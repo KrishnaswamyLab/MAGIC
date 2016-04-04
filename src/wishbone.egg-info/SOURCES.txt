@@ -1,5 +1,0 @@
-src/wishbone.egg-info/PKG-INFO
-src/wishbone.egg-info/SOURCES.txt
-src/wishbone.egg-info/dependency_links.txt
-src/wishbone.egg-info/requires.txt
-src/wishbone.egg-info/top_level.txt
