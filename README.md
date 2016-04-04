@@ -17,3 +17,6 @@ All the dependencies will be automatically installed using the above commands
 #### Usage
 
 A tutorial on Wishbone usage and results visualization for single cell RNA-seq data can be found in this notebook: http://nbviewer.jupyter.org/github/ManuSetty/wishbone/blob/master/notebooks/Wishbone_for_single_cell_RNAseq.ipynb
+
+
+A tutorial on Wishbone usage and results visualization for mass cytometry data can be found in this notebook: http://nbviewer.jupyter.org/github/ManuSetty/wishbone/blob/master/notebooks/Wishbone_for_mass_cytometry.ipynb
