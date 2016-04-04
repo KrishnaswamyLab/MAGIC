@@ -528,7 +528,7 @@ class SCData:
         """
         if self.cluster_assignments is None:
             raise RuntimeError('Please run phenograph before subselecting cells.')
-        if len(set(clusters).difference(scdata.cluster_assignments)) > 0 :
+        if len(set(clusters).difference(self.cluster_assignments)) > 0 :
             raise RuntimeError('Some of the clusters specified are not present. Please select a subset of phenograph clusters')
 
         # Subset of cells to use
@@ -1029,7 +1029,11 @@ class Wishbone:
         s = np.where(self.scdata.diffusion_eigenvectors.index == start_cell)[0]
         if len(s) == 0:
             raise RuntimeError( 'Start cell %s not found in data. Please rerun with correct start cell' % start_cell)
-        if num_waypoints > self.scdata.data.shape[0]:
+        if isinstance(num_waypoints, list):
+            if len(pd.Index(num_waypoints).difference(self.scdata.data.index)) > 0:
+                warnings.warn('Some of the specified waypoints are not in the data. These will be removed')
+                num_waypoints = list(self.scdata.data.index.intersection(num_waypoints))
+        elif num_waypoints > self.scdata.data.shape[0]:
             raise RuntimeError('num_waypoints parameter is higher than the number of cells in the dataset. \
                 Please select a smaller number')
         s = s[0]
