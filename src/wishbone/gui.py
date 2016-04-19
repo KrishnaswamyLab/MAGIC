@@ -21,205 +21,36 @@ class wishbone_gui(tk.Tk):
         self.grid()
         self.vals = None
 
-        #k
-        label = tk.Label(self,text=u"k", anchor="w",fg="black",bg="white")
-        label.grid(column=0,row=0,sticky='EW')
+        #set up menu bar
+        self.menubar = tk.Menu(self)
+        self.fileMenu = tk.Menu(self.menubar, tearoff=0)
+        self.menubar.add_cascade(label="File", menu=self.fileMenu)
+        self.fileMenu.add_command(label="Load data", command=self.loadData)
 
-        self.kEntryVariable = tk.StringVar()
-        self.kentry = tk.Entry(self, textvariable=self.kEntryVariable)
-        self.kentry.grid(column=1,row=0,sticky='EW')
-        self.kEntryVariable.set(u"15")
+        self.analysisMenu = tk.Menu(self.menubar, tearoff=0)
+        self.menubar.add_cascade(label="Analysis", menu=self.analysisMenu)
+        self.analysisMenu.add_command(label="Principal component analysis", state='disabled', command=self.runPCA)
+        self.analysisMenu.add_command(label="tSNE", state='disabled', command=self.runTSNE)
+        self.analysisMenu.add_command(label="Diffusion map", state='disabled', command=self.runDM)
+        self.analysisMenu.add_command(label="Wishbone", state='disabled', command=self.runWishbone)
 
-        #l
-        label = tk.Label(self,text=u"l", anchor="w",fg="black",bg="white")
-        label.grid(column=0,row=1,sticky='EW')
-
-        self.lEntryVariable = tk.StringVar()
-        self.lentry = tk.Entry(self, textvariable=self.lEntryVariable)
-        self.lentry.grid(column=1,row=1,sticky='W')
-        self.lEntryVariable.set(u"15")
-
-        #s
-        label = tk.Label(self,text=u"s", anchor="w",fg="black",bg="white")
-        label.grid(column=0,row=2,sticky='EW')
-
-        self.sEntryVariable = tk.StringVar()
-        self.sentry = tk.Entry(self, textvariable=self.sEntryVariable)
-        self.sentry.grid(column=1,row=2,sticky='W')
-        self.sEntryVariable.set(u"1")
-
-        #num graphs
-        label = tk.Label(self,text=u"Number of graphs", anchor="w",fg="black",bg="white")
-        label.grid(column=0,row=3,sticky='EW')
-
-        self.gEntryVariable = tk.StringVar()
-        self.gentry = tk.Entry(self, textvariable=self.gEntryVariable)
-        self.gentry.grid(column=1,row=3,sticky='W')
-        self.gEntryVariable.set(u"1")
-
-        #num waypoints
-        label = tk.Label(self,text=u"Number of waypoints", anchor="w",fg="black",bg="white")
-        label.grid(column=0,row=4,sticky='EW')
-
-        self.wEntryVariable = tk.StringVar()
-        self.wentry = tk.Entry(self, textvariable=self.wEntryVariable)
-        self.wentry.grid(column=1,row=4,sticky='W')
-        self.wEntryVariable.set(u"150")
-
-
-        #dm eigs
-        label = tk.Label(self,text=u"# of eigen vectors (for diffusion map)", anchor="w",fg="black",bg="white")
-        label.grid(column=0,row=5,sticky='EW')
-
-        self.dmEntryVariable = tk.StringVar()
-        self.dmentry = tk.Entry(self, textvariable=self.dmEntryVariable)
-        self.dmentry.grid(column=1,row=5,sticky='W')
-        self.dmEntryVariable.set(u"4")
-
-        #verbose
-        label = tk.Label(self,text=u"Verbose", anchor="w",fg="black",bg="white")
-        label.grid(column=0,row=6,sticky='EW')
-
-        self.vEntryVariable = tk.StringVar()
-        self.ventry = tk.Entry(self, textvariable=self.vEntryVariable)
-        self.ventry.grid(column=1,row=6,sticky='W')
-        self.vEntryVariable.set(u"1")
-
-        #metric
-        label = tk.Label(self,text=u"Metric", anchor="w",fg="black",bg="white")
-        label.grid(column=0,row=7,sticky='EW')
-
-        self.mEntryVariable = tk.StringVar()
-        self.mentry = tk.Entry(self, textvariable=self.mEntryVariable)
-        self.mentry.grid(column=1,row=7,sticky='W')
-        self.mEntryVariable.set(u"euclidean")
-
-        #voting scheme
-        label = tk.Label(self,text=u"Voting scheme", anchor="w",fg="black",bg="white")
-        label.grid(column=0,row=8,sticky='EW')
-
-        self.vsEntryVariable = tk.StringVar()
-        self.vsentry = tk.Entry(self, textvariable=self.vsEntryVariable)
-        self.vsentry.grid(column=1,row=8,sticky='W')
-        self.vsEntryVariable.set(u"exponential")
-
-        #branch
-        label = tk.Label(self,text=u"Branch", anchor="w",fg="black",bg="white")
-        label.grid(column=0,row=9,sticky='EW')
-
-        self.bEntryVariable = tk.StringVar()
-        self.bentry = tk.Entry(self, textvariable=self.bEntryVariable)
-        self.bentry.grid(column=1,row=9,sticky='W')
-        self.bEntryVariable.set(u"1")
-
-        #band_sample
-        label = tk.Label(self,text=u"Band sample", anchor="w",fg="black",bg="white")
-        label.grid(column=0,row=10,sticky='EW')
-
-        self.bsEntryVariable = tk.StringVar()
-        self.bsentry = tk.Entry(self, textvariable=self.bsEntryVariable)
-        self.bsentry.grid(column=1,row=10,sticky='W')
-        self.bsEntryVariable.set(u"0")
-
-        #partial order
-        label = tk.Label(self,text=u"Partial order", anchor="w",fg="black",bg="white")
-        label.grid(column=0,row=11,sticky='EW')
-
-        self.poEntryVariable = tk.StringVar()
-        self.poentry = tk.Entry(self, textvariable=self.poEntryVariable)
-        self.poentry.grid(column=1,row=11,sticky='W')
-        self.poEntryVariable.set(u"")
-
-        #flock waypoints
-        label = tk.Label(self,text=u"Flock waypoints", anchor="w",fg="black",bg="white")
-        label.grid(column=0,row=12,sticky='EW')
-
-        self.fwEntryVariable = tk.StringVar()
-        self.fwentry = tk.Entry(self, textvariable=self.fwEntryVariable)
-        self.fwentry.grid(column=1,row=12,sticky='W')
-        self.fwEntryVariable.set(u"2")
-
-        #plot data
-        label = tk.Label(self,text=u"Plot data", anchor="w",fg="black",bg="white")
-        label.grid(column=0,row=13,sticky='EW')
-
-        self.pdEntryVariable = tk.StringVar()
-        self.pdentry = tk.Entry(self, textvariable=self.pdEntryVariable)
-        self.pdentry.grid(column=1,row=13,sticky='W')
-        self.pdEntryVariable.set(u"")
-
-        #search connected components
-        label = tk.Label(self,text=u"Search connected components", anchor="w",fg="black",bg="white")
-        label.grid(column=0,row=14,sticky='EW')
-
-        self.sccEntryVariable = tk.StringVar()
-        self.sccentry = tk.Entry(self, textvariable=self.sccEntryVariable)
-        self.sccentry.grid(column=1,row=14,sticky='W')
-        self.sccEntryVariable.set(u"1")
-
-
-        #select data
-        dataButton = tk.Button(self, text=u"Select data file", command=self.OnDataButtonClick)
-        dataButton.grid(column=0, row=15)
-
-        #select waypoints
-        waypointsButton = tk.Button(self, text=u"Select landmarks file", command=self.OnWaypointsButtonClick)
-        waypointsButton.grid(column=1, row=15)
-
-        #calculate trajectory button
-        button = tk.Button(self,text=u"Run wishbone", command=self.OnCalculateTrajectoryButtonClick)
-        button.grid(column=0,row=17, columnspan=2, sticky='S')
-
-        #Visualizations
-        label = tk.Label(self,text=u"Visualize:", anchor="w",fg="black",bg="white")
-        label.grid(column=2,row=17,sticky='EW')
-
-        #diffusion map button
-        dmButton = tk.Button(self, text=u"Diffusion map", command=self.ShowDiffusionMap)
-        dmButton.grid(column=4, row=17)
-
-        #trajectory button
-        trajButton = tk.Button(self, text=u"Wishbone on tSNE", command=self.PlotWishboneOnTsne)
-        trajButton.grid(column=3, row=18)
-
-        #tSNE button
-        tsneButton = tk.Button(self, text=u"tSNE", command=self.PlotTsne)
-        tsneButton.grid(column=3, row=17)
-
-        #diffusion eigen vectors
-        evButton = tk.Button(self, text=u"Diffusion eigen vectors", command=self.PlotDiffusionEigenVectors)
-        evButton.grid(column=5, row=17)
-
-        #plot marker trajectory
-        mtButton = tk.Button(self, text=u"Plot marker trajectory", command=self.PlotMarkerTrajectory)
-        mtButton.grid(column=4, row=18)
-
-        #plot marker heatmap
-        mhButton = tk.Button(self, text=u"Plot marker heatmap", command=self.PlotMarkerHeatmap)
-        mhButton.grid(column=5, row=18)
-
-        #plot derivatives
-        derivButton = tk.Button(self, text=u"Plot derivatives", command=self.PlotDerivatives)
-        derivButton.grid(column=3, row=19)
+        self.visMenu = tk.Menu(self.menubar, tearoff=0)
+        self.menubar.add_cascade(label="Visualization", menu=self.visMenu)
+        self.visMenu.add_command(label="Principal component analysis", state='disabled', command=self.plotPCA)
+        self.visMenu.add_command(label="tSNE", state='disabled', command=self.plotTSNE)
+        self.visMenu.add_command(label="Diffusion map", state='disabled', command=self.plotDM)
+        self.wishboneMenu = tk.Menu(self)
+        self.visMenu.add_cascade(label="Wishbone", menu=self.wishboneMenu)
+        self.wishboneMenu.add_command(label="On tSNE", state='disabled', command=self.plotWBOnTsne)
+        self.wishboneMenu.add_command(label="Marker trajectory", state='disabled', command=self.plotWBMarkerTrajectory)
+        self.wishboneMenu.add_command(label="Heat map", state='disabled', command=self.plotWBHeatMap)
+        self.visMenu.add_command(label="Gene expression", state='disabled', command=self.plotGeneExpOntSNE)
         
-        #set up canvas for plots
-        self.fig, self.ax = wishbone.wb.get_fig()
-        self.canvas = FigureCanvasTkAgg(self.fig, self)
-        self.canvas.show()
-        self.canvas.get_tk_widget().grid(column=2, row=0, rowspan=17, columnspan=4, sticky='NS')
+        self.config(menu=self.menubar)
 
-        #set up listbox for genes
-        label = tk.Label(self,text=u"Genes:", anchor="w",fg="black",bg="white")
-        label.grid(column=6,row=0,sticky='NW')
-
-        self.geneSelectBox = tk.Listbox(self, selectmode=tk.EXTENDED)
-        self.geneSelectBox.grid(column=6, row=2, rowspan=16, sticky='NS')
-        self.geneSelectBox.bind('<BackSpace>', self.DeleteSelected)
-        self.selectedGenes = []
-        gsButton = tk.Button(self, text=u"Plot gene expression", command=self.PlotSelectedGenes)
-        gsButton.grid(column=6, row=17)
-        gcButton = tk.Button(self, text=u"Compare expression of 2 markers", command=self.CompareGeneExpression)
-        gcButton.grid(column=6, row=18)
+        #intro screen
+        tk.Label(self, text=u"Wishbone", font=('Helvetica', 48), fg="black", bg="white", padx=100, pady=50).grid(row=0)
+        tk.Label(self, text=u"To get started, select a data file by clicking File > Load Data", fg="black", bg="white", padx=100, pady=25).grid(row=1)
 
         #update
         self.grid_columnconfigure(0,weight=1)
@@ -227,154 +58,237 @@ class wishbone_gui(tk.Tk):
         self.update()
         self.geometry(self.geometry())       
 
-    def OnDataButtonClick(self):
+    def loadData(self):
         self.dataFileName = filedialog.askopenfilename()
-        # Load sample data
-        self.scdata = wishbone.wb.SCData.from_fcs(os.path.expanduser('~/.wishbone/data/sample_masscyt.fcs'), 
-            cofactor=None)
+
+        #pop up data options menu
+        self.fileInfo = tk.Toplevel()
+        self.fileInfo.title("Data options")
+        tk.Label(self.fileInfo, text=u"File name: ").grid(column=0, row=0)
+        tk.Label(self.fileInfo, text=self.dataFileName.split('/')[-1]).grid(column=1, row=0)
+
+        tk.Label(self.fileInfo,text=u"Name:" ,fg="black",bg="white").grid(column=0, row=1)
+        self.fileNameEntryVar = tk.StringVar()
+        tk.Entry(self.fileInfo, textvariable=self.fileNameEntryVar).grid(column=1,row=1)
+
+        self.normalizeVar = tk.BooleanVar()
+        tk.Checkbutton(self.fileInfo, text=u"Normalize", variable=self.normalizeVar).grid(column=0, row=2, columnspan=2)
+        tk.Label(self.fileInfo, text=u"The normalize parameter is used for correcting for library size among cells.").grid(column=0, row=3, columnspan=2)
+
+        tk.Button(self.fileInfo, text="Cancel", command=self.fileInfo.destroy).grid(column=0, row=4)
+        tk.Button(self.fileInfo, text="Load", command=self.processData).grid(column=1, row=4)
+
+        self.wait_window(self.fileInfo)
+
+    def processData(self):
+        #clear intro screen
+        for item in self.grid_slaves():
+            item.grid_forget()
+
+        #load data
+        self.scdata = wishbone.wb.SCData.from_csv(os.path.expanduser(self.dataFileName), 
+                data_type='sc-seq', normalize=self.normalizeVar.get())
+        #get genes
         self.genes = self.scdata.data.columns.values
 
-        #gene selection setup
-        self.geneInput = AutocompleteEntry(self.genes.tolist(), self, listboxLength=6)
-        self.geneInput.grid(column=6, row=1, sticky='NS')
-        self.geneInput.bind('<Return>', self.AddToSelected)
+        #display file name
+        tk.Label(self,text=u"File name: " + self.fileNameEntryVar.get(), fg="black",bg="white").grid(column=0,row=0)
 
-    
-    def OnWaypointsButtonClick(self):
-        self.waypointsFileName = filedialog.askopenfilename()
-        self.waypoints = pd.DataFrame.from_csv(os.path.expanduser(self.waypointsFileName)).iloc[:, 0]
-        self.waypoints = list(self.waypoints)
+        #set up canvas for plots
+        self.fig, self.ax = wishbone.wb.get_fig()
+        self.canvas = FigureCanvasTkAgg(self.fig, self)
+        self.canvas.show()
+        self.canvas.get_tk_widget().grid(column=1, row=1, rowspan=17, columnspan=4, sticky='NS')
 
-    def OnCalculateTrajectoryButtonClick(self):
-        print(self.kEntryVariable.get())
-        print(self.lEntryVariable.get())
-        print(self.sEntryVariable.get())
-        self.HideTrajectoryOptions()
+        #set up visualization buttons
+        tk.Label(self, text=u"Visualizations:", fg='black', bg='white').grid(column=0, row=1)
+        self.PCAButton = tk.Button(self, text=u"PCA", state='disabled', command=self.plotPCA)
+        self.PCAButton.grid(column=0, row=2)
+        self.tSNEButton = tk.Button(self, text=u"tSNE", state='disabled', command=self.plotTSNE)
+        self.tSNEButton.grid(column=0, row=3)
+        self.DMButton = tk.Button(self, text=u"Diffusion map", state='disabled', command=self.plotDM)
+        self.DMButton.grid(column=0, row=4)
+        self.WBButton = tk.Button(self, text=u"Wishbone", state='disabled', command=self.plotWBOnTsne)
+        self.WBButton.grid(column=0, row=5)
+        self.geneExpButton = tk.Button(self, text=u"Gene expression", state='disabled', command=self.plotGeneExpOntSNE)
+        self.geneExpButton.grid(column=0, row=6)
 
-        # Run tSNE
-        # self.scdata.run_tsne()
-        f = open('tsne', 'rb')
-        self.scdata.tsne = pickle.load(f)
-        # Run diffusion maps
+        #enable buttons
+        self.analysisMenu.entryconfig(0, state='normal')
+
+        #destroy pop up menu
+        self.fileInfo.destroy()
+
+    def runPCA(self):
+        self.scdata.run_pca()
+
+        #enable buttons
+        self.analysisMenu.entryconfig(1, state='normal')
+        self.visMenu.entryconfig(0, state='normal')
+        self.PCAButton.config(state='normal')
+
+    def runTSNE(self):
+        #pop up for # components
+        self.tsneOptions = tk.Toplevel()
+        self.tsneOptions.title("tSNE options")
+        tk.Label(self.tsneOptions,text=u"Number of components:" ,fg="black",bg="white").grid(column=0, row=0)
+        self.nCompVar = tk.IntVar()
+        tk.Entry(self.tsneOptions, textvariable=self.nCompVar).grid(column=1,row=0)
+        tk.Button(self.tsneOptions, text=u"Run", command=self.tsneOptions.destroy).grid(column=0, columnspan=2, row=1)
+        self.wait_window(self.tsneOptions)
+
+        self.scdata.run_tsne(n_components=self.nCompVar.get())
+
+        #enable buttons
+        self.analysisMenu.entryconfig(2, state='normal')
+        self.visMenu.entryconfig(1, state='normal')
+        self.visMenu.entryconfig(3, state='normal')
+        self.tSNEButton.config(state='normal')
+        self.geneExpButton.config(state='normal')
+
+    def runDM(self):
         self.scdata.run_diffusion_map()
 
-        # self.trajectory, self.waypoints, self.branches, self.bas = wishbone.wishbone(self.data, 
-        #                                                                     k=int(self.kEntryVariable.get()), 
-        #                                                                     l=int(self.lEntryVariable.get()), 
-        #                                                                     s=int(self.sEntryVariable.get())-1, 
-        #                                                                     num_graphs=int(self.gEntryVariable.get()), 
-        #                                                                     num_waypoints=[int(self.wEntryVariable.get())] if self.wEntryVariable.get().isdigit() else self.landmarks, 
-        #                                                                     dm_eigs=int(self.dmEntryVariable.get()),
-        #                                                                     verbose=int(self.vEntryVariable.get()),
-        #                                                                     metric=self.mEntryVariable.get(), 
-        #                                                                     voting_scheme=self.vsEntryVariable.get(),
-        #                                                                     branch=int(self.bEntryVariable.get()), 
-        #                                                                     band_sample=int(self.bsEntryVariable.get()),
-        #                                                                     partial_order= [int(i) for i in self.poEntryVariable.get().split(',')] if len(self.poEntryVariable.get()) > 0 else [],
-        #                                                                     flock_waypoints=int(self.fwEntryVariable.get()),
-        #                                                                     plot_data= [int(i) for i in self.pdEntryVariable.get().split(',')] if len(self.pdEntryVariable.get()) > 0 else [],
-        #                                                                     search_connected_components=int(self.sccEntryVariable.get()))
-        # self.wb = wishbone.wb.Wishbone(self.scdata)
-        # self.wb.run_wishbone(int(self.sEntryVariable.get()), components_list=[1, 2, 3], num_waypoints=self.waypoints)
-        f2 = open('wishb', 'rb')
-        self.wb = pickle.load(f2)
+        #enable buttons
+        self.analysisMenu.entryconfig(3, state='normal')
+        self.visMenu.entryconfig(2, state='normal')
+        self.DMButton.config(state='normal')
+
+    def runWishbone(self):
+        #popup menu for wishbone options
+        self.wbOptions = tk.Toplevel()
+        self.wbOptions.title("Wishbone Options")
+
+        #s
+        tk.Label(self.wbOptions,text=u"Start cell:",fg="black",bg="white").grid(column=0,row=0)
+        self.start = tk.StringVar()
+        tk.Entry(self.wbOptions, textvariable=self.start).grid(column=1,row=0)
+
+        #k
+        tk.Label(self.wbOptions,text=u"k:",fg="black",bg="white").grid(column=0,row=1)
+        self.k = tk.IntVar()
+        tk.Entry(self.wbOptions, textvariable=self.k).grid(column=1,row=1)
+        self.k.set(15)
+        
+        #components list
+        tk.Label(self.wbOptions, text=u"Components list:", fg='black', bg='white').grid(column=0, row=2)
+        self.compList = tk.StringVar()
+        tk.Entry(self.wbOptions, textvariable=self.compList).grid(column=1, row=2)
+        self.compList.set("1, 2, 3")
+
+        #num waypoints
+        tk.Label(self.wbOptions, text=u"Number of waypoints:", fg='black', bg='white').grid(column=0, row=3)
+        self.numWaypoints = tk.IntVar()
+        tk.Entry(self.wbOptions, textvariable=self.numWaypoints).grid(column=1, row=3)
+        self.numWaypoints.set(250)
+
+        #branch
+        self.branch = tk.BooleanVar()
+        tk.Checkbutton(self.wbOptions, text=u"Branch", variable=self.branch).grid(column=0, row=4, columnspan=2)
+
+        tk.Button(self.wbOptions, text=u"Run", command=self.wbOptions.destroy).grid(column=0, columnspan=2, row=5)
+        self.wait_window(self.wbOptions)
+
+        self.wb = wishbone.wb.Wishbone(self.scdata)
+        self.wb.run_wishbone(start_cell=self.start.get(), k=self.k.get(), components_list=[int(comp) for comp in self.compList.get().split(',')], num_waypoints=self.numWaypoints.get())
+
+        #enable buttons
+        self.wishboneMenu.entryconfig(0, state='normal')
+        self.wishboneMenu.entryconfig(1, state='normal')
+        self.WBButton.config(state='normal')
+
+    def plotPCA(self):
+        #pop up for # components
+        self.PCAOptions = tk.Toplevel()
+        self.PCAOptions.title("PCA Plot Options")
+        tk.Label(self.PCAOptions,text=u"Max variance explained (ylim):",fg="black",bg="white").grid(column=0, row=0)
+        self.yLimVar = tk.DoubleVar()
+        tk.Entry(self.PCAOptions, textvariable=self.yLimVar).grid(column=1,row=0)
+        tk.Label(self.PCAOptions, text=u"Number of components:", fg='black', bg='white').grid(column=0, row=1)
+        self.compVar = tk.IntVar()
+        tk.Entry(self.PCAOptions, textvariable=self.compVar).grid(column=1, row=1)
+        tk.Button(self.PCAOptions, text=u"Plot", command=self.PCAOptions.destroy).grid(column=0, columnspan=2, row=2)
+        self.wait_window(self.PCAOptions)
 
         self.fig.clf()
-        # self.canvas.get_tk_widget.delete('all')
-        self.fig, self.ax = self.wb.plot_wishbone_on_tsne()
+        self.fig, self.ax = self.scdata.plot_pca_variance_explained(ylim=(0, self.yLimVar.get()), n_components=self.compVar.get())
         self.canvas = FigureCanvasTkAgg(self.fig, self)
         self.canvas.show()
-        self.canvas.get_tk_widget().grid(column=2, row=0, rowspan=17, columnspan=4, sticky='NS') 
+        self.canvas.get_tk_widget().grid(column=1, row=1, rowspan=17, columnspan=4, sticky='NS') 
 
-    def ShowDiffusionMap(self):
+    def plotTSNE(self):
         self.fig.clf()
-        # self.canvas.get_tk_widget.delete('all')
-        self.fig, self.ax = self.scdata.plot_diffusion_components()
-        self.canvas = FigureCanvasTkAgg(self.fig, self)
-        self.canvas.show()
-        self.canvas.get_tk_widget().grid(column=2, row=0, rowspan=17, columnspan=4, sticky='NS') 
-
-    def PlotWishboneOnTsne(self):
-        self.fig.clf()
-        # self.canvas.get_tk_widget.delete('all')
-        self.fig, self.ax = self.wb.plot_wishbone_on_tsne()
-        self.canvas = FigureCanvasTkAgg(self.fig, self)
-        self.canvas.show()
-        self.canvas.get_tk_widget().grid(column=2, row=0, rowspan=17, columnspan=4, sticky='NS') 
-
-    def PlotTsne(self):
-        self.fig.clf()
-        # self.canvas.get_tk_widget.delete('all')
         self.fig, self.ax = self.scdata.plot_tsne()
         self.canvas = FigureCanvasTkAgg(self.fig, self)
         self.canvas.show()
-        self.canvas.get_tk_widget().grid(column=2, row=0, rowspan=17, columnspan=4, sticky='NS') 
+        self.canvas.get_tk_widget().grid(column=1, row=1, rowspan=17, columnspan=4, sticky='NS') 
 
-    def PlotDiffusionEigenVectors(self):
+    def plotDM(self):
         self.fig.clf()
-        # self.canvas.get_tk_widget.delete('all')
-        self.fig, self.ax = self.scdata.plot_diffusion_eigen_vectors()
+        self.canvas.get_tk_widget().grid_forget()
+        self.fig, self.ax = self.scdata.plot_diffusion_components()
         self.canvas = FigureCanvasTkAgg(self.fig, self)
         self.canvas.show()
-        self.canvas.get_tk_widget().grid(column=2, row=0, rowspan=17, columnspan=4, sticky='NS') 
+        self.canvas.get_tk_widget().grid(column=1, row=1, rowspan=17, columnspan=4, sticky='NS') 
+
+    def plotWBOnTsne(self):
+        self.fig.clf()
+        self.fig, self.ax = self.wb.plot_wishbone_on_tsne()
+        self.canvas = FigureCanvasTkAgg(self.fig, self)
+        self.canvas.show()
+        self.canvas.get_tk_widget().grid(column=1, row=1, rowspan=17, columnspan=4, sticky='NS')
+
+    def plotWBMarkerTrajectory(self):
+        self.getGeneSelection()
+        if len(self.selectedGenes) < 1:
+            print('Error: must select at least one gene')
+        self.fig.clf()
+        self.vals, self.fig, self.ax = self.wb.plot_marker_trajectory(self.selectedGenes)
+        self.canvas = FigureCanvasTkAgg(self.fig, self)
+        self.canvas.show()
+        self.canvas.get_tk_widget().grid(column=1, row=1, rowspan=17, columnspan=4, sticky='NS')
         
-    def CompareGeneExpression(self):
-        selected = self.geneSelectBox.curselection()
-        if len(selected) != 2:
-            print('Error: select exactly two genes to plot')
-        self.fig.clf()
-        a = self.fig.add_subplot(111)
-        a.scatter(self.scdata.data[self.selectedGenes[selected[0]]], self.scdata.data[self.selectedGenes[selected[1]]], s=10, edgecolors='none')
-        a.set_xlim([0, 6])
-        a.set_ylim([0, 6])
-        a.set_xlabel(self.selectedGenes[selected[0]])
-        a.set_ylabel(self.selectedGenes[selected[1]])
-        self.canvas.draw()
+        #enable buttons
+        self.wishboneMenu.entryconfig(2, state='normal')
 
-    def PlotSelectedGenes(self):
-        selected = self.geneSelectBox.curselection()
-        if len(selected) < 1:
-            print('Error: must select at least one gene')
-        self.fig.clf()
-        self.fig, self.ax = self.scdata.plot_gene_expression([self.selectedGenes[i] for i in selected])
-        self.canvas = FigureCanvasTkAgg(self.fig, self)
-        self.canvas.show()
-        self.canvas.get_tk_widget().grid(column=2, row=0, rowspan=17, columnspan=4, sticky='NS')
-
-    def PlotMarkerTrajectory(self):
-        selected = self.geneSelectBox.curselection()
-        if len(selected) < 1:
-            print('Error: must select at least one gene')
-        self.fig.clf()
-        self.vals, self.fig, self.ax = self.wb.plot_marker_trajectory([self.selectedGenes[i] for i in selected], 
-                    smoothing_factor=1.5, show_variance=True)
-        self.canvas = FigureCanvasTkAgg(self.fig, self)
-        self.canvas.show()
-        self.canvas.get_tk_widget().grid(column=2, row=0, rowspan=17, columnspan=4, sticky='NS')
-
-    def PlotMarkerHeatmap(self):
-        if self.vals == None:
-            print('Error: must plot marker trajectory first')
+    def plotWBHeatMap(self):
         self.fig.clf()
         self.fig, self.ax = self.wb.plot_marker_heatmap(self.vals)
         self.canvas = FigureCanvasTkAgg(self.fig, self)
         self.canvas.show()
-        self.canvas.get_tk_widget().grid(column=2, row=0, rowspan=17, columnspan=4, sticky='NS')
+        self.canvas.get_tk_widget().grid(column=1, row=1, rowspan=17, columnspan=4, sticky='NS')
 
-    def PlotDerivatives(self):
-        if self.vals == None:
-            print('Error: must plot marker trajectory first')
+    def plotGeneExpOntSNE(self):
+        self.getGeneSelection()
+        if len(self.selectedGenes) < 1:
+            print('Error: must select at least one gene')
         self.fig.clf()
-        self.fig, self.ax = self.wb.plot_derivatives(self.vals)
+        self.fig, self.ax = self.scdata.plot_gene_expression(self.selectedGenes)
         self.canvas = FigureCanvasTkAgg(self.fig, self)
         self.canvas.show()
-        self.canvas.get_tk_widget().grid(column=2, row=0, rowspan=17, columnspan=4, sticky='NS')
+        self.canvas.get_tk_widget().grid(column=1, row=1, rowspan=17, columnspan=4, sticky='NS')
 
+    def getGeneSelection(self):
+        #popup menu to get selected genes
+        self.geneSelection = tk.Toplevel()
+        self.geneSelection.title("Select Genes")
+        tk.Label(self.geneSelection,text=u"Genes:",fg="black",bg="white").grid(row=0)
 
+        self.geneInput = AutocompleteEntry(self.genes.tolist(), self.geneSelection, listboxLength=6)
+        self.geneInput.grid(row=1)
+        self.geneInput.bind('<Return>', self.AddToSelected)
+
+        self.geneSelectBox = tk.Listbox(self.geneSelection, selectmode=tk.EXTENDED)
+        self.geneSelectBox.grid(row=2, rowspan=10)
+        self.geneSelectBox.bind('<BackSpace>', self.DeleteSelected)
+        self.selectedGenes = []
+
+        tk.Button(self.geneSelection, text=u"Use selected genes", command=self.geneSelection.destroy).grid(row=12)
+        self.wait_window(self.geneSelection)
+    
     def AddToSelected(self, event):
         self.selectedGenes.append(self.geneInput.get())
         self.geneSelectBox.insert(tk.END, self.selectedGenes[len(self.selectedGenes)-1])
-
 
     def DeleteSelected(self, event):
         selected = self.geneSelectBox.curselection()
@@ -383,15 +297,7 @@ class wishbone_gui(tk.Tk):
             idx = int(i) - pos
             self.geneSelectBox.delete( idx,idx )
             self.selectedGenes = self.selectedGenes[:idx] + self.selectedGenes[idx+1:]
-            pos = pos + 1
-
-    def HideTrajectoryOptions(self):
-        for item in self.grid_slaves():
-            if int(item.grid_info()['column']) < 2:
-                item.grid_forget()
-        self.grid_columnconfigure(0, minsize=0)
-        self.grid_columnconfigure(1, minsize=0)
-
+            pos = pos + 1     
 
 if __name__ == "__main__":
     app = wishbone_gui(None)
