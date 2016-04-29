@@ -177,12 +177,12 @@ class wishbone_gui(tk.Tk):
         if self.GSEAFileName != None:
             self.scdata.run_diffusion_map_correlations()
             self.scdata.data.columns = self.scdata.data.columns.str.upper()
-            self.outputDir = filedialog.askdirectory(title='Select directory to save output', initialdir='~/.wishbone/gsea')
+            self.outputPrefix = filedialog.asksaveasfilename(title='Input file prefix for saving output', initialdir='~/.wishbone/gsea')
             if 'mouse' in self.GSEAFileName:
                 gmt_file_type = 'mouse'
             else:
                 gmt_file_type = 'human'
-            self.reports = self.scdata.run_gsea(output_stem= os.path.expanduser(self.outputDir), 
+            self.reports = self.scdata.run_gsea(output_stem= os.path.expanduser(self.outputPrefix), 
                      gmt_file=(gmt_file_type, self.GSEAFileName.split('/')[-1]))
             #enable buttons
             self.analysisMenu.entryconfig(4, state='normal')
@@ -290,15 +290,27 @@ class wishbone_gui(tk.Tk):
         self.resetCanvas()
         self.canvas = tk.Canvas(self, width=600, height=300)
         self.canvas.grid(column=1, row=1, rowspan=17, columnspan=4,sticky='NS')
-        self.canvas.create_text(5, 5, anchor='nw', text='Positive correlations:\n'+str(self.reports[1]['pos'])+'\nNegative correlations:\n'+ str(self.reports[1]['neg']))
+        self.outputText(1)
         self.currentPlot = 'GSEA_result_'+self.diff_component.get()
 
     def updateComponent(self):
         self.resetCanvas()
         self.canvas = tk.Canvas(self, width=600, height=300)
         self.canvas.grid(column=1, row=1, rowspan=17, columnspan=4,sticky='NS')
-        self.canvas.create_text(5, 5, anchor='nw', text='Positive correlations:\n'+str(self.reports[int(self.diff_component.get().split(' ')[-1])]['pos'])+'\nNegative correlations:\n'+ str(self.reports[int(self.diff_component.get().split(' ')[-1])]['neg']))
+        self.outputText(int(self.diff_component.get().split(' ')[-1]))
         self.currentPlot = 'GSEA_result_'+self.diff_component.get()
+
+    def outputText(self, diff_component):
+        pos_text = str(self.reports[diff_component]['pos']).split('\n')
+        pos_text = pos_text[1:len(pos_text)-1]
+        pos_text = '\n'.join(pos_text)
+        neg_text = str(self.reports[diff_component]['neg']).split('\n')
+        neg_text = neg_text[1:len(neg_text)-1]
+        neg_text = '\n'.join(neg_text)
+        self.canvas.create_text(5, 5, anchor='nw', text='Positive correlations:\n\n', font=('Helvetica', 16, 'bold'))
+        self.canvas.create_text(5, 50, anchor='nw', text=pos_text)
+        self.canvas.create_text(5, 150, anchor='nw', text='Negative correlations:\n\n', font=('Helvetica', 16, 'bold'))
+        self.canvas.create_text(5, 200, anchor='nw', text=neg_text)
 
     def plotWBOnTsne(self):
         self.saveButton.config(state='normal')
@@ -363,7 +375,7 @@ class wishbone_gui(tk.Tk):
         self.geneSelection.title("Select Genes")
         tk.Label(self.geneSelection,text=u"Genes:",fg="black",bg="white").grid(row=0)
 
-        self.geneInput = AutocompleteEntry(self.genes.tolist(), self.geneSelection, listboxLength=6)
+        self.geneInput = wishbone.autocomplete_entry.AutocompleteEntry(self.genes.tolist(), self.geneSelection, listboxLength=6)
         self.geneInput.grid(row=1)
         self.geneInput.bind('<Return>', self.AddToSelected)
 
@@ -402,7 +414,12 @@ class wishbone_gui(tk.Tk):
             for item in self.canvas.find_all():
                 self.canvas.delete(item)
 
-if __name__ == "__main__":
+def launch():
     app = wishbone_gui(None)
     app.title('Wishbone')
     app.mainloop()
+
+# if __name__ == "__main__":
+#     app = wishbone_gui(None)
+#     app.title('Wishbone')
+#     app.mainloop()

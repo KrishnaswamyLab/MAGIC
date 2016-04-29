@@ -14,11 +14,12 @@ import numpy as np
 import pandas as pd
 
 import matplotlib
-try:
-    os.environ['DISPLAY']
-except KeyError:
-    matplotlib.use('Agg')
+# try:
+#     os.environ['DISPLAY']
+# except KeyError:
+#     matplotlib.use('Agg')
 import matplotlib.pyplot as plt
+from matplotlib.figure import Figure
 with warnings.catch_warnings():
     warnings.simplefilter('ignore')  # catch experimental ipython widget warning
     import seaborn as sns
@@ -50,7 +51,7 @@ def qualitative_colors(n):
     return sns.color_palette('Set1', n)
 
 
-def get_fig(fig=None, ax=None, figsize=[4, 4]):
+def get_fig(fig=None, ax=None, figsize=[5, 5]):
     """fills in any missing axis or figure with the currently active one
     :param ax: matplotlib Axis object
     :param fig: matplotlib Figure object
