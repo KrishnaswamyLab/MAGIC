@@ -1,3 +1,5 @@
+#!/usr/local/bin/python3
+
 import matplotlib
 matplotlib.use("TkAgg")
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2TkAgg
@@ -6,7 +8,6 @@ from matplotlib.figure import Figure
 import wishbone
 import os
 import pandas as pd
-from autocomplete_entry import AutocompleteEntry
 import tkinter as tk
 from tkinter import filedialog
 import pickle
@@ -419,7 +420,5 @@ def launch():
     app.title('Wishbone')
     app.mainloop()
 
-# if __name__ == "__main__":
-#     app = wishbone_gui(None)
-#     app.title('Wishbone')
-#     app.mainloop()
+if __name__ == "__main__":
+    launch()
