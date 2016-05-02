@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
 import wishbone
 import os
+from platform import system as platform
 import pandas as pd
 import tkinter as tk
 from tkinter import filedialog
@@ -61,7 +62,7 @@ class wishbone_gui(tk.Tk):
         self.resizable(True,False)
         self.update()
         self.geometry(self.geometry())       
-
+        self.focus_force()
     def loadData(self):
         self.dataFileName = filedialog.askopenfilename(title='Load data file', initialdir='~/.wishbone/data')
 
@@ -417,6 +418,7 @@ class wishbone_gui(tk.Tk):
 
 def launch():
     app = wishbone_gui(None)
+    os.system('''/usr/bin/osascript -e 'tell app "Finder" to set frontmost of process "python" to true' ''')
     app.title('Wishbone')
     app.mainloop()
 

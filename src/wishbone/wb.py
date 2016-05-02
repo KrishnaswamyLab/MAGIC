@@ -892,7 +892,7 @@ class SCData:
         # remove genes missing from experiment
         genes = set(genes).difference(not_in_dataframe)
 
-        height = int(2 * np.ceil(len(genes) / 5))
+        height = int(1.5 * np.ceil(len(genes) / 5))
         width = 10
         fig = plt.figure(figsize=[width, height])
         n_rows = int(height / 2)
@@ -1171,7 +1171,7 @@ class Wishbone:
         linewidth = 3
 
         # Set up plot
-        fig, ax = get_fig(fig, ax, figsize=[14, 4])
+        fig, ax = get_fig(fig, ax, figsize=[8, 4])
 
         for marker,color in zip(markers, colors):
 
@@ -1350,7 +1350,7 @@ class Wishbone:
 
         # Set up figure
         markers = marker_trends['Trunk'].columns[1:]
-        fig = plt.figure(figsize = [16, 0.5*len(markers)])
+        fig = plt.figure(figsize = [8, 0.5*len(markers)])
         gs = plt.GridSpec( 1, 2 )
 
         branches = np.sort(list(set(marker_trends.keys()).difference(['Trunk'])))
