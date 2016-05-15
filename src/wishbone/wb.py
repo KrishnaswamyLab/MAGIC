@@ -51,7 +51,7 @@ def qualitative_colors(n):
     return sns.color_palette('Set1', n)
 
 
-def get_fig(fig=None, ax=None, figsize=[5, 5]):
+def get_fig(fig=None, ax=None, figsize=[6.5, 6.5]):
     """fills in any missing axis or figure with the currently active one
     :param ax: matplotlib Axis object
     :param fig: matplotlib Figure object
@@ -653,6 +653,7 @@ class SCData:
                         cmap=cmap, edgecolors='none', s=size)
             ax.xaxis.set_major_locator(plt.NullLocator())
             ax.yaxis.set_major_locator(plt.NullLocator())
+            ax.set_aspect('equal')
             plt.title( 'Component %d' % i, fontsize=10 )
 
         # fig.suptitle(title, fontsize=12)
@@ -892,9 +893,9 @@ class SCData:
         # remove genes missing from experiment
         genes = set(genes).difference(not_in_dataframe)
 
-        height = int(1.5 * np.ceil(len(genes) / 5))
+        height = int(2 * np.ceil(len(genes) / 5))
         width = 10
-        fig = plt.figure(figsize=[width, height])
+        fig = plt.figure(figsize=[width, height+0.25])
         n_rows = int(height / 2)
         n_cols = int(width / 2)
         gs = plt.GridSpec(n_rows, n_cols)
@@ -1171,7 +1172,7 @@ class Wishbone:
         linewidth = 3
 
         # Set up plot
-        fig, ax = get_fig(fig, ax, figsize=[8, 4])
+        fig, ax = get_fig(fig, ax, figsize=[14, 4])
 
         for marker,color in zip(markers, colors):
 
@@ -1350,7 +1351,7 @@ class Wishbone:
 
         # Set up figure
         markers = marker_trends['Trunk'].columns[1:]
-        fig = plt.figure(figsize = [8, 0.5*len(markers)])
+        fig = plt.figure(figsize = [16, 0.5*len(markers)])
         gs = plt.GridSpec( 1, 2 )
 
         branches = np.sort(list(set(marker_trends.keys()).difference(['Trunk'])))
