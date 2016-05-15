@@ -7,7 +7,8 @@ import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
 import wishbone
 import os
-from platform import system as platform
+import sys
+import platform
 import pandas as pd
 import tkinter as tk
 from tkinter import filedialog
@@ -58,32 +59,34 @@ class wishbone_gui(tk.Tk):
         tk.Label(self, text=u"To get started, select a data file by clicking File > Load Data", fg="black", bg="white", padx=100, pady=25).grid(row=1)
 
         #update
+        self.protocol('WM_DELETE_WINDOW', self.quitWB)
         self.grid_columnconfigure(0,weight=1)
-        self.resizable(True,False)
+        self.resizable(True,True)
         self.update()
         self.geometry(self.geometry())       
         self.focus_force()
+
     def loadData(self):
         self.dataFileName = filedialog.askopenfilename(title='Load data file', initialdir='~/.wishbone/data')
+        if(self.dataFileName != ""):
+            #pop up data options menu
+            self.fileInfo = tk.Toplevel()
+            self.fileInfo.title("Data options")
+            tk.Label(self.fileInfo, text=u"File name: ").grid(column=0, row=0)
+            tk.Label(self.fileInfo, text=self.dataFileName.split('/')[-1]).grid(column=1, row=0)
 
-        #pop up data options menu
-        self.fileInfo = tk.Toplevel()
-        self.fileInfo.title("Data options")
-        tk.Label(self.fileInfo, text=u"File name: ").grid(column=0, row=0)
-        tk.Label(self.fileInfo, text=self.dataFileName.split('/')[-1]).grid(column=1, row=0)
+            tk.Label(self.fileInfo,text=u"Name:" ,fg="black",bg="white").grid(column=0, row=1)
+            self.fileNameEntryVar = tk.StringVar()
+            tk.Entry(self.fileInfo, textvariable=self.fileNameEntryVar).grid(column=1,row=1)
 
-        tk.Label(self.fileInfo,text=u"Name:" ,fg="black",bg="white").grid(column=0, row=1)
-        self.fileNameEntryVar = tk.StringVar()
-        tk.Entry(self.fileInfo, textvariable=self.fileNameEntryVar).grid(column=1,row=1)
+            self.normalizeVar = tk.BooleanVar()
+            tk.Checkbutton(self.fileInfo, text=u"Normalize", variable=self.normalizeVar).grid(column=0, row=2, columnspan=2)
+            tk.Label(self.fileInfo, text=u"The normalize parameter is used for correcting for library size among cells.").grid(column=0, row=3, columnspan=2)
 
-        self.normalizeVar = tk.BooleanVar()
-        tk.Checkbutton(self.fileInfo, text=u"Normalize", variable=self.normalizeVar).grid(column=0, row=2, columnspan=2)
-        tk.Label(self.fileInfo, text=u"The normalize parameter is used for correcting for library size among cells.").grid(column=0, row=3, columnspan=2)
+            tk.Button(self.fileInfo, text="Cancel", command=self.fileInfo.destroy).grid(column=0, row=4)
+            tk.Button(self.fileInfo, text="Load", command=self.processData).grid(column=1, row=4)
 
-        tk.Button(self.fileInfo, text="Cancel", command=self.fileInfo.destroy).grid(column=0, row=4)
-        tk.Button(self.fileInfo, text="Load", command=self.processData).grid(column=1, row=4)
-
-        self.wait_window(self.fileInfo)
+            self.wait_window(self.fileInfo)
 
     def processData(self):
         #clear intro screen
@@ -103,7 +106,7 @@ class wishbone_gui(tk.Tk):
         self.fig, self.ax = wishbone.wb.get_fig()
         self.canvas = FigureCanvasTkAgg(self.fig, self)
         self.canvas.show()
-        self.canvas.get_tk_widget().grid(column=1, row=1, rowspan=17, columnspan=4, sticky='NS')
+        self.canvas.get_tk_widget().grid(column=1, row=1, rowspan=10, columnspan=4,sticky='NSEW')
 
         #set up visualization buttons
         tk.Label(self, text=u"Visualizations:", fg='black', bg='white').grid(column=0, row=1)
@@ -134,7 +137,7 @@ class wishbone_gui(tk.Tk):
 
         #enable buttons
         self.analysisMenu.entryconfig(0, state='normal')
-
+        self.geometry('800x550')
         #destroy pop up menu
         self.fileInfo.destroy()
 
@@ -152,31 +155,35 @@ class wishbone_gui(tk.Tk):
         self.tsneOptions.title("tSNE options")
         tk.Label(self.tsneOptions,text=u"Number of components:" ,fg="black",bg="white").grid(column=0, row=0)
         self.nCompVar = tk.IntVar()
+        self.nCompVar.set(5)
         tk.Entry(self.tsneOptions, textvariable=self.nCompVar).grid(column=1,row=0)
-        tk.Button(self.tsneOptions, text=u"Run", command=self.tsneOptions.destroy).grid(column=0, columnspan=2, row=1)
+        tk.Button(self.tsneOptions, text="Run", command=self._runTSNE).grid(column=1, row=1)
+        tk.Button(self.tsneOptions, text="Cancel", command=self.tsneOptions.destroy).grid(column=0, row=1)
         self.wait_window(self.tsneOptions)
 
+    def _runTSNE(self):
         self.scdata.run_tsne(n_components=self.nCompVar.get())
 
         #enable buttons
         self.analysisMenu.entryconfig(2, state='normal')
         self.visMenu.entryconfig(1, state='normal')
-        self.visMenu.entryconfig(4, state='normal')
+        self.visMenu.entryconfig(5, state='normal')
         self.tSNEButton.config(state='normal')
         self.geneExpButton.config(state='normal')
+        self.tsneOptions.destroy()
 
     def runDM(self):
         self.scdata.run_diffusion_map()
 
         #enable buttons
         self.analysisMenu.entryconfig(3, state='normal')
+        self.analysisMenu.entryconfig(4, state='normal')
         self.visMenu.entryconfig(2, state='normal')
         self.DMButton.config(state='normal')
 
     def runGSEA(self):
-        self.GSEAFileName = filedialog.askopenfilename(title='Select gmt File', initialdir='~/.wishbone/gsea')
-        print(self.GSEAFileName)
-        if self.GSEAFileName != None:
+        self.GSEAFileName = filedialog.askopenfilename(title='Select gmt File', initialdir='~/.wishbone/tools')
+        if self.GSEAFileName != "":
             self.scdata.run_diffusion_map_correlations()
             self.scdata.data.columns = self.scdata.data.columns.str.upper()
             self.outputPrefix = filedialog.asksaveasfilename(title='Input file prefix for saving output', initialdir='~/.wishbone/gsea')
@@ -187,7 +194,6 @@ class wishbone_gui(tk.Tk):
             self.reports = self.scdata.run_gsea(output_stem= os.path.expanduser(self.outputPrefix), 
                      gmt_file=(gmt_file_type, self.GSEAFileName.split('/')[-1]))
             #enable buttons
-            self.analysisMenu.entryconfig(4, state='normal')
             self.visMenu.entryconfig(3, state='normal')
             self.GSEAButton.config(state='normal')
 
@@ -221,18 +227,23 @@ class wishbone_gui(tk.Tk):
 
         #branch
         self.branch = tk.BooleanVar()
+        self.branch.set(True)
         tk.Checkbutton(self.wbOptions, text=u"Branch", variable=self.branch).grid(column=0, row=4, columnspan=2)
 
-        tk.Button(self.wbOptions, text=u"Run", command=self.wbOptions.destroy).grid(column=0, columnspan=2, row=5)
+        tk.Button(self.wbOptions, text="Run", command=self._runWishbone).grid(column=1, row=5)
+        tk.Button(self.wbOptions, text="Cancel", command=self.wbOptions.destroy).grid(column=0, row=5)
         self.wait_window(self.wbOptions)
 
+    def _runWishbone(self):
         self.wb = wishbone.wb.Wishbone(self.scdata)
         self.wb.run_wishbone(start_cell=self.start.get(), k=self.k.get(), components_list=[int(comp) for comp in self.compList.get().split(',')], num_waypoints=self.numWaypoints.get())
 
         #enable buttons
         self.wishboneMenu.entryconfig(0, state='normal')
         self.wishboneMenu.entryconfig(1, state='normal')
+        self.wishboneMenu.entryconfig(2, state='normal')
         self.WBButton.config(state='normal')
+        self.wbOptions.destroy()
 
     def plotPCA(self):
         self.saveButton.config(state='normal')
@@ -243,22 +254,27 @@ class wishbone_gui(tk.Tk):
         self.PCAOptions.title("PCA Plot Options")
         tk.Label(self.PCAOptions,text=u"Max variance explained (ylim):",fg="black",bg="white").grid(column=0, row=0)
         self.yLimVar = tk.DoubleVar()
+        self.yLimVar.set(round(self.scdata.pca['eigenvalues'][0][0], 2))
         tk.Entry(self.PCAOptions, textvariable=self.yLimVar).grid(column=1,row=0)
         tk.Label(self.PCAOptions, text=u"Number of components:", fg='black', bg='white').grid(column=0, row=1)
         self.compVar = tk.IntVar()
+        self.compVar.set(15)
         tk.Entry(self.PCAOptions, textvariable=self.compVar).grid(column=1, row=1)
-        tk.Button(self.PCAOptions, text=u"Plot", command=self.PCAOptions.destroy).grid(column=0, columnspan=2, row=2)
+        tk.Button(self.PCAOptions, text="Plot", command=self._plotPCA).grid(column=1, row=2)
+        tk.Button(self.PCAOptions, text="Cancel", command=self.PCAOptions.destroy).grid(column=0, row=2)
         self.wait_window(self.PCAOptions)
 
+    def _plotPCA(self):
         self.resetCanvas()
         self.fig, self.ax = self.scdata.plot_pca_variance_explained(ylim=(0, self.yLimVar.get()), n_components=self.compVar.get())
         self.canvas = FigureCanvasTkAgg(self.fig, self)
         self.canvas.show()
-        self.canvas.get_tk_widget().grid(column=1, row=1, rowspan=17, columnspan=4, sticky='NS') 
+        self.canvas.get_tk_widget().grid(column=1, row=1, rowspan=10, columnspan=4,sticky='NW') 
         self.currentPlot = 'pca'
 
         #enable buttons
         self.saveButton.config(state='normal')
+        self.PCAOptions.destroy()
 
     def plotTSNE(self):
         self.saveButton.config(state='normal')
@@ -269,19 +285,20 @@ class wishbone_gui(tk.Tk):
         self.fig, self.ax = self.scdata.plot_tsne()
         self.canvas = FigureCanvasTkAgg(self.fig, self)
         self.canvas.show()
-        self.canvas.get_tk_widget().grid(column=1, row=1, rowspan=17, columnspan=4, sticky='NS') 
+        self.canvas.get_tk_widget().grid(column=1, row=1, rowspan=10, columnspan=4,sticky='NW') 
         self.currentPlot = 'tsne'
 
     def plotDM(self):
         self.saveButton.config(state='normal')
         self.component_menu.config(state='disabled')
         self.updateButton.config(state='disabled')
-        
+        self.geometry('950x550')
+
         self.resetCanvas()
         self.fig, self.ax = self.scdata.plot_diffusion_components()
         self.canvas = FigureCanvasTkAgg(self.fig, self)
         self.canvas.show()
-        self.canvas.get_tk_widget().grid(column=1, row=1, rowspan=17, columnspan=4, sticky='NS') 
+        self.canvas.get_tk_widget().grid(column=1, row=1, rowspan=10, columnspan=4,sticky='W') 
         self.currentPlot = 'dm_components'
 
     def showGSEAResults(self):
@@ -291,14 +308,14 @@ class wishbone_gui(tk.Tk):
         
         self.resetCanvas()
         self.canvas = tk.Canvas(self, width=600, height=300)
-        self.canvas.grid(column=1, row=1, rowspan=17, columnspan=4,sticky='NS')
+        self.canvas.grid(column=1, row=1, rowspan=17, columnspan=4)
         self.outputText(1)
         self.currentPlot = 'GSEA_result_'+self.diff_component.get()
 
     def updateComponent(self):
         self.resetCanvas()
         self.canvas = tk.Canvas(self, width=600, height=300)
-        self.canvas.grid(column=1, row=1, rowspan=17, columnspan=4,sticky='NS')
+        self.canvas.grid(column=1, row=1, rowspan=17, columnspan=4,sticky='NSEW')
         self.outputText(int(self.diff_component.get().split(' ')[-1]))
         self.currentPlot = 'GSEA_result_'+self.diff_component.get()
 
@@ -323,53 +340,67 @@ class wishbone_gui(tk.Tk):
         self.fig, self.ax = self.wb.plot_wishbone_on_tsne()
         self.canvas = FigureCanvasTkAgg(self.fig, self)
         self.canvas.show()
-        self.canvas.get_tk_widget().grid(column=1, row=1, rowspan=17, columnspan=4, sticky='NS')
+        self.canvas.get_tk_widget().grid(column=1, row=1, rowspan=10, columnspan=4)
         self.currentPlot = 'wishbone_on_tsne'
 
     def plotWBMarkerTrajectory(self):
-        self.saveButton.config(state='normal')
-        self.component_menu.config(state='disabled')
-        self.updateButton.config(state='disabled')
-        
         self.getGeneSelection()
         if len(self.selectedGenes) < 1:
             print('Error: must select at least one gene')
-        self.resetCanvas()
-        self.vals, self.fig, self.ax = self.wb.plot_marker_trajectory(self.selectedGenes)
-        self.canvas = FigureCanvasTkAgg(self.fig, self)
-        self.canvas.show()
-        self.canvas.get_tk_widget().grid(column=1, row=1, rowspan=17, columnspan=4, sticky='NS')
-        self.currentPlot = 'wishbone_marker_trajectory'
 
-        #enable buttons
-        self.wishboneMenu.entryconfig(2, state='normal')
+        else:
+            self.saveButton.config(state='normal')
+            self.component_menu.config(state='disabled')
+            self.updateButton.config(state='disabled')
+            self.resetCanvas()
+            self.vals, self.fig, self.ax = self.wb.plot_marker_trajectory(self.selectedGenes)
+            self.fig.set_size_inches(10, 4, forward=True)
+            self.fig.tight_layout()
+            self.fig.subplots_adjust(right=0.8)
+            self.canvas = FigureCanvasTkAgg(self.fig, self)
+            self.canvas.show()
+            self.canvas.get_tk_widget().grid(column=1, row=1, rowspan=10, columnspan=5, sticky='W')
+            self.currentPlot = 'wishbone_marker_trajectory'
+            self.geometry('1050x550')
+
+            #enable buttons
+            self.wishboneMenu.entryconfig(2, state='normal')
 
     def plotWBHeatMap(self):
-        self.saveButton.config(state='normal')
-        self.component_menu.config(state='disabled')
-        self.updateButton.config(state='disabled')
-        
-        self.resetCanvas()
-        self.fig, self.ax = self.wb.plot_marker_heatmap(self.vals)
-        self.canvas = FigureCanvasTkAgg(self.fig, self)
-        self.canvas.show()
-        self.canvas.get_tk_widget().grid(column=1, row=1, rowspan=17, columnspan=4, sticky='NS')
-        self.currentPlot = 'wishbone_marker_heatmap'
-
-    def plotGeneExpOntSNE(self):
-        self.saveButton.config(state='normal')
-        self.component_menu.config(state='disabled')
-        self.updateButton.config(state='disabled')
         self.getGeneSelection()
         if len(self.selectedGenes) < 1:
             print('Error: must select at least one gene')
-        
-        self.resetCanvas()
-        self.fig, self.ax = self.scdata.plot_gene_expression(self.selectedGenes)
-        self.canvas = FigureCanvasTkAgg(self.fig, self)
-        self.canvas.show()
-        self.canvas.get_tk_widget().grid(column=1, row=1, rowspan=17, columnspan=4, sticky='NS')
-        self.currentPlot = 'gene_expression_tsne'
+
+        else:
+            self.saveButton.config(state='normal')
+            self.component_menu.config(state='disabled')
+            self.updateButton.config(state='disabled')
+            self.resetCanvas()
+            self.vals, self.fig, self.ax = self.wb.plot_marker_trajectory(self.selectedGenes)
+            self.fig, self.ax = self.wb.plot_marker_heatmap(self.vals)
+            self.fig.set_size_inches(10, 4, forward=True)
+            self.fig.tight_layout()
+            self.canvas = FigureCanvasTkAgg(self.fig, self)
+            self.canvas.show()
+            self.canvas.get_tk_widget().grid(column=1, row=1, rowspan=10, columnspan=5, sticky='W')
+            self.currentPlot = 'wishbone_marker_heatmap'
+
+    def plotGeneExpOntSNE(self):
+        self.getGeneSelection()
+        if len(self.selectedGenes) < 1:
+            print('Error: must select at least one gene')
+
+        else:
+            self.saveButton.config(state='normal')
+            self.component_menu.config(state='disabled')
+            self.updateButton.config(state='disabled')
+            self.resetCanvas()
+            self.fig, self.ax = self.scdata.plot_gene_expression(self.selectedGenes)
+            self.canvas = FigureCanvasTkAgg(self.fig, self)
+            self.canvas.show()
+            self.canvas.get_tk_widget().grid(column=1, row=1, rowspan=10, columnspan=4,sticky='W')
+            self.currentPlot = 'gene_expression_tsne'
+            self.geometry('950x550')
 
     def getGeneSelection(self):
         #popup menu to get selected genes
@@ -386,9 +417,14 @@ class wishbone_gui(tk.Tk):
         self.geneSelectBox.bind('<BackSpace>', self.DeleteSelected)
         self.selectedGenes = []
 
-        tk.Button(self.geneSelection, text=u"Use selected genes", command=self.geneSelection.destroy).grid(row=12)
+        tk.Button(self.geneSelection, text="Use selected genes", command=self.geneSelection.destroy).grid(row=12)
+        tk.Button(self.geneSelection, text="Cancel", command=self.cancelGeneSelection).grid(row=13)
         self.wait_window(self.geneSelection)
     
+    def cancelGeneSelection(self):
+        self.selectedGenes = []
+        self.geneSelection.destroy()
+
     def AddToSelected(self, event):
         self.selectedGenes.append(self.geneInput.get())
         self.geneSelectBox.insert(tk.END, self.selectedGenes[len(self.selectedGenes)-1])
@@ -416,9 +452,19 @@ class wishbone_gui(tk.Tk):
             for item in self.canvas.find_all():
                 self.canvas.delete(item)
 
+    def quitWB(self):
+        self.quit()
+        self.destroy()
+
 def launch():
     app = wishbone_gui(None)
-    os.system('''/usr/bin/osascript -e 'tell app "Finder" to set frontmost of process "python" to true' ''')
+    print (platform.system())
+    if platform.system() != 'Darwin':
+        self.lift()
+        self.call('wm', 'attributes', '.', '-topmost', True)
+        self.after_idle(root.call, 'wm', 'attributes', '.', '-topmost', False)
+    else:
+        os.system('''/usr/bin/osascript -e 'tell app "Finder" to set frontmost of process "python" to true' ''')
     app.title('Wishbone')
     app.mainloop()
 
