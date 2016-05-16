@@ -30,6 +30,7 @@ class wishbone_gui(tk.Tk):
         self.fileMenu = tk.Menu(self.menubar, tearoff=0)
         self.menubar.add_cascade(label="File", menu=self.fileMenu)
         self.fileMenu.add_command(label="Load data", command=self.loadData)
+        self.fileMenu.add_command(label="Exit Wishbone", command=self.quitWB)
 
         self.analysisMenu = tk.Menu(self.menubar, tearoff=0)
         self.menubar.add_cascade(label="Analysis", menu=self.analysisMenu)
