@@ -14,11 +14,12 @@ import numpy as np
 import pandas as pd
 
 import matplotlib
-try:
-    os.environ['DISPLAY']
-except KeyError:
-    matplotlib.use('Agg')
+# try:
+#     os.environ['DISPLAY']
+# except KeyError:
+#     matplotlib.use('Agg')
 import matplotlib.pyplot as plt
+from matplotlib.figure import Figure
 with warnings.catch_warnings():
     warnings.simplefilter('ignore')  # catch experimental ipython widget warning
     import seaborn as sns
@@ -50,7 +51,7 @@ def qualitative_colors(n):
     return sns.color_palette('Set1', n)
 
 
-def get_fig(fig=None, ax=None, figsize=[4, 4]):
+def get_fig(fig=None, ax=None, figsize=[6.5, 6.5]):
     """fills in any missing axis or figure with the currently active one
     :param ax: matplotlib Axis object
     :param fig: matplotlib Figure object
@@ -652,6 +653,7 @@ class SCData:
                         cmap=cmap, edgecolors='none', s=size)
             ax.xaxis.set_major_locator(plt.NullLocator())
             ax.yaxis.set_major_locator(plt.NullLocator())
+            ax.set_aspect('equal')
             plt.title( 'Component %d' % i, fontsize=10 )
 
         # fig.suptitle(title, fontsize=12)
@@ -893,7 +895,7 @@ class SCData:
 
         height = int(2 * np.ceil(len(genes) / 5))
         width = 10
-        fig = plt.figure(figsize=[width, height])
+        fig = plt.figure(figsize=[width, height+0.25])
         n_rows = int(height / 2)
         n_cols = int(width / 2)
         gs = plt.GridSpec(n_rows, n_cols)
