@@ -30,3 +30,18 @@ A python GUI is now available for Wishbone. After following the installation ste
 
 A tutorial on using the interface is available in the [Wishbone tutorial](docs/wishbone_tutorial.pptx).
 
+
+#### Citation
+
+Wishbone manuscript is available from [Nature Biotechnology](http://www.nature.com/nbt/journal/vaop/ncurrent/full/nbt.3569.html). If you use Wishbone for your work, please cite our paper.
+
+        @article{Wishbone_2016,
+                title = {Wishbone identifies bifurcating developmental trajectories from single-cell data},
+                author = {Manu Setty and Michelle D Tadmor and Shlomit Reich-Zeliger and Omer Angel and Tomer Meir Salame and Pooja Kathail and Kristy Choi and Sean Bendall and Nir Friedman and Dana Pe'er},
+                journal = {Nature Biotechnology},
+                year = {2016},
+                month = {may},
+                url = {http://dx.doi.org/10.1038/nbt.3569},
+                doi = {doi:10.1038/nbt.3569}
+        }
+                
