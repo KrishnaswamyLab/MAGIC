@@ -1,8 +1,13 @@
 import os
+import sys
 import shutil
 from subprocess import call
 from setuptools import setup
 from warnings import warn
+
+if sys.version_info.major != 3:
+    raise RuntimeError('Wishbone requires Python 3')
+
 
 # install phenograph
 call(['pip3', 'install', 'git+https://github.com/jacoblevine/phenograph.git'])
@@ -25,6 +30,7 @@ setup(name='wishbone',
           'networkx',
           'fcsparser',
           'statsmodels'],
+      scripts=['src/wishbone/wishbone_gui.py'],
       )
 
 
