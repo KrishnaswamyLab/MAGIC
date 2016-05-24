@@ -14,11 +14,12 @@ call(['pip3', 'install', 'git+https://github.com/jacoblevine/phenograph.git'])
 
 
 setup(name='wishbone',
-      version='1.0',
+      version='0.2.1',
       description='Wishbone algorithm for identifying bifurcating trajectories from single-cell data',
       author='Manu Setty',
       author_email='manu.setty@columbia.edu',
       package_dir={'': 'src'},
+      packages=['wishbone'],
       install_requires=[
           'numpy>=1.10.0',
           'pandas>=0.18.0',
