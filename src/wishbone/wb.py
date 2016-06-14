@@ -1050,7 +1050,9 @@ class Wishbone:
         branches = res['Branches']
         trajectory = (trajectory - np.min(trajectory)) / (np.max(trajectory) - np.min(trajectory))
         self.trajectory = pd.Series(trajectory, index=self.scdata.data.index)
-        self.branch = pd.Series([np.int(i) for i in branches], index=self.scdata.data.index)
+        self.branch = None
+        if branch:
+            self.branch = pd.Series([np.int(i) for i in branches], index=self.scdata.data.index)
         self.waypoints = list(self.scdata.data.index[res['Waypoints']])
 
         # Set branch colors
@@ -1127,7 +1129,7 @@ class Wishbone:
 
 
         # Adjust weights if data has branches
-        if hasattr(self, 'branch'):
+        if self.branch is not None:
 
             plot_branch = True
 
@@ -1351,15 +1353,41 @@ class Wishbone:
 
         # Set up figure
         markers = marker_trends['Trunk'].columns[1:]
-        fig = plt.figure(figsize = [16, 0.5*len(markers)])
-        gs = plt.GridSpec( 1, 2 )
 
-        branches = np.sort(list(set(marker_trends.keys()).difference(['Trunk'])))
-        for i,br in enumerate(branches):
-            ax = plt.subplot( gs[0, i] )
+        if self.branch is not None:
+            fig = plt.figure(figsize = [16, 0.5*len(markers)])
+            gs = plt.GridSpec( 1, 2 )
+
+            branches = np.sort(list(set(marker_trends.keys()).difference(['Trunk'])))
+            for i,br in enumerate(branches):
+                ax = plt.subplot( gs[0, i] )
+
+                # Construct the full matrix
+                mat = marker_trends['Trunk'].append( marker_trends[br][2:] )
+                mat.index = range(mat.shape[0])
+
+                # Start and end
+                start = np.where(mat['x'] >= trajectory_range[0])[0][0]
+                end = np.where(mat['x'] >= trajectory_range[1])[0][0]
+
+                # Plot
+                plot_mat = mat.ix[start:end]
+                sns.heatmap(plot_mat[markers].T, 
+                    linecolor='none', cmap=cmap, vmin=0, vmax=1)            
+                ax.xaxis.set_major_locator(plt.NullLocator())
+                ticks = np.arange(trajectory_range[0], trajectory_range[1]+0.1, 0.1)
+                plt.xticks([np.where(plot_mat['x'] >= i)[0][0] for i in ticks], ticks)
+
+                # Labels
+                plt.xlabel( 'Wishbone trajectory' )
+                plt.title( br )
+        else:
+            # Plot values from the trunk alone
+            fig = plt.figure(figsize = [8, 0.5*len(markers)])
+            ax = plt.gca()
 
             # Construct the full matrix
-            mat = marker_trends['Trunk'].append( marker_trends[br][2:] )
+            mat = marker_trends['Trunk']
             mat.index = range(mat.shape[0])
 
             # Start and end
@@ -1376,9 +1404,10 @@ class Wishbone:
 
             # Labels
             plt.xlabel( 'Wishbone trajectory' )
-            plt.title( br )
+
 
         return fig, ax
+
 
     def plot_derivatives(self, marker_trends, trajectory_range=[0, 1]):
         """ Plot change in expression of markers along trajectory
@@ -1393,15 +1422,53 @@ class Wishbone:
 
         # Set up figure
         markers = marker_trends['Trunk'].columns[1:]
-        fig = plt.figure(figsize = [16, 0.5*len(markers)])
-        gs = plt.GridSpec( 1, 2 )
 
-        branches = np.sort(list(set(marker_trends.keys()).difference(['Trunk'])))
-        for i,br in enumerate(branches):
-            ax = plt.subplot( gs[0, i] )
+        if self.branch is not None:
+            fig = plt.figure(figsize = [16, 0.5*len(markers)])
+            gs = plt.GridSpec( 1, 2 )
+
+            branches = np.sort(list(set(marker_trends.keys()).difference(['Trunk'])))
+            for i,br in enumerate(branches):
+                ax = plt.subplot( gs[0, i] )
+
+                # Construct the full matrix
+                mat = marker_trends['Trunk'].append( marker_trends[br][2:] )
+                mat.index = range(mat.shape[0])
+
+                # Start and end
+                start = np.where(mat['x'] >= trajectory_range[0])[0][0]
+                end = np.where(mat['x'] >= trajectory_range[1])[0][0]
+
+                # Plot
+                diffs = mat[markers].diff()
+                diffs[diffs.isnull()] = 0
+
+                # Update the branch points diffs
+                bp_bin = marker_trends['Trunk'].shape[0]
+                diffs.ix[bp_bin-1] = marker_trends[br].ix[0:1, markers].diff().ix[1]
+                diffs.ix[bp_bin] = marker_trends[br].ix[1:2, markers].diff().ix[2]
+                diffs = diffs.ix[start:end]
+                mat = mat.ix[start:end]
+
+                # Differences
+                vmax = max(0.05,  abs(diffs).max().max() )
+                # Plot
+                sns.heatmap(diffs.T, linecolor='none', 
+                    cmap=matplotlib.cm.RdBu_r, vmin=-vmax, vmax=vmax)
+                ax.xaxis.set_major_locator(plt.NullLocator())
+                ticks = np.arange(trajectory_range[0], trajectory_range[1]+0.1, 0.1)
+                plt.xticks([np.where(mat['x'] >= i)[0][0] for i in ticks], ticks)
+
+                # Labels
+                plt.xlabel( 'Wishbone trajectory' )
+                plt.title( br )
+        else:
+            # Plot values from the trunk alone
+            fig = plt.figure(figsize = [8, 0.5*len(markers)])
+            ax = plt.gca()
 
             # Construct the full matrix
-            mat = marker_trends['Trunk'].append( marker_trends[br][2:] )
+            mat = marker_trends['Trunk']
             mat.index = range(mat.shape[0])
 
             # Start and end
@@ -1411,11 +1478,6 @@ class Wishbone:
             # Plot
             diffs = mat[markers].diff()
             diffs[diffs.isnull()] = 0
-
-            # Update the branch points diffs
-            bp_bin = marker_trends['Trunk'].shape[0]
-            diffs.ix[bp_bin-1] = marker_trends[br].ix[0:1, markers].diff().ix[1]
-            diffs.ix[bp_bin] = marker_trends[br].ix[1:2, markers].diff().ix[2]
             diffs = diffs.ix[start:end]
             mat = mat.ix[start:end]
 
@@ -1430,8 +1492,6 @@ class Wishbone:
 
             # Labels
             plt.xlabel( 'Wishbone trajectory' )
-            plt.title( br )
-
 
         return fig, ax
 

@@ -109,11 +109,17 @@ def wishbone(data, s, k=15, l=15, num_graphs=1, num_waypoints=250,
 			branches.append(RNK)
 			bas.append(Y)
 
+			# Set return values
+			branches = branches[0]
+			bas = bas[0]
 		else:
-			branches = trajectory # branch
-	
+			branches = None
+			bas = None
+
+		trajectory = trajectory[0]
+		waypoints = waypoints[0]
 		return dict(zip(['Trajectory', 'Waypoints', 'Branches', 'BAS'],
-		  [trajectory[0], waypoints[0], branches[0], bas[0]]))
+		  [trajectory, waypoints, branches, bas]))
 
 
 
