@@ -459,14 +459,17 @@ class wishbone_gui(tk.Tk):
 
 def launch():
     app = wishbone_gui(None)
-    print (platform.system())
-    if platform.system() != 'Darwin':
+	
+	if platform.system() == 'Darwin':
+		os.system('''/usr/bin/osascript -e 'tell app "Finder" to set frontmost of process "python" to true' ''')
+	elif platform.system() == 'Windows':
         self.lift()
         self.call('wm', 'attributes', '.', '-topmost', True)
         self.after_idle(root.call, 'wm', 'attributes', '.', '-topmost', False)
-    else:
-        os.system('''/usr/bin/osascript -e 'tell app "Finder" to set frontmost of process "python" to true' ''')
-    app.title('Wishbone')
+	elif platform.system() == 'Linux':
+		app.focus_force()
+	
+	app.title('Wishbone')
     app.mainloop()
 
 if __name__ == "__main__":
