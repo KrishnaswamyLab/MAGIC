@@ -463,9 +463,9 @@ def launch():
 	if platform.system() == 'Darwin':
 		os.system('''/usr/bin/osascript -e 'tell app "Finder" to set frontmost of process "python" to true' ''')
 	elif platform.system() == 'Windows':
-        self.lift()
-        self.call('wm', 'attributes', '.', '-topmost', True)
-        self.after_idle(root.call, 'wm', 'attributes', '.', '-topmost', False)
+        app.lift()
+        app.call('wm', 'attributes', '.', '-topmost', True)
+        app.after_idle(root.call, 'wm', 'attributes', '.', '-topmost', False)
 	elif platform.system() == 'Linux':
 		app.focus_force()
 	
