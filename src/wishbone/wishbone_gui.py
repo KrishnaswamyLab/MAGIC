@@ -465,7 +465,7 @@ def launch():
 	elif platform.system() == 'Windows':
         app.lift()
         app.call('wm', 'attributes', '.', '-topmost', True)
-        app.after_idle(root.call, 'wm', 'attributes', '.', '-topmost', False)
+        app.after_idle(app.call, 'wm', 'attributes', '.', '-topmost', False)
 	elif platform.system() == 'Linux':
 		app.focus_force()
 	
