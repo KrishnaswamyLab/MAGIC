@@ -504,7 +504,8 @@ class wishbone_gui(tk.Tk):
         self.gateOptions.destroy()
         self.buttonPress = self.canvas.mpl_connect('button_press_event', self._startGate)
         self.buttonRelease = self.canvas.mpl_connect('button_release_event', self._endGate)
-
+        self.canvas.get_tk_widget().config(cursor='plus')
+ 
     def _startGate(self, event):
         self.start_x = event.xdata
         self.start_y = event.ydata
@@ -523,7 +524,8 @@ class wishbone_gui(tk.Tk):
         #disable mouse events
         self.canvas.mpl_disconnect(self.buttonPress)
         self.canvas.mpl_disconnect(self.buttonRelease)
-
+        self.canvas.get_tk_widget().config(cursor='arrow')
+ 
         #save cell gate
         gate = Path([[start_x, start_y], 
                      [start_x + width, start_y],
