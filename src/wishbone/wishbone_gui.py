@@ -5,14 +5,18 @@ matplotlib.use("TkAgg")
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2TkAgg
 import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
+from matplotlib.patches import Rectangle
+from matplotlib.path import Path
 import wishbone
 import os
 import sys
 import platform
 import pandas as pd
 import tkinter as tk
+import numpy as np
 from tkinter import filedialog
 import pickle
+import random
 
 class wishbone_gui(tk.Tk):
     def __init__(self,parent):
@@ -52,6 +56,7 @@ class wishbone_gui(tk.Tk):
         self.wishboneMenu.add_command(label="Marker trajectory", state='disabled', command=self.plotWBMarkerTrajectory)
         self.wishboneMenu.add_command(label="Heat map", state='disabled', command=self.plotWBHeatMap)
         self.visMenu.add_command(label="Gene expression", state='disabled', command=self.plotGeneExpOntSNE)
+        self.visMenu.add_command(label="Set gate", state='disabled', command=self.setGate)
         
         self.config(menu=self.menubar)
 
@@ -123,6 +128,8 @@ class wishbone_gui(tk.Tk):
         self.WBButton.grid(column=0, row=6)
         self.geneExpButton = tk.Button(self, text=u"Gene expression", state='disabled', command=self.plotGeneExpOntSNE)
         self.geneExpButton.grid(column=0, row=7)
+        self.setGateButton = tk.Button(self, text=u"Set gate", state='disabled', command=self.setGate)
+        self.setGateButton.grid(column=0, row=8)
         self.saveButton = tk.Button(self, text=u"Save plot", state='disabled', command=self.savePlot)
         self.saveButton.grid(column = 4, row=0)
         self.diff_component = tk.StringVar()
@@ -164,6 +171,7 @@ class wishbone_gui(tk.Tk):
 
     def _runTSNE(self):
         self.scdata.run_tsne(n_components=self.nCompVar.get())
+        self.gates = {}
 
         #enable buttons
         self.analysisMenu.entryconfig(2, state='normal')
@@ -207,6 +215,12 @@ class wishbone_gui(tk.Tk):
         tk.Label(self.wbOptions,text=u"Start cell:",fg="black",bg="white").grid(column=0,row=0)
         self.start = tk.StringVar()
         tk.Entry(self.wbOptions, textvariable=self.start).grid(column=1,row=0)
+        if(len(self.gates) > 0):
+            self.cell_gate = tk.StringVar()
+            self.cell_gate.set('Use cell gate')
+            self.gate_menu = tk.OptionMenu(self.wbOptions, self.cell_gate,
+                                           *list(self.gates.keys()))
+            self.gate_menu.grid(row=0, column=2)
 
         #k
         tk.Label(self.wbOptions,text=u"k:",fg="black",bg="white").grid(column=0,row=1)
@@ -237,8 +251,17 @@ class wishbone_gui(tk.Tk):
 
     def _runWishbone(self):
         self.wb = wishbone.wb.Wishbone(self.scdata)
-        self.wb.run_wishbone(start_cell=self.start.get(), k=self.k.get(), components_list=[int(comp) for comp in self.compList.get().split(',')], num_waypoints=self.numWaypoints.get())
 
+        if self.cell_gate.get() == 'Use cell gate':
+            self.wb.run_wishbone(start_cell=self.start.get(), k=self.k.get(), components_list=[int(comp) for comp in self.compList.get().split(',')], num_waypoints=self.numWaypoints.get())
+        else:
+            #randomly select start cell in gate
+            print('Using cell gate:')
+            print(self.cell_gate.get())
+            start_cell = random.sample(list(self.gates[self.cell_gate.get()]), 1)[0]
+            print(start_cell)
+            self.wb.run_wishbone(start_cell=start_cell, k=self.k.get(), components_list=[int(comp) for comp in self.compList.get().split(',')], num_waypoints=self.numWaypoints.get())
+        
         #enable buttons
         self.wishboneMenu.entryconfig(0, state='normal')
         self.wishboneMenu.entryconfig(1, state='normal')
@@ -250,6 +273,9 @@ class wishbone_gui(tk.Tk):
         self.saveButton.config(state='normal')
         self.component_menu.config(state='disabled')
         self.updateButton.config(state='disabled')
+        self.setGateButton.config(state='disabled')
+        self.visMenu.entryconfig(6, state='disabled')
+
         #pop up for # components
         self.PCAOptions = tk.Toplevel()
         self.PCAOptions.title("PCA Plot Options")
@@ -281,7 +307,9 @@ class wishbone_gui(tk.Tk):
         self.saveButton.config(state='normal')
         self.component_menu.config(state='disabled')
         self.updateButton.config(state='disabled')
-        
+        self.setGateButton.config(state='normal')
+        self.visMenu.entryconfig(6, state='normal')
+
         self.resetCanvas()
         self.fig, self.ax = self.scdata.plot_tsne()
         self.canvas = FigureCanvasTkAgg(self.fig, self)
@@ -293,6 +321,9 @@ class wishbone_gui(tk.Tk):
         self.saveButton.config(state='normal')
         self.component_menu.config(state='disabled')
         self.updateButton.config(state='disabled')
+        self.setGateButton.config(state='disabled')
+        self.visMenu.entryconfig(6, state='disabled')
+
         self.geometry('950x550')
 
         self.resetCanvas()
@@ -306,7 +337,9 @@ class wishbone_gui(tk.Tk):
         self.saveButton.config(state='disabled')
         self.component_menu.config(state='normal')
         self.updateButton.config(state='normal')
-        
+        self.setGateButton.config(state='disabled')
+        self.visMenu.entryconfig(6, state='disabled')
+
         self.resetCanvas()
         self.canvas = tk.Canvas(self, width=600, height=300)
         self.canvas.grid(column=1, row=1, rowspan=17, columnspan=4)
@@ -336,7 +369,9 @@ class wishbone_gui(tk.Tk):
         self.saveButton.config(state='normal')
         self.component_menu.config(state='disabled')
         self.updateButton.config(state='disabled')
-        
+        self.setGateButton.config(state='disabled')
+        self.visMenu.entryconfig(6, state='disabled')
+
         self.resetCanvas()
         self.fig, self.ax = self.wb.plot_wishbone_on_tsne()
         self.canvas = FigureCanvasTkAgg(self.fig, self)
@@ -353,6 +388,9 @@ class wishbone_gui(tk.Tk):
             self.saveButton.config(state='normal')
             self.component_menu.config(state='disabled')
             self.updateButton.config(state='disabled')
+            self.setGateButton.config(state='disabled')
+            self.visMenu.entryconfig(6, state='disabled')
+
             self.resetCanvas()
             self.vals, self.fig, self.ax = self.wb.plot_marker_trajectory(self.selectedGenes)
             self.fig.set_size_inches(10, 4, forward=True)
@@ -376,6 +414,9 @@ class wishbone_gui(tk.Tk):
             self.saveButton.config(state='normal')
             self.component_menu.config(state='disabled')
             self.updateButton.config(state='disabled')
+            self.setGateButton.config(state='disabled')
+            self.visMenu.entryconfig(6, state='disabled')
+
             self.resetCanvas()
             self.vals, self.fig, self.ax = self.wb.plot_marker_trajectory(self.selectedGenes)
             self.fig, self.ax = self.wb.plot_marker_heatmap(self.vals)
@@ -395,6 +436,9 @@ class wishbone_gui(tk.Tk):
             self.saveButton.config(state='normal')
             self.component_menu.config(state='disabled')
             self.updateButton.config(state='disabled')
+            self.setGateButton.config(state='disabled')
+            self.visMenu.entryconfig(6, state='disabled')
+
             self.resetCanvas()
             self.fig, self.ax = self.scdata.plot_gene_expression(self.selectedGenes)
             self.canvas = FigureCanvasTkAgg(self.fig, self)
@@ -443,6 +487,62 @@ class wishbone_gui(tk.Tk):
         self.plotFileName = filedialog.asksaveasfilename(title='Save Plot', defaultextension='.png', initialfile=self.fileNameEntryVar.get()+"_"+self.currentPlot)
         if self.plotFileName != None:
             self.fig.savefig(self.plotFileName)
+
+    def setGate(self):
+        #pop up for gate name
+        self.gateOptions = tk.Toplevel()
+        self.gateOptions.title("Create gate for start cells")
+        tk.Label(self.gateOptions,text=u"Gate name:" ,fg="black",bg="white").grid(column=0, row=0)
+        self.gateName = tk.StringVar()
+        self.gateName.set('Gate ' + str(len(self.gates) + 1))
+        tk.Entry(self.gateOptions, textvariable=self.gateName).grid(column=1,row=0)
+        tk.Button(self.gateOptions, text="Select gate", command=self._setGate).grid(column=1, row=1)
+        tk.Button(self.gateOptions, text="Cancel", command=self.gateOptions.destroy).grid(column=0, row=1)
+        self.wait_window(self.gateOptions)
+
+    def _setGate(self):
+        self.gateOptions.destroy()
+        self.buttonPress = self.canvas.mpl_connect('button_press_event', self._startGate)
+        self.buttonRelease = self.canvas.mpl_connect('button_release_event', self._endGate)
+        self.canvas.get_tk_widget().config(cursor='plus')
+ 
+    def _startGate(self, event):
+        self.start_x = event.xdata
+        self.start_y = event.ydata
+
+    def _endGate(self, event):
+        #draw gate rectangle
+        start_x = self.start_x if self.start_x < event.xdata else event.xdata
+        start_y = self.start_y if self.start_y < event.ydata else event.ydata
+        width = np.absolute(event.xdata-self.start_x)
+        height = np.absolute(event.ydata-self.start_y)
+        rect = Rectangle((start_x, start_y), width, height, 
+                         fill=False, ec='black', alpha=1, lw=2)
+        self.ax.add_patch(rect)
+        self.canvas.draw()
+
+        #disable mouse events
+        self.canvas.mpl_disconnect(self.buttonPress)
+        self.canvas.mpl_disconnect(self.buttonRelease)
+        self.canvas.get_tk_widget().config(cursor='arrow')
+ 
+        #save cell gate
+        gate = Path([[start_x, start_y], 
+                     [start_x + width, start_y],
+                     [start_x + width, start_y + height], 
+                     [start_x, start_y + height],
+                     [start_x, start_y]])
+        gated_cells = self.scdata.tsne.index[gate.contains_points(self.scdata.tsne)]
+        self.gates[self.gateName.get()] = gated_cells
+
+        #replot tSNE w gate colored
+        self.fig.clf()
+        plt.scatter(self.scdata.tsne['x'], self.scdata.tsne['y'], s=10, edgecolors='none', color='lightgrey')
+        plt.scatter(self.scdata.tsne.ix[gated_cells, 'x'], self.scdata.tsne.ix[gated_cells, 'y'], s=10, edgecolors='none')
+        self.canvas.draw()
+
+        self.setGateButton.config(state='disabled')
+        self.visMenu.entryconfig(6, state='disabled')
 
     def resetCanvas(self):
         self.fig.clf()
