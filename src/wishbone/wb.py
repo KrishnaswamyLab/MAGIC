@@ -381,7 +381,7 @@ class SCData:
 
 
 
-    def run_tsne(self, n_components=15):
+    def run_tsne(self, n_components=15, perplexity=30):
         """ Run tSNE on the data. tSNE is run on the principal component projections
         for single cell RNA-seq data and on the expression matrix for mass cytometry data
         :param n_components: Number of components to use for running tSNE for single cell 
@@ -399,8 +399,12 @@ class SCData:
             data = pd.DataFrame(np.dot(data, self.pca['loadings'].iloc[:, 0:n_components]),
                                 index=self.data.index)
 
-        print('If running in notebook, please look at the command line window for tSNE progress log')
-        self.tsne = pd.DataFrame(bh_sne(data),
+        # Reduce perplexity if necessary
+        perplexity_limit = 15
+        if data.shape[0] < 100 and perplexity > perplexity_limit:
+            print('Reducing perplexity to %d since there are <100 cells in the dataset. ' % perplexity_limit)
+            perplexity = perplexity_limit
+        self.tsne = pd.DataFrame(bh_sne(data, perplexity=perplexity),
                                  index=self.data.index, columns=['x', 'y'])
 
     def plot_tsne(self, fig=None, ax=None, title='tSNE projection'):
