@@ -163,14 +163,18 @@ class wishbone_gui(tk.Tk):
         self.tsneOptions.title("tSNE options")
         tk.Label(self.tsneOptions,text=u"Number of components:" ,fg="black",bg="white").grid(column=0, row=0)
         self.nCompVar = tk.IntVar()
-        self.nCompVar.set(5)
+        self.nCompVar.set(15)
         tk.Entry(self.tsneOptions, textvariable=self.nCompVar).grid(column=1,row=0)
-        tk.Button(self.tsneOptions, text="Run", command=self._runTSNE).grid(column=1, row=1)
-        tk.Button(self.tsneOptions, text="Cancel", command=self.tsneOptions.destroy).grid(column=0, row=1)
+        tk.Label(self.tsneOptions,text=u"Perplexity:" ,fg="black",bg="white").grid(column=0, row=1)
+        self.perplexityVar = tk.IntVar()
+        self.perplexityVar.set(30)
+        tk.Entry(self.tsneOptions, textvariable=self.perplexityVar).grid(column=1,row=1)
+        tk.Button(self.tsneOptions, text="Run", command=self._runTSNE).grid(column=1, row=2)
+        tk.Button(self.tsneOptions, text="Cancel", command=self.tsneOptions.destroy).grid(column=0, row=2)
         self.wait_window(self.tsneOptions)
 
     def _runTSNE(self):
-        self.scdata.run_tsne(n_components=self.nCompVar.get())
+        self.scdata.run_tsne(n_components=self.nCompVar.get(), perplexity=self.perplexityVar.get())
         self.gates = {}
 
         #enable buttons
