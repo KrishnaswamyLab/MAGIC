@@ -151,7 +151,7 @@ class SCData:
     def data(self, item):
         if not (isinstance(item, pd.DataFrame)):
             raise TypeError('SCData.data must be of type DataFrame')
-        self._reads = item
+        self._data = item
 
     @property
     def metadata(self):
@@ -259,6 +259,7 @@ class SCData:
 
         # Parse the fcs file
         text, data = fcsparser.parse( fcs_file )
+        data = data.astype(np.float64)
 
         # Extract the S and N features (Indexing assumed to start from 1)
         # Assumes channel names are in S
