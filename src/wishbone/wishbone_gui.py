@@ -192,10 +192,11 @@ class wishbone_gui(tk.Tk):
         #pop up for # components
         self.tsneOptions = tk.Toplevel()
         self.tsneOptions.title("tSNE options")
-        tk.Label(self.tsneOptions,text=u"Number of components:" ,fg="black",bg="white").grid(column=0, row=0)
-        self.nCompVar = tk.IntVar()
-        self.nCompVar.set(15)
-        tk.Entry(self.tsneOptions, textvariable=self.nCompVar).grid(column=1,row=0)
+        if self.scdata.data_type == 'sc-seq':
+            tk.Label(self.tsneOptions,text=u"Number of components:" ,fg="black",bg="white").grid(column=0, row=0)
+            self.nCompVar = tk.IntVar()
+            self.nCompVar.set(15)
+            tk.Entry(self.tsneOptions, textvariable=self.nCompVar).grid(column=1,row=0)
         tk.Label(self.tsneOptions,text=u"Perplexity:" ,fg="black",bg="white").grid(column=0, row=1)
         self.perplexityVar = tk.IntVar()
         self.perplexityVar.set(30)
