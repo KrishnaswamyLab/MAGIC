@@ -206,7 +206,10 @@ class wishbone_gui(tk.Tk):
         self.wait_window(self.tsneOptions)
 
     def _runTSNE(self):
-        self.scdata.run_tsne(n_components=self.nCompVar.get(), perplexity=self.perplexityVar.get())
+        if self.scdata.data_type == 'sc-seq':
+            self.scdata.run_tsne(n_components=self.nCompVar.get(), perplexity=self.perplexityVar.get())
+        else:
+            self.scdata.run_tsne(n_components=None, perplexity=self.perplexityVar.get())
         self.gates = {}
 
         #enable buttons
