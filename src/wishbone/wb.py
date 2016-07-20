@@ -973,11 +973,11 @@ class Wishbone:
         """
         with open(fin, 'rb') as f:
             data = pickle.load(f)
-        scdata = cls(data['_scdata'])
+        wb = cls(data['_scdata'], True)
         del data['_scdata']
         for k, v in data.items():
-            setattr(scdata, k[1:], v)
-        return scdata
+            setattr(wb, k[1:], v)
+        return wb
 
     @property
     def scdata(self):
