@@ -121,7 +121,7 @@ class SCData:
           in '.p'.
         :return: None
         """
-        wb = wishbone.wb.Wishbone(self)
+        wb = wishbone.wb.Wishbone(self, True)
         wb.save(fout)
 
 
@@ -933,12 +933,12 @@ class SCData:
 
 class Wishbone:
 
-    def __init__(self, scdata):
+    def __init__(self, scdata, ignore_dm_check=False):
         """
         Container class for Wishbone
         :param data:  SCData object
         """
-        if scdata.diffusion_eigenvectors is None:
+        if not ignore_dm_check and scdata.diffusion_eigenvectors is None:
             raise RuntimeError('Please use scdata with diffusion maps run for Wishbone')
 
         self._scdata = scdata
