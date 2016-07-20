@@ -115,6 +115,16 @@ class SCData:
         with open(fout, 'wb') as f:
             pickle.dump(vars(self), f)
 
+    def save_as_wishbone(self, fout: str):
+        """
+        :param fout: str, name of archive to store pickled Wishbone data in. Should end
+          in '.p'.
+        :return: None
+        """
+        wb = wishbone.wb.Wishbone(self)
+        wb.save(fout)
+
+
     @classmethod
     def load(cls, fin):
         """
