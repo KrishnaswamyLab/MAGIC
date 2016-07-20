@@ -115,6 +115,16 @@ class SCData:
         with open(fout, 'wb') as f:
             pickle.dump(vars(self), f)
 
+    def save_as_wishbone(self, fout: str):
+        """
+        :param fout: str, name of archive to store pickled Wishbone data in. Should end
+          in '.p'.
+        :return: None
+        """
+        wb = wishbone.wb.Wishbone(self, True)
+        wb.save(fout)
+
+
     @classmethod
     def load(cls, fin):
         """
@@ -923,12 +933,12 @@ class SCData:
 
 class Wishbone:
 
-    def __init__(self, scdata):
+    def __init__(self, scdata, ignore_dm_check=False):
         """
         Container class for Wishbone
         :param data:  SCData object
         """
-        if scdata.diffusion_eigenvectors is None:
+        if not ignore_dm_check and scdata.diffusion_eigenvectors is None:
             raise RuntimeError('Please use scdata with diffusion maps run for Wishbone')
 
         self._scdata = scdata
@@ -963,11 +973,11 @@ class Wishbone:
         """
         with open(fin, 'rb') as f:
             data = pickle.load(f)
-        scdata = cls(data['_scdata'])
+        wb = cls(data['_scdata'], True)
         del data['_scdata']
         for k, v in data.items():
-            setattr(scdata, k[1:], v)
-        return scdata
+            setattr(wb, k[1:], v)
+        return wb
 
     @property
     def scdata(self):

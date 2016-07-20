@@ -34,6 +34,7 @@ class wishbone_gui(tk.Tk):
         self.fileMenu = tk.Menu(self.menubar, tearoff=0)
         self.menubar.add_cascade(label="File", menu=self.fileMenu)
         self.fileMenu.add_command(label="Load data", command=self.loadData)
+        self.fileMenu.add_command(label="Save data", state='disabled', command=self.saveData)
         self.fileMenu.add_command(label="Exit Wishbone", command=self.quitWB)
 
         self.analysisMenu = tk.Menu(self.menubar, tearoff=0)
@@ -90,7 +91,7 @@ class wishbone_gui(tk.Tk):
                 self.cofactorVar = tk.IntVar()
                 self.cofactorVar.set(5)
                 tk.Entry(self.fileInfo, textvariable=self.cofactorVar).grid(column=1,row=2)
-            else:
+            elif self.dataFileName.split('.')[len(self.dataFileName.split('.'))-1] == 'csv':
                 self.normalizeVar = tk.BooleanVar()
                 tk.Checkbutton(self.fileInfo, text=u"Normalize", variable=self.normalizeVar).grid(column=0, row=2, columnspan=2)
                 tk.Label(self.fileInfo, text=u"The normalize parameter is used for correcting for library size among cells.").grid(column=0, row=3, columnspan=2)
@@ -115,35 +116,21 @@ class wishbone_gui(tk.Tk):
         self.canvas.get_tk_widget().grid(column=1, row=1, rowspan=10, columnspan=4,sticky='NSEW')
         tk.Label(self, text=u"Visualizations:", fg='black', bg='white').grid(column=0, row=1)
 
+        #load data based on input type
         if self.dataFileName.split('.')[len(self.dataFileName.split('.'))-1] == 'fcs':    # mass cytometry data
-            #load data
             self.scdata = wishbone.wb.SCData.from_fcs(os.path.expanduser(self.dataFileName), 
                                                       cofactor=self.cofactorVar.get())
-            self.tSNEButton = tk.Button(self, text=u"tSNE", state='disabled', command=self.plotTSNE)
-            self.tSNEButton.grid(column=0, row=2)
-            self.DMButton = tk.Button(self, text=u"Diffusion map", state='disabled', command=self.plotDM)
-            self.DMButton.grid(column=0, row=3)
-            self.WBButton = tk.Button(self, text=u"Wishbone", state='disabled', command=self.plotWBOnTsne)
-            self.WBButton.grid(column=0, row=4)
-            self.geneExpButton = tk.Button(self, text=u"Gene expression", state='disabled', command=self.plotGeneExpOntSNE)
-            self.geneExpButton.grid(column=0, row=5)
-            self.setGateButton = tk.Button(self, text=u"Set gate", state='disabled', command=self.setGate)
-            self.setGateButton.grid(column=0, row=6)
-            self.saveButton = tk.Button(self, text=u"Save plot", state='disabled', command=self.savePlot)
-            self.saveButton.grid(column = 4, row=0)
+            self.wb = None
+        elif self.dataFileName.split('.')[len(self.dataFileName.split('.'))-1] == 'csv': # sc-seq data
+            self.scdata = wishbone.wb.SCData.from_csv(os.path.expanduser(self.dataFileName), data_type='sc-seq', 
+                                                      normalize=self.normalizeVar.get())
+            self.wb = None
+        else:
+            self.wb = wishbone.wb.Wishbone.load(self.dataFileName)
+            self.scdata = self.wb.scdata
 
-            self.analysisMenu.delete(0)
-            self.analysisMenu.delete(2)
-            self.visMenu.delete(0)
-            self.visMenu.delete(2)
-            self.analysisMenu.entryconfig(1, state='normal')
-
-        else:   #sc-seq data
-            #load data
-            self.scdata = wishbone.wb.SCData.from_csv(os.path.expanduser(self.dataFileName), 
-                                    data_type='sc-seq', normalize=self.normalizeVar.get())
-
-            
+        #set up buttons based on data type
+        if self.scdata.data_type == 'sc-seq':
             self.PCAButton = tk.Button(self, text=u"PCA", state='disabled', command=self.plotPCA)
             self.PCAButton.grid(column=0, row=2)
             self.tSNEButton = tk.Button(self, text=u"tSNE", state='disabled', command=self.plotTSNE)
@@ -171,14 +158,76 @@ class wishbone_gui(tk.Tk):
             self.updateButton = tk.Button(self, text=u"Update component", command=self.updateComponent, state='disabled')
             self.updateButton.grid(column=3, row=0)
 
-        #get genes
-        self.genes = self.scdata.data.columns.values
+            #enable buttons based on current state of scdata object
+            if self.scdata.pca:
+                self.analysisMenu.entryconfig(1, state='normal')
+                self.visMenu.entryconfig(0, state='normal')
+                self.PCAButton.config(state='normal')
+            if isinstance(self.scdata.tsne, pd.DataFrame):
+                self.analysisMenu.entryconfig(2, state='normal')
+                self.visMenu.entryconfig(1, state='normal')
+                self.visMenu.entryconfig(5, state='normal')
+                self.tSNEButton.config(state='normal')
+                self.geneExpButton.config(state='normal')
+            if isinstance(self.scdata.diffusion_eigenvectors, pd.DataFrame):
+                self.analysisMenu.entryconfig(3, state='normal')
+                self.analysisMenu.entryconfig(4, state='normal')
+                self.visMenu.entryconfig(2, state='normal')
+                self.DMButton.config(state='normal')
+        else:
+            self.tSNEButton = tk.Button(self, text=u"tSNE", state='disabled', command=self.plotTSNE)
+            self.tSNEButton.grid(column=0, row=2)
+            self.DMButton = tk.Button(self, text=u"Diffusion map", state='disabled', command=self.plotDM)
+            self.DMButton.grid(column=0, row=3)
+            self.WBButton = tk.Button(self, text=u"Wishbone", state='disabled', command=self.plotWBOnTsne)
+            self.WBButton.grid(column=0, row=4)
+            self.geneExpButton = tk.Button(self, text=u"Gene expression", state='disabled', command=self.plotGeneExpOntSNE)
+            self.geneExpButton.grid(column=0, row=5)
+            self.setGateButton = tk.Button(self, text=u"Set gate", state='disabled', command=self.setGate)
+            self.setGateButton.grid(column=0, row=6)
+            self.saveButton = tk.Button(self, text=u"Save plot", state='disabled', command=self.savePlot)
+            self.saveButton.grid(column = 4, row=0)
+
+            self.analysisMenu.delete(0)
+            self.analysisMenu.delete(2)
+            self.visMenu.delete(0)
+            self.visMenu.delete(2)
+            self.analysisMenu.entryconfig(1, state='normal')
+
+            #enable buttons based on current state of scdata object
+            if isinstance(self.scdata.tsne, pd.DataFrame):
+                self.visMenu.entryconfig(0, state='normal')
+                self.visMenu.entryconfig(3, state='normal')
+                self.tSNEButton.config(state='normal')
+                self.geneExpButton.config(state='normal')
+            if isinstance(self.scdata.diffusion_eigenvectors, pd.DataFrame):
+                self.analysisMenu.entryconfig(2, state='normal')
+                self.visMenu.entryconfig(1, state='normal')
+                self.DMButton.config(state='normal')
 
         #enable buttons
         self.analysisMenu.entryconfig(0, state='normal')
+        self.fileMenu.entryconfig(1, state='normal')
+        if self.wb:
+                if isinstance(self.wb.trajectory, pd.Series):
+                    self.wishboneMenu.entryconfig(0, state='normal')
+                    self.wishboneMenu.entryconfig(1, state='normal')
+                    self.wishboneMenu.entryconfig(2, state='normal')
+                    self.WBButton.config(state='normal')
+        #get genes
+        self.genes = self.scdata.data.columns.values
+        self.gates = {}
         self.geometry('800x550')
         #destroy pop up menu
         self.fileInfo.destroy()
+
+    def saveData(self):
+        pickleFileName = filedialog.asksaveasfilename(title='Save Wishbone Data', defaultextension='.p', initialfile=self.fileNameEntryVar.get())
+        if pickleFileName != None:
+            if self.wb != None:
+                self.wb.save(pickleFileName)
+            else:
+                self.scdata.save_as_wishbone(pickleFileName)
 
     def runPCA(self):
         self.scdata.run_pca()
