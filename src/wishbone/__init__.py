@@ -3,4 +3,4 @@ from . import core
 from . import wishbone_gui
 from . import autocomplete_entry
 
-__version__ = "0.3"
+__version__ = "0.4"
