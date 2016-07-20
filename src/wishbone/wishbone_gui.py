@@ -85,9 +85,15 @@ class wishbone_gui(tk.Tk):
             self.fileNameEntryVar = tk.StringVar()
             tk.Entry(self.fileInfo, textvariable=self.fileNameEntryVar).grid(column=1,row=1)
 
-            self.normalizeVar = tk.BooleanVar()
-            tk.Checkbutton(self.fileInfo, text=u"Normalize", variable=self.normalizeVar).grid(column=0, row=2, columnspan=2)
-            tk.Label(self.fileInfo, text=u"The normalize parameter is used for correcting for library size among cells.").grid(column=0, row=3, columnspan=2)
+            if self.dataFileName.split('.')[len(self.dataFileName.split('.'))-1] == 'fcs':
+                tk.Label(self.fileInfo,text=u"Cofactor:" ,fg="black",bg="white").grid(column=0, row=2)
+                self.cofactorVar = tk.IntVar()
+                self.cofactorVar.set(5)
+                tk.Entry(self.fileInfo, textvariable=self.cofactorVar).grid(column=1,row=2)
+            else:
+                self.normalizeVar = tk.BooleanVar()
+                tk.Checkbutton(self.fileInfo, text=u"Normalize", variable=self.normalizeVar).grid(column=0, row=2, columnspan=2)
+                tk.Label(self.fileInfo, text=u"The normalize parameter is used for correcting for library size among cells.").grid(column=0, row=3, columnspan=2)
 
             tk.Button(self.fileInfo, text="Cancel", command=self.fileInfo.destroy).grid(column=0, row=4)
             tk.Button(self.fileInfo, text="Load", command=self.processData).grid(column=1, row=4)
@@ -99,12 +105,6 @@ class wishbone_gui(tk.Tk):
         for item in self.grid_slaves():
             item.grid_forget()
 
-        #load data
-        self.scdata = wishbone.wb.SCData.from_csv(os.path.expanduser(self.dataFileName), 
-                data_type='sc-seq', normalize=self.normalizeVar.get())
-        #get genes
-        self.genes = self.scdata.data.columns.values
-
         #display file name
         tk.Label(self,text=u"File name: " + self.fileNameEntryVar.get(), fg="black",bg="white").grid(column=0,row=0)
 
@@ -113,35 +113,66 @@ class wishbone_gui(tk.Tk):
         self.canvas = FigureCanvasTkAgg(self.fig, self)
         self.canvas.show()
         self.canvas.get_tk_widget().grid(column=1, row=1, rowspan=10, columnspan=4,sticky='NSEW')
-
-        #set up visualization buttons
         tk.Label(self, text=u"Visualizations:", fg='black', bg='white').grid(column=0, row=1)
-        self.PCAButton = tk.Button(self, text=u"PCA", state='disabled', command=self.plotPCA)
-        self.PCAButton.grid(column=0, row=2)
-        self.tSNEButton = tk.Button(self, text=u"tSNE", state='disabled', command=self.plotTSNE)
-        self.tSNEButton.grid(column=0, row=3)
-        self.DMButton = tk.Button(self, text=u"Diffusion map", state='disabled', command=self.plotDM)
-        self.DMButton.grid(column=0, row=4)
-        self.GSEAButton = tk.Button(self, text=u"GSEA Results", state='disabled', command=self.showGSEAResults)
-        self.GSEAButton.grid(column=0, row=5)
-        self.WBButton = tk.Button(self, text=u"Wishbone", state='disabled', command=self.plotWBOnTsne)
-        self.WBButton.grid(column=0, row=6)
-        self.geneExpButton = tk.Button(self, text=u"Gene expression", state='disabled', command=self.plotGeneExpOntSNE)
-        self.geneExpButton.grid(column=0, row=7)
-        self.setGateButton = tk.Button(self, text=u"Set gate", state='disabled', command=self.setGate)
-        self.setGateButton.grid(column=0, row=8)
-        self.saveButton = tk.Button(self, text=u"Save plot", state='disabled', command=self.savePlot)
-        self.saveButton.grid(column = 4, row=0)
-        self.diff_component = tk.StringVar()
-        self.diff_component.set('Component 1')
-        self.component_menu = tk.OptionMenu(self, self.diff_component,
-                                            'Component 1', 'Component 2', 'Component 3',
-                                            'Component 4', 'Component 5', 'Component 6', 
-                                            'Component 7', 'Component 8', 'Component 9')
-        self.component_menu.config(state='disabled')
-        self.component_menu.grid(row=0, column=2)
-        self.updateButton = tk.Button(self, text=u"Update component", command=self.updateComponent, state='disabled')
-        self.updateButton.grid(column=3, row=0)
+
+        if self.dataFileName.split('.')[len(self.dataFileName.split('.'))-1] == 'fcs':    # mass cytometry data
+            #load data
+            self.scdata = wishbone.wb.SCData.from_fcs(os.path.expanduser(self.dataFileName), 
+                                                      cofactor=self.cofactorVar.get())
+            self.tSNEButton = tk.Button(self, text=u"tSNE", state='disabled', command=self.plotTSNE)
+            self.tSNEButton.grid(column=0, row=2)
+            self.DMButton = tk.Button(self, text=u"Diffusion map", state='disabled', command=self.plotDM)
+            self.DMButton.grid(column=0, row=3)
+            self.WBButton = tk.Button(self, text=u"Wishbone", state='disabled', command=self.plotWBOnTsne)
+            self.WBButton.grid(column=0, row=4)
+            self.geneExpButton = tk.Button(self, text=u"Gene expression", state='disabled', command=self.plotGeneExpOntSNE)
+            self.geneExpButton.grid(column=0, row=5)
+            self.setGateButton = tk.Button(self, text=u"Set gate", state='disabled', command=self.setGate)
+            self.setGateButton.grid(column=0, row=6)
+            self.saveButton = tk.Button(self, text=u"Save plot", state='disabled', command=self.savePlot)
+            self.saveButton.grid(column = 4, row=0)
+
+            self.analysisMenu.delete(0)
+            self.analysisMenu.delete(2)
+            self.visMenu.delete(0)
+            self.visMenu.delete(2)
+            self.analysisMenu.entryconfig(1, state='normal')
+
+        else:   #sc-seq data
+            #load data
+            self.scdata = wishbone.wb.SCData.from_csv(os.path.expanduser(self.dataFileName), 
+                                    data_type='sc-seq', normalize=self.normalizeVar.get())
+
+            
+            self.PCAButton = tk.Button(self, text=u"PCA", state='disabled', command=self.plotPCA)
+            self.PCAButton.grid(column=0, row=2)
+            self.tSNEButton = tk.Button(self, text=u"tSNE", state='disabled', command=self.plotTSNE)
+            self.tSNEButton.grid(column=0, row=3)
+            self.DMButton = tk.Button(self, text=u"Diffusion map", state='disabled', command=self.plotDM)
+            self.DMButton.grid(column=0, row=4)
+            self.GSEAButton = tk.Button(self, text=u"GSEA Results", state='disabled', command=self.showGSEAResults)
+            self.GSEAButton.grid(column=0, row=5)
+            self.WBButton = tk.Button(self, text=u"Wishbone", state='disabled', command=self.plotWBOnTsne)
+            self.WBButton.grid(column=0, row=6)
+            self.geneExpButton = tk.Button(self, text=u"Gene expression", state='disabled', command=self.plotGeneExpOntSNE)
+            self.geneExpButton.grid(column=0, row=7)
+            self.setGateButton = tk.Button(self, text=u"Set gate", state='disabled', command=self.setGate)
+            self.setGateButton.grid(column=0, row=8)
+            self.saveButton = tk.Button(self, text=u"Save plot", state='disabled', command=self.savePlot)
+            self.saveButton.grid(column = 4, row=0)
+            self.diff_component = tk.StringVar()
+            self.diff_component.set('Component 1')
+            self.component_menu = tk.OptionMenu(self, self.diff_component,
+                                                'Component 1', 'Component 2', 'Component 3',
+                                                'Component 4', 'Component 5', 'Component 6', 
+                                                'Component 7', 'Component 8', 'Component 9')
+            self.component_menu.config(state='disabled')
+            self.component_menu.grid(row=0, column=2)
+            self.updateButton = tk.Button(self, text=u"Update component", command=self.updateComponent, state='disabled')
+            self.updateButton.grid(column=3, row=0)
+
+        #get genes
+        self.genes = self.scdata.data.columns.values
 
         #enable buttons
         self.analysisMenu.entryconfig(0, state='normal')
@@ -161,10 +192,11 @@ class wishbone_gui(tk.Tk):
         #pop up for # components
         self.tsneOptions = tk.Toplevel()
         self.tsneOptions.title("tSNE options")
-        tk.Label(self.tsneOptions,text=u"Number of components:" ,fg="black",bg="white").grid(column=0, row=0)
-        self.nCompVar = tk.IntVar()
-        self.nCompVar.set(15)
-        tk.Entry(self.tsneOptions, textvariable=self.nCompVar).grid(column=1,row=0)
+        if self.scdata.data_type == 'sc-seq':
+            tk.Label(self.tsneOptions,text=u"Number of components:" ,fg="black",bg="white").grid(column=0, row=0)
+            self.nCompVar = tk.IntVar()
+            self.nCompVar.set(15)
+            tk.Entry(self.tsneOptions, textvariable=self.nCompVar).grid(column=1,row=0)
         tk.Label(self.tsneOptions,text=u"Perplexity:" ,fg="black",bg="white").grid(column=0, row=1)
         self.perplexityVar = tk.IntVar()
         self.perplexityVar.set(30)
@@ -174,13 +206,20 @@ class wishbone_gui(tk.Tk):
         self.wait_window(self.tsneOptions)
 
     def _runTSNE(self):
-        self.scdata.run_tsne(n_components=self.nCompVar.get(), perplexity=self.perplexityVar.get())
+        if self.scdata.data_type == 'sc-seq':
+            self.scdata.run_tsne(n_components=self.nCompVar.get(), perplexity=self.perplexityVar.get())
+        else:
+            self.scdata.run_tsne(n_components=None, perplexity=self.perplexityVar.get())
         self.gates = {}
 
         #enable buttons
-        self.analysisMenu.entryconfig(2, state='normal')
-        self.visMenu.entryconfig(1, state='normal')
-        self.visMenu.entryconfig(5, state='normal')
+        if self.scdata.data_type == 'sc-seq':
+            self.analysisMenu.entryconfig(2, state='normal')
+            self.visMenu.entryconfig(1, state='normal')
+            self.visMenu.entryconfig(5, state='normal')
+        else:
+            self.visMenu.entryconfig(0, state='normal')
+            self.visMenu.entryconfig(3, state='normal')
         self.tSNEButton.config(state='normal')
         self.geneExpButton.config(state='normal')
         self.tsneOptions.destroy()
@@ -189,9 +228,13 @@ class wishbone_gui(tk.Tk):
         self.scdata.run_diffusion_map()
 
         #enable buttons
-        self.analysisMenu.entryconfig(3, state='normal')
-        self.analysisMenu.entryconfig(4, state='normal')
-        self.visMenu.entryconfig(2, state='normal')
+        if self.scdata.data_type == 'sc-seq':
+            self.analysisMenu.entryconfig(3, state='normal')
+            self.analysisMenu.entryconfig(4, state='normal')
+            self.visMenu.entryconfig(2, state='normal')
+        else:
+            self.analysisMenu.entryconfig(2, state='normal')
+            self.visMenu.entryconfig(1, state='normal')
         self.DMButton.config(state='normal')
 
     def runGSEA(self):
@@ -275,10 +318,13 @@ class wishbone_gui(tk.Tk):
 
     def plotPCA(self):
         self.saveButton.config(state='normal')
-        self.component_menu.config(state='disabled')
-        self.updateButton.config(state='disabled')
         self.setGateButton.config(state='disabled')
-        self.visMenu.entryconfig(6, state='disabled')
+        if self.scdata.data_type == 'sc-seq':
+            self.component_menu.config(state='disabled')
+            self.updateButton.config(state='disabled')
+            self.visMenu.entryconfig(6, state='disabled')
+        else:
+            self.visMenu.entryconfig(4, state='disabled')
 
         #pop up for # components
         self.PCAOptions = tk.Toplevel()
@@ -309,10 +355,13 @@ class wishbone_gui(tk.Tk):
 
     def plotTSNE(self):
         self.saveButton.config(state='normal')
-        self.component_menu.config(state='disabled')
-        self.updateButton.config(state='disabled')
         self.setGateButton.config(state='normal')
-        self.visMenu.entryconfig(6, state='normal')
+        if self.scdata.data_type == 'sc-seq':
+            self.component_menu.config(state='disabled')
+            self.updateButton.config(state='disabled')
+            self.visMenu.entryconfig(6, state='normal')
+        else:
+            self.visMenu.entryconfig(4, state='normal')
 
         self.resetCanvas()
         self.fig, self.ax = self.scdata.plot_tsne()
@@ -323,10 +372,13 @@ class wishbone_gui(tk.Tk):
 
     def plotDM(self):
         self.saveButton.config(state='normal')
-        self.component_menu.config(state='disabled')
-        self.updateButton.config(state='disabled')
         self.setGateButton.config(state='disabled')
-        self.visMenu.entryconfig(6, state='disabled')
+        if self.scdata.data_type == 'sc-seq':
+            self.component_menu.config(state='disabled')
+            self.updateButton.config(state='disabled')
+            self.visMenu.entryconfig(6, state='disabled')
+        else:
+            self.visMenu.entryconfig(4, state='disabled')
 
         self.geometry('950x550')
 
@@ -371,10 +423,13 @@ class wishbone_gui(tk.Tk):
 
     def plotWBOnTsne(self):
         self.saveButton.config(state='normal')
-        self.component_menu.config(state='disabled')
-        self.updateButton.config(state='disabled')
         self.setGateButton.config(state='disabled')
-        self.visMenu.entryconfig(6, state='disabled')
+        if self.scdata.data_type == 'sc-seq':
+            self.component_menu.config(state='disabled')
+            self.updateButton.config(state='disabled')
+            self.visMenu.entryconfig(6, state='disabled')
+        else:
+            self.visMenu.entryconfig(4, state='disabled')
 
         self.resetCanvas()
         self.fig, self.ax = self.wb.plot_wishbone_on_tsne()
@@ -390,10 +445,13 @@ class wishbone_gui(tk.Tk):
 
         else:
             self.saveButton.config(state='normal')
-            self.component_menu.config(state='disabled')
-            self.updateButton.config(state='disabled')
             self.setGateButton.config(state='disabled')
-            self.visMenu.entryconfig(6, state='disabled')
+            if self.scdata.data_type == 'sc-seq':
+                self.component_menu.config(state='disabled')
+                self.updateButton.config(state='disabled')
+                self.visMenu.entryconfig(6, state='disabled')
+            else:
+                self.visMenu.entryconfig(4, state='disabled')
 
             self.resetCanvas()
             self.vals, self.fig, self.ax = self.wb.plot_marker_trajectory(self.selectedGenes)
@@ -416,10 +474,13 @@ class wishbone_gui(tk.Tk):
 
         else:
             self.saveButton.config(state='normal')
-            self.component_menu.config(state='disabled')
-            self.updateButton.config(state='disabled')
             self.setGateButton.config(state='disabled')
-            self.visMenu.entryconfig(6, state='disabled')
+            if self.scdata.data_type == 'sc-seq':
+                self.component_menu.config(state='disabled')
+                self.updateButton.config(state='disabled')
+                self.visMenu.entryconfig(6, state='disabled')
+            else:
+                self.visMenu.entryconfig(4, state='disabled')
 
             self.resetCanvas()
             self.vals, self.fig, self.ax = self.wb.plot_marker_trajectory(self.selectedGenes)
@@ -438,10 +499,13 @@ class wishbone_gui(tk.Tk):
 
         else:
             self.saveButton.config(state='normal')
-            self.component_menu.config(state='disabled')
-            self.updateButton.config(state='disabled')
             self.setGateButton.config(state='disabled')
-            self.visMenu.entryconfig(6, state='disabled')
+            if self.scdata.data_type == 'sc-seq':
+                self.component_menu.config(state='disabled')
+                self.updateButton.config(state='disabled')
+                self.visMenu.entryconfig(6, state='disabled')
+            else:
+                self.visMenu.entryconfig(4, state='disabled')
 
             self.resetCanvas()
             self.fig, self.ax = self.scdata.plot_gene_expression(self.selectedGenes)
