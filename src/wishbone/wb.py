@@ -280,7 +280,7 @@ class SCData:
         data = data[data_channels]
 
         # Transform if necessary
-        if cofactor is not None:
+        if cofactor is not None or cofactor > 0:
             data = np.arcsinh(np.divide( data, cofactor ))
 
         # Create and return scdata object
