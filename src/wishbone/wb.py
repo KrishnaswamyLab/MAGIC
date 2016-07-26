@@ -20,6 +20,7 @@ import matplotlib
 #     matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
+from mpl_toolkits.mplot3d import Axes3D
 with warnings.catch_warnings():
     warnings.simplefilter('ignore')  # catch experimental ipython widget warning
     import seaborn as sns
@@ -29,6 +30,7 @@ from scipy.sparse import csr_matrix, find
 from scipy.sparse.linalg import eigs
 from numpy.linalg import norm
 from scipy.stats import gaussian_kde
+from scipy.io import mmread
 from numpy.core.umath_tests import inner1d
 from sklearn.neighbors import NearestNeighbors
 import fcsparser
@@ -297,6 +299,26 @@ class SCData:
         scdata = cls(data, 'masscyt', metadata)
         return scdata
 
+
+    @classmethod
+    def from_mtx(cls, mtx_file, gene_name_file):
+
+        #Read in mtx file
+        count_matrix = mmread(mtx_file)
+
+        gene_names = np.loadtxt(gene_name_file, dtype=np.dtype('S'))
+        gene_names = np.array([gene.decode('utf-8') for gene in gene_names])
+
+        df = pd.DataFrame(count_matrix.todense(), columns=gene_names)
+
+        # Construct class object
+        scdata = cls( df, data_type='sc-seq' )        
+        return scdata
+
+
+    def filter_scseq_data(self, filter_min, filter_max):
+        print(filter_min)
+        print(filter_max)
 
     def normalize_scseq_data(self):
         """
@@ -930,6 +952,50 @@ class SCData:
             ax.yaxis.set_major_locator(plt.NullLocator())
 
         return fig, axes
+
+
+    def scatter_gene_expression(self, genes, fig=None, ax=None):
+        """ 2D or 3D scatter plot of expression of selected genes
+        :param genes: Iterable of strings to scatter
+        """
+
+        not_in_dataframe = set(genes).difference(self.data.columns)
+        if not_in_dataframe:
+            if len(not_in_dataframe) < len(genes):
+                print('The following genes were either not observed in the experiment, '
+                      'or the wrong gene symbol was used: {!r}'.format(not_in_dataframe))
+            else:
+                print('None of the listed genes were observed in the experiment, or the '
+                      'wrong symbols were used.')
+                return
+
+        # remove genes missing from experiment
+        genes = list(set(genes).difference(not_in_dataframe))
+
+        if len(genes) < 2 or len(genes) > 3:
+            raise RuntimeError('Please specify either 2 or 3 genes to scatter.')
+
+        fig, ax = get_fig(fig=fig, ax=ax)
+        if len(genes) == 2:
+            plt.scatter(self.data[genes[0]], self.data[genes[1]],
+                        s=size, color=qualitative_colors(2)[1])
+            ax.xaxis.set_major_locator(plt.NullLocator())
+            ax.yaxis.set_major_locator(plt.NullLocator())
+            ax.set_xlabel(genes[0])
+            ax.set_ylabel(genes[1])
+        else:
+            ax = fig.add_subplot(111, projection='3d')
+            ax.scatter(self.data[genes[0]], self.data[genes[1]], self.data[genes[2]],
+                        s=size, color=qualitative_colors(2)[1])
+            ax.xaxis.set_major_locator(plt.NullLocator())
+            ax.yaxis.set_major_locator(plt.NullLocator())
+            ax.zaxis.set_major_locator(plt.NullLocator())
+            ax.set_xlabel(genes[0])
+            ax.set_ylabel(genes[1])
+            ax.set_zlabel(genes[2])
+
+        return fig, ax
+
 
 class Wishbone:
 

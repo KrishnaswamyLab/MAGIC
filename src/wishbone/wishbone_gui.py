@@ -56,7 +56,10 @@ class wishbone_gui(tk.Tk):
         self.wishboneMenu.add_command(label="On tSNE", state='disabled', command=self.plotWBOnTsne)
         self.wishboneMenu.add_command(label="Marker trajectory", state='disabled', command=self.plotWBMarkerTrajectory)
         self.wishboneMenu.add_command(label="Heat map", state='disabled', command=self.plotWBHeatMap)
-        self.visMenu.add_command(label="Gene expression", state='disabled', command=self.plotGeneExpOntSNE)
+        self.geneExpMenu = tk.Menu(self)
+        self.visMenu.add_cascade(label="Gene expression", menu=self.geneExpMenu)
+        self.geneExpMenu.add_command(label="Scatter plot", state='disabled', command=self.scatterGeneExp)
+        self.geneExpMenu.add_command(label="On tSNE", state='disabled', command=self.plotGeneExpOntSNE)
         self.visMenu.add_command(label="Set gate", state='disabled', command=self.setGate)
         
         self.config(menu=self.menubar)
@@ -86,20 +89,45 @@ class wishbone_gui(tk.Tk):
             self.fileNameEntryVar = tk.StringVar()
             tk.Entry(self.fileInfo, textvariable=self.fileNameEntryVar).grid(column=1,row=1)
 
-            if self.dataFileName.split('.')[len(self.dataFileName.split('.'))-1] == 'fcs':
+            self.dataFileType = self.dataFileName.split('.', 1)[1]
+            if  self.dataFileType == 'fcs':
                 tk.Label(self.fileInfo,text=u"Cofactor:" ,fg="black",bg="white").grid(column=0, row=2)
                 self.cofactorVar = tk.IntVar()
                 self.cofactorVar.set(5)
                 tk.Entry(self.fileInfo, textvariable=self.cofactorVar).grid(column=1,row=2)
-            elif self.dataFileName.split('.')[len(self.dataFileName.split('.'))-1] == 'csv':
+            elif self.dataFileType == 'csv':
                 self.normalizeVar = tk.BooleanVar()
                 tk.Checkbutton(self.fileInfo, text=u"Normalize", variable=self.normalizeVar).grid(column=0, row=2, columnspan=2)
                 tk.Label(self.fileInfo, text=u"The normalize parameter is used for correcting for library size among cells.").grid(column=0, row=3, columnspan=2)
+            elif self.dataFileType == 'mtx' or self.dataFileType == 'mtx.gz':
+                #get gene names file
+                tk.Button(self.fileInfo, text="Select gene names file", command=self.getGeneNameFile).grid(column=0, row=2)
 
-            tk.Button(self.fileInfo, text="Cancel", command=self.fileInfo.destroy).grid(column=0, row=4)
-            tk.Button(self.fileInfo, text="Load", command=self.processData).grid(column=1, row=4)
+                #filter parameters
+                self.filterVar = tk.BooleanVar()
+                tk.Checkbutton(self.fileInfo, text=u"Filter non-cells", variable=self.filterVar).grid(column=0, row=3, columnspan=4)
+                self.filterMinVar = tk.IntVar()
+                self.filterMinVar.set(0)
+                self.filterMaxVar = tk.IntVar()
+                self.filterMaxVar.set(0)
+                tk.Label(self.fileInfo,text=u"Filter min:" ,fg="black",bg="white").grid(column=0, row=4)
+                tk.Entry(self.fileInfo, textvariable=self.filterMinVar).grid(column=1,row=4)
+                tk.Label(self.fileInfo,text=u" Max:" ,fg="black",bg="white").grid(column=2, row=4)
+                tk.Entry(self.fileInfo, textvariable=self.filterMaxVar).grid(column=3,row=4)
+
+                #normalize
+                self.normalizeVar = tk.BooleanVar()
+                tk.Checkbutton(self.fileInfo, text=u"Normalize", variable=self.normalizeVar).grid(column=0, row=5, columnspan=4)
+                tk.Label(self.fileInfo, text=u"The normalize parameter is used for correcting for library size among cells.").grid(column=0, row=6, columnspan=4)
+
+            tk.Button(self.fileInfo, text="Cancel", command=self.fileInfo.destroy).grid(column=1, row=7)
+            tk.Button(self.fileInfo, text="Load", command=self.processData).grid(column=2, row=7)
 
             self.wait_window(self.fileInfo)
+
+    def getGeneNameFile(self):
+        self.geneNameFile = filedialog.askopenfilename(title='Select gene name file', initialdir='~/.wishbone/data')
+        tk.Label(self.fileInfo,text=self.geneNameFile.split('/')[-1] ,fg="black",bg="white").grid(column=1, row=2)
 
     def processData(self):
         #clear intro screen
@@ -117,15 +145,22 @@ class wishbone_gui(tk.Tk):
         tk.Label(self, text=u"Visualizations:", fg='black', bg='white').grid(column=0, row=1)
 
         #load data based on input type
-        if self.dataFileName.split('.')[len(self.dataFileName.split('.'))-1] == 'fcs':    # mass cytometry data
+        if self.dataFileType == 'fcs':    # mass cytometry data
             self.scdata = wishbone.wb.SCData.from_fcs(os.path.expanduser(self.dataFileName), 
                                                       cofactor=self.cofactorVar.get())
             self.wb = None
-        elif self.dataFileName.split('.')[len(self.dataFileName.split('.'))-1] == 'csv': # sc-seq data
+        elif self.dataFileType == 'csv':    # sc-seq data
             self.scdata = wishbone.wb.SCData.from_csv(os.path.expanduser(self.dataFileName), data_type='sc-seq', 
                                                       normalize=self.normalizeVar.get())
             self.wb = None
-        else:
+        elif self.dataFileType == 'mtx' or self.dataFileType == 'mtx.gz':   # sparse matrix
+            self.scdata = wishbone.wb.SCData.from_mtx(os.path.expanduser(self.dataFileName), os.path.expanduser(self.geneNameFile))
+            if self.filterVar.get() == True:
+                self.scdata.filter_scseq_data(self.filterMinVar.get(), self.filterMaxVar.get())
+            if self.normalizeVar.get() == True:
+                self.scdata.normalize_scseq_data()    
+            self.wb = None
+        else:   # pickled Wishbone object
             self.wb = wishbone.wb.Wishbone.load(self.dataFileName)
             self.scdata = self.wb.scdata
 
@@ -141,7 +176,7 @@ class wishbone_gui(tk.Tk):
             self.GSEAButton.grid(column=0, row=5)
             self.WBButton = tk.Button(self, text=u"Wishbone", state='disabled', command=self.plotWBOnTsne)
             self.WBButton.grid(column=0, row=6)
-            self.geneExpButton = tk.Button(self, text=u"Gene expression", state='disabled', command=self.plotGeneExpOntSNE)
+            self.geneExpButton = tk.Button(self, text=u"Gene expression on tSNE", state='disabled', command=self.plotGeneExpOntSNE)
             self.geneExpButton.grid(column=0, row=7)
             self.setGateButton = tk.Button(self, text=u"Set gate", state='disabled', command=self.setGate)
             self.setGateButton.grid(column=0, row=8)
@@ -166,7 +201,7 @@ class wishbone_gui(tk.Tk):
             if isinstance(self.scdata.tsne, pd.DataFrame):
                 self.analysisMenu.entryconfig(2, state='normal')
                 self.visMenu.entryconfig(1, state='normal')
-                self.visMenu.entryconfig(5, state='normal')
+                self.geneExpMenu.entryconfig(1, state='normal')
                 self.tSNEButton.config(state='normal')
                 self.geneExpButton.config(state='normal')
             if isinstance(self.scdata.diffusion_eigenvectors, pd.DataFrame):
@@ -197,7 +232,7 @@ class wishbone_gui(tk.Tk):
             #enable buttons based on current state of scdata object
             if isinstance(self.scdata.tsne, pd.DataFrame):
                 self.visMenu.entryconfig(0, state='normal')
-                self.visMenu.entryconfig(3, state='normal')
+                self.geneExpMenu.entryconfig(1, state='normal')
                 self.tSNEButton.config(state='normal')
                 self.geneExpButton.config(state='normal')
             if isinstance(self.scdata.diffusion_eigenvectors, pd.DataFrame):
@@ -208,6 +243,7 @@ class wishbone_gui(tk.Tk):
         #enable buttons
         self.analysisMenu.entryconfig(0, state='normal')
         self.fileMenu.entryconfig(1, state='normal')
+        self.geneExpMenu.entryconfig(0, state='normal')
         if self.wb:
                 if isinstance(self.wb.trajectory, pd.Series):
                     self.wishboneMenu.entryconfig(0, state='normal')
@@ -265,10 +301,9 @@ class wishbone_gui(tk.Tk):
         if self.scdata.data_type == 'sc-seq':
             self.analysisMenu.entryconfig(2, state='normal')
             self.visMenu.entryconfig(1, state='normal')
-            self.visMenu.entryconfig(5, state='normal')
         else:
             self.visMenu.entryconfig(0, state='normal')
-            self.visMenu.entryconfig(3, state='normal')
+        self.geneExpMenu.entryconfig(1, state='normal')
         self.tSNEButton.config(state='normal')
         self.geneExpButton.config(state='normal')
         self.tsneOptions.destroy()
@@ -541,6 +576,29 @@ class wishbone_gui(tk.Tk):
             self.canvas.get_tk_widget().grid(column=1, row=1, rowspan=10, columnspan=5, sticky='W')
             self.currentPlot = 'wishbone_marker_heatmap'
 
+    def scatterGeneExp(self):
+        self.getGeneSelection()
+        if len(self.selectedGenes) < 1:
+            print('Error: must select at least one gene')
+        elif len(self.selectedGenes) > 3:
+            print('Error: too many genes selected. Must select either 2 or 3 genes to scatter')
+        else:
+            self.saveButton.config(state='normal')
+            self.setGateButton.config(state='disabled')
+            if self.scdata.data_type == 'sc-seq':
+                self.component_menu.config(state='disabled')
+                self.updateButton.config(state='disabled')
+                self.visMenu.entryconfig(6, state='disabled')
+            else:
+                self.visMenu.entryconfig(4, state='disabled')
+
+            self.resetCanvas()
+            self.fig, self.ax = self.scdata.scatter_gene_expression(self.selectedGenes)
+            self.canvas = FigureCanvasTkAgg(self.fig, self)
+            self.canvas.show()
+            self.canvas.get_tk_widget().grid(column=1, row=1, rowspan=10, columnspan=4,sticky='W')
+            self.currentPlot = '_'.join(self.selectedGenes) + '_scatter'
+
     def plotGeneExpOntSNE(self):
         self.getGeneSelection()
         if len(self.selectedGenes) < 1:
@@ -561,7 +619,7 @@ class wishbone_gui(tk.Tk):
             self.canvas = FigureCanvasTkAgg(self.fig, self)
             self.canvas.show()
             self.canvas.get_tk_widget().grid(column=1, row=1, rowspan=10, columnspan=4,sticky='W')
-            self.currentPlot = 'gene_expression_tsne'
+            self.currentPlot = '_'.join(self.selectedGenes) + '_tsne'
             self.geometry('950x550')
 
     def getGeneSelection(self):
