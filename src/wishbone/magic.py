@@ -71,15 +71,18 @@ def impute_fast(data, L, t, rescale_to_max, L_t=None, tprev=None):
     
 	return data_new, L_t
 
-def run_magic(data, n_pca_components=20, t=8, knn=30, epsilon=1, rescale=True):
+def run_magic(data, n_pca_components=None, t=8, knn=20, epsilon=1, rescale=True):
 
-	#project data onto n pca components
-	if isinstance(data, wishbone.wb.SCData):
-		data = data.data
-	if isinstance(data, pd.DataFrame):
-		pca_projected_data = run_pca(data.values, n_pca_components)
+	if n_pca_components != None:
+		#project data onto n pca components
+		if isinstance(data, wishbone.wb.SCData):
+			data = data.data
+		if isinstance(data, pd.DataFrame):
+			pca_projected_data = run_pca(data.values, n_pca_components)
+		else:
+			pca_projected_data = run_pca(data, n_pca_components)
 	else:
-		pca_projected_data = run_pca(data, n_pca_components)
+		pca_projected_data = data
 
 	#run diffusion maps to get markov matrix
 	diffusion_map = run_diffusion_map(pca_projected_data, knn=knn, normalization='markov', epsilon=epsilon, distance_metric='euclidean')
