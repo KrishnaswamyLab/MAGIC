@@ -1,45 +1,7 @@
 import numpy as np
 import pandas as pd
 from scipy import sparse
-from GraphDiffusion.graph_diffusion import run_diffusion_map
 import wishbone
-
-def run_pca(X, n_components):
-
-	# Make sure data is zero mean
-    X = np.subtract(X, np.amin(X))
-    X = np.divide(X, np.amax(X))
-
-    # Compute covariance matrix
-    if (X.shape[1] < X.shape[0]):
-        C = np.cov(X, rowvar=0)
-    # if N>D, we better use this matrix for the eigendecomposition
-    else:
-        C = np.multiply((1/X.shape[0]), np.dot(X, X.T))
-
-    # Perform eigendecomposition of C
-    C[np.where(np.isnan(C))] = 0
-    C[np.where(np.isinf(C))] = 0
-    l, M = np.linalg.eig(C)
-
-    # Sort eigenvectors in descending order
-    ind = np.argsort(l)[::-1]
-    l = l[ind]
-    if n_components < 1:
-        n_components = np.where(np.cumsum(np.divide(l, np.sum(l)), axis=0) >= n_components)[0][0] + 1
-        print('Embedding into ' + str(n_components) + ' dimensions.')
-    if n_components > M.shape[1]:
-        n_components = M.shape[1]
-        print('Target dimensionality reduced to ' + str(n_components) + '.')
-
-    M = M[:, ind[:n_components]]
-    l = l[:n_components]
-
-    # Apply mapping on the data
-    if X.shape[1] >= X.shape[0]:
-        M = np.multiply(np.dot(X.T, M), (1 / np.sqrt(X.shape[0] * l)).T)
-
-    return M 
 
 def impute_fast(data, L, t, rescale_to_max, L_t=None, tprev=None):
 
