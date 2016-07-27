@@ -154,11 +154,12 @@ class wishbone_gui(tk.Tk):
                                                       normalize=self.normalizeVar.get())
             self.wb = None
         elif self.dataFileType == 'mtx' or self.dataFileType == 'mtx.gz':   # sparse matrix
-            self.scdata = wishbone.wb.SCData.from_mtx(os.path.expanduser(self.dataFileName), os.path.expanduser(self.geneNameFile))
             if self.filterVar.get() == True:
-                self.scdata.filter_scseq_data(self.filterMinVar.get(), self.filterMaxVar.get())
-            if self.normalizeVar.get() == True:
-                self.scdata.normalize_scseq_data()    
+                self.scdata = wishbone.wb.SCData.from_mtx(os.path.expanduser(self.dataFileName), os.path.expanduser(self.geneNameFile),
+                                                          filter_min=self.filterMinVar.get(), filter_max=self.filterMaxVar.get(), normalize=self.normalizeVar.get())
+            else:
+                self.scdata = wishbone.wb.SCData.from_mtx(os.path.expanduser(self.dataFileName), os.path.expanduser(self.geneNameFile),
+                                                          normalize=self.normalizeVar.get())   
             self.wb = None
         else:   # pickled Wishbone object
             self.wb = wishbone.wb.Wishbone.load(self.dataFileName)

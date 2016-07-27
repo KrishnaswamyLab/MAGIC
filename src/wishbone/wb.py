@@ -26,7 +26,7 @@ with warnings.catch_warnings():
     import seaborn as sns
 
 from tsne import bh_sne
-from scipy.sparse import csr_matrix, find
+from scipy.sparse import csr_matrix, find, vstack
 from scipy.sparse.linalg import eigs
 from numpy.linalg import norm
 from scipy.stats import gaussian_kde
@@ -301,10 +301,16 @@ class SCData:
 
 
     @classmethod
-    def from_mtx(cls, mtx_file, gene_name_file):
+    def from_mtx(cls, mtx_file, gene_name_file, filter_min=0, filter_max=0, normalize=True):
 
         #Read in mtx file
         count_matrix = mmread(mtx_file)
+
+        if filter_min != filter_max:
+            sums = count_matrix.sum(axis=1)
+            to_keep = np.intersect1d(np.where(sums >= filter_min)[0], 
+                                     np.where(sums <= filter_max)[0])
+            count_matrix = sparse.vstack([count_matrix.getrow(i) for i in to_keep])
 
         gene_names = np.loadtxt(gene_name_file, dtype=np.dtype('S'))
         gene_names = np.array([gene.decode('utf-8') for gene in gene_names])
@@ -312,13 +318,13 @@ class SCData:
         df = pd.DataFrame(count_matrix.todense(), columns=gene_names)
 
         # Construct class object
-        scdata = cls( df, data_type='sc-seq' )        
+        scdata = cls( df, data_type='sc-seq' )
+
+        # Normalize if specified
+        if data_type == 'sc-seq':
+            scdata = scdata.normalize_scseq_data( )
+
         return scdata
-
-
-    def filter_scseq_data(self, filter_min, filter_max):
-        print(filter_min)
-        print(filter_max)
 
     def normalize_scseq_data(self):
         """
