@@ -33,6 +33,7 @@ from scipy.stats import gaussian_kde
 from scipy.io import mmread
 from numpy.core.umath_tests import inner1d
 from sklearn.neighbors import NearestNeighbors
+from GraphDiffusion.graph_diffusion import run_diffusion_map
 import fcsparser
 import phenograph
 
@@ -959,6 +960,7 @@ class SCData:
 
         return fig, axes
 
+<<<<<<< HEAD
 
     def scatter_gene_expression(self, genes, fig=None, ax=None):
         """ 2D or 3D scatter plot of expression of selected genes
@@ -1002,6 +1004,31 @@ class SCData:
 
         return fig, ax
 
+=======
+    def run_magic(self, n_pca_components=None, t=8, knn=20, epsilon=0, rescale=True):
+        if self.data_type == 'sc-seq':
+            if self.pca:
+                pca_projected_data = self.pca['loadings'].values
+            elif n_pca_components != None:
+                self.run_pca(n_components=n_pca_components)
+                pca_projected_data = self.pca['loadings'].values
+            else:
+                pca_projected_data = self.data.values
+        else:
+            pca_projected_data = self.data.values
+
+        #run diffusion maps to get markov matrix
+        diffusion_map = run_diffusion_map(pca_projected_data, knn=knn, normalization='markov', epsilon=epsilon, distance_metric='euclidean')
+
+        #get imputed data matrix
+        new_data, L_t = wishbone.magic.impute_fast(self.data.values, diffusion_map['T'], t, rescale_to_max=rescale)
+
+        new_data = pd.DataFrame(new_data, index=self.data.index, columns=self.data.columns)
+
+        # Construct class object
+        scdata = wishbone.wb.SCData(new_data, data_type=self.data_type)
+        return scdata
+>>>>>>> f47631b55e7a4203343ac71c7a9b198070d1389d
 
 class Wishbone:
 
