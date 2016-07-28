@@ -26,7 +26,7 @@ with warnings.catch_warnings():
     import seaborn as sns
 
 from tsne import bh_sne
-from scipy.sparse import csr_matrix, find, vstack
+from scipy.sparse import csr_matrix, find, vstack, hstack
 from scipy.sparse.linalg import eigs
 from numpy.linalg import norm
 from scipy.stats import gaussian_kde
@@ -302,16 +302,26 @@ class SCData:
 
 
     @classmethod
-    def from_mtx(cls, mtx_file, gene_name_file, filter_min=0, filter_max=0, normalize=True):
+    def from_mtx(cls, mtx_file, gene_name_file, filter_cell_min=0, filter_cell_max=0, filter_gene_nonzero=None, filter_gene_mols=None, normalize=True):
 
         #Read in mtx file
         count_matrix = mmread(mtx_file)
 
-        if filter_min != filter_max:
+        if filter_cell_min != filter_cell_max:
             sums = count_matrix.sum(axis=1)
-            to_keep = np.intersect1d(np.where(sums >= filter_min)[0], 
-                                     np.where(sums <= filter_max)[0])
-            count_matrix = sparse.vstack([count_matrix.getrow(i) for i in to_keep])
+            to_keep = np.intersect1d(np.where(sums >= filter_cell_min)[0], 
+                                     np.where(sums <= filter_cell_max)[0])
+            count_matrix = vstack([count_matrix.getrow(i) for i in to_keep])
+
+        if filter_gene_nonzero != None:
+            nonzero = count_matrix.getnnz(axis=0)
+            to_keep = np.where(nonzero >= filter_gene_nonzero)[0]
+            count_matrix = hstack([count_matrix.getcol(i) for i in to_keep])
+
+        if filter_gene_mols != None:
+            sums = count_matrix.sum(axis=0)
+            to_keep = np.where(sums >= filter_gene_mols)[0]
+            count_matrix = hstack([count_matrix.getcol(i) for i in to_keep])
 
         gene_names = np.loadtxt(gene_name_file, dtype=np.dtype('S'))
         gene_names = np.array([gene.decode('utf-8') for gene in gene_names])
@@ -322,10 +332,11 @@ class SCData:
         scdata = cls( df, data_type='sc-seq' )
 
         # Normalize if specified
-        if data_type == 'sc-seq':
+        if normalize == True:
             scdata = scdata.normalize_scseq_data( )
 
         return scdata
+
 
     def normalize_scseq_data(self):
         """
@@ -418,7 +429,6 @@ class SCData:
         plt.title('Principal components')
         sns.despine(ax=ax)
         return fig, ax
-
 
 
     def run_tsne(self, n_components=15, perplexity=30):
@@ -960,7 +970,6 @@ class SCData:
 
         return fig, axes
 
-<<<<<<< HEAD
 
     def scatter_gene_expression(self, genes, fig=None, ax=None):
         """ 2D or 3D scatter plot of expression of selected genes
@@ -1004,8 +1013,9 @@ class SCData:
 
         return fig, ax
 
-=======
+
     def run_magic(self, n_pca_components=None, t=8, knn=20, epsilon=0, rescale=True):
+
         if self.data_type == 'sc-seq':
             if self.pca:
                 pca_projected_data = self.pca['loadings'].values
@@ -1028,7 +1038,18 @@ class SCData:
         # Construct class object
         scdata = wishbone.wb.SCData(new_data, data_type=self.data_type)
         return scdata
->>>>>>> f47631b55e7a4203343ac71c7a9b198070d1389d
+
+
+    def concatenate_data(self, other_data_sets, join='outer'):
+
+        #concatenate dataframes
+        dfs = [data_set.data for data_set in other_data_sets]
+        dfs.append(self.data)
+        df_concat = pd.concat(dfs, join=join)
+
+        scdata = wishbone.wb.SCData(df_concat)
+        return scdata
+
 
 class Wishbone:
 
