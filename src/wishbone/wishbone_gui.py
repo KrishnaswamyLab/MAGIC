@@ -28,6 +28,7 @@ class wishbone_gui(tk.Tk):
         self.grid()
         self.vals = None
         self.currentPlot = None
+        self.data = {}
 
         #set up menu bar
         self.menubar = tk.Menu(self)
@@ -44,6 +45,7 @@ class wishbone_gui(tk.Tk):
         self.analysisMenu.add_command(label="Diffusion map", state='disabled', command=self.runDM)
         self.analysisMenu.add_command(label="GSEA", state='disabled', command=self.runGSEA)
         self.analysisMenu.add_command(label="Wishbone", state='disabled', command=self.runWishbone)
+        self.analysisMenu.add_command(label="Magic", state='disabled', command=self.runMagic)
 
         self.visMenu = tk.Menu(self.menubar, tearoff=0)
         self.menubar.add_cascade(label="Visualization", menu=self.visMenu)
@@ -105,23 +107,31 @@ class wishbone_gui(tk.Tk):
 
                 #filter parameters
                 self.filterVar = tk.BooleanVar()
-                tk.Checkbutton(self.fileInfo, text=u"Filter non-cells", variable=self.filterVar).grid(column=0, row=3, columnspan=4)
-                self.filterMinVar = tk.IntVar()
-                self.filterMinVar.set(0)
-                self.filterMaxVar = tk.IntVar()
-                self.filterMaxVar.set(0)
-                tk.Label(self.fileInfo,text=u"Filter min:" ,fg="black",bg="white").grid(column=0, row=4)
-                tk.Entry(self.fileInfo, textvariable=self.filterMinVar).grid(column=1,row=4)
+                tk.Checkbutton(self.fileInfo, text=u"Filter cells/genes", variable=self.filterVar).grid(column=0, row=3, columnspan=4)
+                self.filterCellMinVar = tk.IntVar()
+                self.filterCellMinVar.set(0)
+                tk.Label(self.fileInfo,text=u"Filter by reads per cell. Min:" ,fg="black",bg="white").grid(column=0, row=4)
+                tk.Entry(self.fileInfo, textvariable=self.filterCellMinVar).grid(column=1,row=4)
+                self.filterCellMaxVar = tk.IntVar()
+                self.filterCellMaxVar.set(0)
                 tk.Label(self.fileInfo,text=u" Max:" ,fg="black",bg="white").grid(column=2, row=4)
-                tk.Entry(self.fileInfo, textvariable=self.filterMaxVar).grid(column=3,row=4)
+                tk.Entry(self.fileInfo, textvariable=self.filterCellMaxVar).grid(column=3,row=4)
+                self.filterGeneNonzeroVar = tk.IntVar()
+                self.filterGeneNonzeroVar.set(0)
+                tk.Label(self.fileInfo,text=u"Filter by nonzero cells per gene. Min:" ,fg="black",bg="white").grid(column=0, row=5)
+                tk.Entry(self.fileInfo, textvariable=self.filterGeneNonzeroVar).grid(column=1,row=5)
+                self.filterGeneMolsVar = tk.IntVar()
+                self.filterGeneMolsVar.set(0)
+                tk.Label(self.fileInfo,text=u"Filter by reads per gene. Min:" ,fg="black",bg="white").grid(column=0, row=6)
+                tk.Entry(self.fileInfo, textvariable=self.filterGeneMolsVar).grid(column=1,row=6)
 
                 #normalize
                 self.normalizeVar = tk.BooleanVar()
-                tk.Checkbutton(self.fileInfo, text=u"Normalize", variable=self.normalizeVar).grid(column=0, row=5, columnspan=4)
-                tk.Label(self.fileInfo, text=u"The normalize parameter is used for correcting for library size among cells.").grid(column=0, row=6, columnspan=4)
+                tk.Checkbutton(self.fileInfo, text=u"Normalize", variable=self.normalizeVar).grid(column=0, row=7, columnspan=4)
+                tk.Label(self.fileInfo, text=u"The normalize parameter is used for correcting for library size among cells.").grid(column=0, row=8, columnspan=4)
 
-            tk.Button(self.fileInfo, text="Cancel", command=self.fileInfo.destroy).grid(column=1, row=7)
-            tk.Button(self.fileInfo, text="Load", command=self.processData).grid(column=2, row=7)
+            tk.Button(self.fileInfo, text="Cancel", command=self.fileInfo.destroy).grid(column=1, row=9)
+            tk.Button(self.fileInfo, text="Load", command=self.processData).grid(column=2, row=9)
 
             self.wait_window(self.fileInfo)
 
@@ -134,55 +144,46 @@ class wishbone_gui(tk.Tk):
         for item in self.grid_slaves():
             item.grid_forget()
 
-        #display file name
-        tk.Label(self,text=u"File name: " + self.fileNameEntryVar.get(), fg="black",bg="white").grid(column=0,row=0)
+        tk.Label(self,text=u"Data sets:" , fg="black",bg="white").grid(column=0,row=0)
 
         #set up canvas for plots
         self.fig, self.ax = wishbone.wb.get_fig()
         self.canvas = FigureCanvasTkAgg(self.fig, self)
         self.canvas.show()
         self.canvas.get_tk_widget().grid(column=1, row=1, rowspan=10, columnspan=4,sticky='NSEW')
-        tk.Label(self, text=u"Visualizations:", fg='black', bg='white').grid(column=0, row=1)
 
         #load data based on input type
         if self.dataFileType == 'fcs':    # mass cytometry data
-            self.scdata = wishbone.wb.SCData.from_fcs(os.path.expanduser(self.dataFileName), 
+            scdata = wishbone.wb.SCData.from_fcs(os.path.expanduser(self.dataFileName), 
                                                       cofactor=self.cofactorVar.get())
-            self.wb = None
+            wb = None
         elif self.dataFileType == 'csv':    # sc-seq data
-            self.scdata = wishbone.wb.SCData.from_csv(os.path.expanduser(self.dataFileName), data_type='sc-seq', 
+            scdata = wishbone.wb.SCData.from_csv(os.path.expanduser(self.dataFileName), data_type='sc-seq', 
                                                       normalize=self.normalizeVar.get())
-            self.wb = None
+            wb = None
         elif self.dataFileType == 'mtx' or self.dataFileType == 'mtx.gz':   # sparse matrix
             if self.filterVar.get() == True:
-                self.scdata = wishbone.wb.SCData.from_mtx(os.path.expanduser(self.dataFileName), os.path.expanduser(self.geneNameFile),
-                                                          filter_min=self.filterMinVar.get(), filter_max=self.filterMaxVar.get(), normalize=self.normalizeVar.get())
+                scdata = wishbone.wb.SCData.from_mtx(os.path.expanduser(self.dataFileName), os.path.expanduser(self.geneNameFile),
+                                                     filter_cell_min=self.filterCellMinVar.get(), filter_cell_max=self.filterCellMaxVar.get(), 
+                                                     filter_gene_nonzero=self.filterGeneNonzeroVar.get(),
+                                                     filter_gene_mols=self.filterGeneMolsVar.get(), normalize=self.normalizeVar.get())
             else:
-                self.scdata = wishbone.wb.SCData.from_mtx(os.path.expanduser(self.dataFileName), os.path.expanduser(self.geneNameFile),
+                scdata = wishbone.wb.SCData.from_mtx(os.path.expanduser(self.dataFileName), os.path.expanduser(self.geneNameFile),
                                                           normalize=self.normalizeVar.get())   
-            self.wb = None
+            wb = None
         else:   # pickled Wishbone object
-            self.wb = wishbone.wb.Wishbone.load(self.dataFileName)
-            self.scdata = self.wb.scdata
+            wb = wishbone.wb.Wishbone.load(self.dataFileName)
+            scdata = wb.scdata
 
+        self.data[self.fileNameEntryVar.get()] = {'scdata' : scdata, 'wb' : wb, 'state' : tk.BooleanVar(),
+                                                  'genes' : scdata.data.columns.values, 'gates' : {}}
+        for i in range(len(self.data)):
+            tk.Checkbutton(self, text=list(self.data.keys())[i], variable=list(self.data.values())[i]['state']).grid(column=0, row=i+1)
+        
         #set up buttons based on data type
-        if self.scdata.data_type == 'sc-seq':
-            self.PCAButton = tk.Button(self, text=u"PCA", state='disabled', command=self.plotPCA)
-            self.PCAButton.grid(column=0, row=2)
-            self.tSNEButton = tk.Button(self, text=u"tSNE", state='disabled', command=self.plotTSNE)
-            self.tSNEButton.grid(column=0, row=3)
-            self.DMButton = tk.Button(self, text=u"Diffusion map", state='disabled', command=self.plotDM)
-            self.DMButton.grid(column=0, row=4)
-            self.GSEAButton = tk.Button(self, text=u"GSEA Results", state='disabled', command=self.showGSEAResults)
-            self.GSEAButton.grid(column=0, row=5)
-            self.WBButton = tk.Button(self, text=u"Wishbone", state='disabled', command=self.plotWBOnTsne)
-            self.WBButton.grid(column=0, row=6)
-            self.geneExpButton = tk.Button(self, text=u"Gene expression on tSNE", state='disabled', command=self.plotGeneExpOntSNE)
-            self.geneExpButton.grid(column=0, row=7)
-            self.setGateButton = tk.Button(self, text=u"Set gate", state='disabled', command=self.setGate)
-            self.setGateButton.grid(column=0, row=8)
+        if scdata.data_type == 'sc-seq':
             self.saveButton = tk.Button(self, text=u"Save plot", state='disabled', command=self.savePlot)
-            self.saveButton.grid(column = 4, row=0)
+            self.saveButton.grid(column = 3, row=0)
             self.diff_component = tk.StringVar()
             self.diff_component.set('Component 1')
             self.component_menu = tk.OptionMenu(self, self.diff_component,
@@ -190,37 +191,24 @@ class wishbone_gui(tk.Tk):
                                                 'Component 4', 'Component 5', 'Component 6', 
                                                 'Component 7', 'Component 8', 'Component 9')
             self.component_menu.config(state='disabled')
-            self.component_menu.grid(row=0, column=2)
+            self.component_menu.grid(row=0, column=1)
             self.updateButton = tk.Button(self, text=u"Update component", command=self.updateComponent, state='disabled')
-            self.updateButton.grid(column=3, row=0)
+            self.updateButton.grid(column=2, row=0)
+            self.analysisMenu.entryconfig(5, state='normal')
 
             #enable buttons based on current state of scdata object
-            if self.scdata.pca:
+            if scdata.pca:
                 self.analysisMenu.entryconfig(1, state='normal')
                 self.visMenu.entryconfig(0, state='normal')
-                self.PCAButton.config(state='normal')
-            if isinstance(self.scdata.tsne, pd.DataFrame):
+            if isinstance(scdata.tsne, pd.DataFrame):
                 self.analysisMenu.entryconfig(2, state='normal')
                 self.visMenu.entryconfig(1, state='normal')
                 self.geneExpMenu.entryconfig(1, state='normal')
-                self.tSNEButton.config(state='normal')
-                self.geneExpButton.config(state='normal')
-            if isinstance(self.scdata.diffusion_eigenvectors, pd.DataFrame):
+            if isinstance(scdata.diffusion_eigenvectors, pd.DataFrame):
                 self.analysisMenu.entryconfig(3, state='normal')
                 self.analysisMenu.entryconfig(4, state='normal')
                 self.visMenu.entryconfig(2, state='normal')
-                self.DMButton.config(state='normal')
         else:
-            self.tSNEButton = tk.Button(self, text=u"tSNE", state='disabled', command=self.plotTSNE)
-            self.tSNEButton.grid(column=0, row=2)
-            self.DMButton = tk.Button(self, text=u"Diffusion map", state='disabled', command=self.plotDM)
-            self.DMButton.grid(column=0, row=3)
-            self.WBButton = tk.Button(self, text=u"Wishbone", state='disabled', command=self.plotWBOnTsne)
-            self.WBButton.grid(column=0, row=4)
-            self.geneExpButton = tk.Button(self, text=u"Gene expression", state='disabled', command=self.plotGeneExpOntSNE)
-            self.geneExpButton.grid(column=0, row=5)
-            self.setGateButton = tk.Button(self, text=u"Set gate", state='disabled', command=self.setGate)
-            self.setGateButton.grid(column=0, row=6)
             self.saveButton = tk.Button(self, text=u"Save plot", state='disabled', command=self.savePlot)
             self.saveButton.grid(column = 4, row=0)
 
@@ -229,178 +217,285 @@ class wishbone_gui(tk.Tk):
             self.visMenu.delete(0)
             self.visMenu.delete(2)
             self.analysisMenu.entryconfig(1, state='normal')
+            self.analysisMenu.entryconfig(3, state='normal')
 
             #enable buttons based on current state of scdata object
-            if isinstance(self.scdata.tsne, pd.DataFrame):
+            if isinstance(scdata.tsne, pd.DataFrame):
                 self.visMenu.entryconfig(0, state='normal')
                 self.geneExpMenu.entryconfig(1, state='normal')
-                self.tSNEButton.config(state='normal')
-                self.geneExpButton.config(state='normal')
-            if isinstance(self.scdata.diffusion_eigenvectors, pd.DataFrame):
+            if isinstance(scdata.diffusion_eigenvectors, pd.DataFrame):
                 self.analysisMenu.entryconfig(2, state='normal')
                 self.visMenu.entryconfig(1, state='normal')
-                self.DMButton.config(state='normal')
 
         #enable buttons
         self.analysisMenu.entryconfig(0, state='normal')
         self.fileMenu.entryconfig(1, state='normal')
         self.geneExpMenu.entryconfig(0, state='normal')
-        if self.wb:
-                if isinstance(self.wb.trajectory, pd.Series):
+        self.concatButton = tk.Button(self, text=u"Concatenate selected datasets", state='disabled', command=self.concatenateData)
+        self.concatButton.grid(column=0, row=10)
+        if len(self.data) > 1:
+            self.concatButton.config(state='normal')
+
+        if wb:
+                if isinstance(wb.trajectory, pd.Series):
                     self.wishboneMenu.entryconfig(0, state='normal')
                     self.wishboneMenu.entryconfig(1, state='normal')
                     self.wishboneMenu.entryconfig(2, state='normal')
-                    self.WBButton.config(state='normal')
-        #get genes
-        self.genes = self.scdata.data.columns.values
-        self.gates = {}
+
         self.geometry('800x550')
         #destroy pop up menu
         self.fileInfo.destroy()
 
     def saveData(self):
-        pickleFileName = filedialog.asksaveasfilename(title='Save Wishbone Data', defaultextension='.p', initialfile=self.fileNameEntryVar.get())
-        if pickleFileName != None:
-            if self.wb != None:
-                self.wb.save(pickleFileName)
-            else:
-                self.scdata.save_as_wishbone(pickleFileName)
+        for key in self.data:
+            if self.data[key]['state'].get() == True:
+                pickleFileName = filedialog.asksaveasfilename(title=key + ': save wishbone data', defaultextension='.p', initialfile=key)
+                if pickleFileName != None:
+                    if self.wb != None:
+                        self.wb.save(pickleFileName)
+                    else:
+                        self.scdata.save_as_wishbone(pickleFileName)
+
+    def concatenateData(self):
+        self.concatOptions = tk.Toplevel()
+        self.concatOptions.title("Concatenate data sets")
+
+        tk.Label(self.concatOptions, text=u"New data set name:", fg="black", bg="white").grid(column=0, row=0)
+        self.nameVar = tk.StringVar()
+        tk.Entry(self.concatOptions, textvariable=self.nameVar).grid(column=1, row=0)
+
+        self.joinVar = tk.BooleanVar()
+        self.joinVar.set(True)
+        tk.Checkbutton(self.concatOptions, text=u"Outer join", variable=self.joinVar).grid(column=0, row=1, columnspan=2)
+
+        tk.Button(self.concatOptions, text="Concatenate", command=self._concatenateData).grid(column=1, row=2)
+        tk.Button(self.concatOptions, text="Cancel", command=self.concatOptions.destroy).grid(column=0, row=2)
+        self.wait_window(self.concatOptions)
+
+    def _concatenateData(self):
+        to_concat = []
+        for key in self.data:
+            if self.data[key]['state'].get() == True:
+                to_concat.append(self.data[key]['scdata'])
+
+        scdata = to_concat[0].concatenate_data(to_concat[1:], 
+                                               join='outer' if self.joinVar.get() == True else 'inner')
+
+        self.data[self.nameVar.get()] = {'scdata' : scdata, 'wb' : None, 'state' : tk.BooleanVar(),
+                                         'genes' : scdata.data.columns.values, 'gates' : {}}
+        
+        #update data sets
+        for i in range(len(self.data)):
+            tk.Checkbutton(self, text=list(self.data.keys())[i], variable=list(self.data.values())[i]['state']).grid(column=0, row=i+1)
+        
+        self.concatOptions.destroy()
 
     def runPCA(self):
-        self.scdata.run_pca()
+        for key in self.data:
+            if self.data[key]['state'].get() == True:
+                self.data[key]['scdata'].run_pca()
 
         #enable buttons
         self.analysisMenu.entryconfig(1, state='normal')
         self.visMenu.entryconfig(0, state='normal')
-        self.PCAButton.config(state='normal')
 
     def runTSNE(self):
-        #pop up for # components
-        self.tsneOptions = tk.Toplevel()
-        self.tsneOptions.title("tSNE options")
-        if self.scdata.data_type == 'sc-seq':
-            tk.Label(self.tsneOptions,text=u"Number of components:" ,fg="black",bg="white").grid(column=0, row=0)
-            self.nCompVar = tk.IntVar()
-            self.nCompVar.set(15)
-            tk.Entry(self.tsneOptions, textvariable=self.nCompVar).grid(column=1,row=0)
-        tk.Label(self.tsneOptions,text=u"Perplexity:" ,fg="black",bg="white").grid(column=0, row=1)
-        self.perplexityVar = tk.IntVar()
-        self.perplexityVar.set(30)
-        tk.Entry(self.tsneOptions, textvariable=self.perplexityVar).grid(column=1,row=1)
-        tk.Button(self.tsneOptions, text="Run", command=self._runTSNE).grid(column=1, row=2)
-        tk.Button(self.tsneOptions, text="Cancel", command=self.tsneOptions.destroy).grid(column=0, row=2)
-        self.wait_window(self.tsneOptions)
+        for key in self.data:
+            if self.data[key]['state'].get() == True:
+                #pop up for # components
+                self.tsneOptions = tk.Toplevel()
+                self.tsneOptions.title(key + ": tSNE options")
+                self.curKey = key
+                if self.data[key]['scdata'].data_type == 'sc-seq':
+                    tk.Label(self.tsneOptions,text=u"Number of components:" ,fg="black",bg="white").grid(column=0, row=0)
+                    self.nCompVar = tk.IntVar()
+                    self.nCompVar.set(15)
+                    tk.Entry(self.tsneOptions, textvariable=self.nCompVar).grid(column=1,row=0)
+                tk.Label(self.tsneOptions,text=u"Perplexity:" ,fg="black",bg="white").grid(column=0, row=1)
+                self.perplexityVar = tk.IntVar()
+                self.perplexityVar.set(30)
+                tk.Entry(self.tsneOptions, textvariable=self.perplexityVar).grid(column=1,row=1)
+                tk.Button(self.tsneOptions, text="Run", command=self._runTSNE).grid(column=1, row=2)
+                tk.Button(self.tsneOptions, text="Cancel", command=self.tsneOptions.destroy).grid(column=0, row=2)
+                self.wait_window(self.tsneOptions)
 
     def _runTSNE(self):
-        if self.scdata.data_type == 'sc-seq':
-            self.scdata.run_tsne(n_components=self.nCompVar.get(), perplexity=self.perplexityVar.get())
+        if self.data[self.curKey]['scdata'].data_type == 'sc-seq':
+            self.data[self.curKey]['scdata'].run_tsne(n_components=self.nCompVar.get(), perplexity=self.perplexityVar.get())
         else:
-            self.scdata.run_tsne(n_components=None, perplexity=self.perplexityVar.get())
-        self.gates = {}
+            self.data[self.curKey]['scdata'].run_tsne(n_components=None, perplexity=self.perplexityVar.get())
+        self.data[self.curKey]['gates'] = {}
 
         #enable buttons
-        if self.scdata.data_type == 'sc-seq':
+        if self.data[self.curKey]['scdata'].data_type == 'sc-seq':
             self.analysisMenu.entryconfig(2, state='normal')
             self.visMenu.entryconfig(1, state='normal')
         else:
             self.visMenu.entryconfig(0, state='normal')
         self.geneExpMenu.entryconfig(1, state='normal')
-        self.tSNEButton.config(state='normal')
-        self.geneExpButton.config(state='normal')
         self.tsneOptions.destroy()
 
     def runDM(self):
-        self.scdata.run_diffusion_map()
+        for key in self.data:
+            if self.data[key]['state'].get() == True:
+                self.data[key]['scdata'].run_diffusion_map()
 
-        #enable buttons
-        if self.scdata.data_type == 'sc-seq':
-            self.analysisMenu.entryconfig(3, state='normal')
-            self.analysisMenu.entryconfig(4, state='normal')
-            self.visMenu.entryconfig(2, state='normal')
-        else:
-            self.analysisMenu.entryconfig(2, state='normal')
-            self.visMenu.entryconfig(1, state='normal')
-        self.DMButton.config(state='normal')
+            #enable buttons
+            if self.data[key]['scdata'].data_type == 'sc-seq':
+                self.analysisMenu.entryconfig(3, state='normal')
+                self.analysisMenu.entryconfig(4, state='normal')
+                self.visMenu.entryconfig(2, state='normal')
+            else:
+                self.analysisMenu.entryconfig(2, state='normal')
+                self.visMenu.entryconfig(1, state='normal')
 
     def runGSEA(self):
-        self.GSEAFileName = filedialog.askopenfilename(title='Select gmt File', initialdir='~/.wishbone/tools')
-        if self.GSEAFileName != "":
-            self.scdata.run_diffusion_map_correlations()
-            self.scdata.data.columns = self.scdata.data.columns.str.upper()
-            self.outputPrefix = filedialog.asksaveasfilename(title='Input file prefix for saving output', initialdir='~/.wishbone/gsea')
-            if 'mouse' in self.GSEAFileName:
+
+        GSEAFileName = filedialog.askopenfilename(title='Select gmt File', initialdir='~/.wishbone/tools')
+
+        if GSEAFileName != "":
+            if 'mouse' in GSEAFileName:
                 gmt_file_type = 'mouse'
             else:
                 gmt_file_type = 'human'
-            self.reports = self.scdata.run_gsea(output_stem= os.path.expanduser(self.outputPrefix), 
-                     gmt_file=(gmt_file_type, self.GSEAFileName.split('/')[-1]))
+
+            for key in self.data:
+                if self.data[key]['state'].get() == True: 
+                    self.data[key]['scdata'].run_diffusion_map_correlations()
+                    self.data[key]['scdata'].data.columns = self.data[key]['scdata'].data.columns.str.upper()
+                    outputPrefix = filedialog.asksaveasfilename(title=key + ': input file prefix for saving output', initialdir='~/.wishbone/gsea')
+                    
+                    self.data[key]['gsea_reports'] = self.data[key]['scdata'].run_gsea(output_stem= os.path.expanduser(outputPrefix), 
+                                                                                       gmt_file=(gmt_file_type, GSEAFileName.split('/')[-1]))
+
             #enable buttons
             self.visMenu.entryconfig(3, state='normal')
-            self.GSEAButton.config(state='normal')
 
     def runWishbone(self):
-        #popup menu for wishbone options
-        self.wbOptions = tk.Toplevel()
-        self.wbOptions.title("Wishbone Options")
+        for key in self.data:
+            if self.data[key]['state'].get() == True: 
+                self.curKey = key
 
-        #s
-        tk.Label(self.wbOptions,text=u"Start cell:",fg="black",bg="white").grid(column=0,row=0)
-        self.start = tk.StringVar()
-        tk.Entry(self.wbOptions, textvariable=self.start).grid(column=1,row=0)
-        if(len(self.gates) > 0):
-            self.cell_gate = tk.StringVar()
-            self.cell_gate.set('Use cell gate')
-            self.gate_menu = tk.OptionMenu(self.wbOptions, self.cell_gate,
-                                           *list(self.gates.keys()))
-            self.gate_menu.grid(row=0, column=2)
+                #popup menu for wishbone options
+                self.wbOptions = tk.Toplevel()
+                self.wbOptions.title(key + ": Wishbone options")
 
-        #k
-        tk.Label(self.wbOptions,text=u"k:",fg="black",bg="white").grid(column=0,row=1)
-        self.k = tk.IntVar()
-        tk.Entry(self.wbOptions, textvariable=self.k).grid(column=1,row=1)
-        self.k.set(15)
-        
-        #components list
-        tk.Label(self.wbOptions, text=u"Components list:", fg='black', bg='white').grid(column=0, row=2)
-        self.compList = tk.StringVar()
-        tk.Entry(self.wbOptions, textvariable=self.compList).grid(column=1, row=2)
-        self.compList.set("1, 2, 3")
+                #s
+                tk.Label(self.wbOptions,text=u"Start cell:",fg="black",bg="white").grid(column=0,row=0)
+                self.start = tk.StringVar()
+                tk.Entry(self.wbOptions, textvariable=self.start).grid(column=1,row=0)
+                if(len(self[key]['gates']) > 0):
+                    self.cell_gate = tk.StringVar()
+                    self.cell_gate.set('Use cell gate')
+                    self.gate_menu = tk.OptionMenu(self.wbOptions, self.cell_gate,
+                                                   *list(self.data[key]['gates'].keys()))
+                    self.gate_menu.grid(row=0, column=2)
 
-        #num waypoints
-        tk.Label(self.wbOptions, text=u"Number of waypoints:", fg='black', bg='white').grid(column=0, row=3)
-        self.numWaypoints = tk.IntVar()
-        tk.Entry(self.wbOptions, textvariable=self.numWaypoints).grid(column=1, row=3)
-        self.numWaypoints.set(250)
+                #k
+                tk.Label(self.wbOptions,text=u"k:",fg="black",bg="white").grid(column=0,row=1)
+                self.k = tk.IntVar()
+                tk.Entry(self.wbOptions, textvariable=self.k).grid(column=1,row=1)
+                self.k.set(15)
+                
+                #components list
+                tk.Label(self.wbOptions, text=u"Components list:", fg='black', bg='white').grid(column=0, row=2)
+                self.compList = tk.StringVar()
+                tk.Entry(self.wbOptions, textvariable=self.compList).grid(column=1, row=2)
+                self.compList.set("1, 2, 3")
 
-        #branch
-        self.branch = tk.BooleanVar()
-        self.branch.set(True)
-        tk.Checkbutton(self.wbOptions, text=u"Branch", variable=self.branch).grid(column=0, row=4, columnspan=2)
+                #num waypoints
+                tk.Label(self.wbOptions, text=u"Number of waypoints:", fg='black', bg='white').grid(column=0, row=3)
+                self.numWaypoints = tk.IntVar()
+                tk.Entry(self.wbOptions, textvariable=self.numWaypoints).grid(column=1, row=3)
+                self.numWaypoints.set(250)
 
-        tk.Button(self.wbOptions, text="Run", command=self._runWishbone).grid(column=1, row=5)
-        tk.Button(self.wbOptions, text="Cancel", command=self.wbOptions.destroy).grid(column=0, row=5)
-        self.wait_window(self.wbOptions)
+                #branch
+                self.branch = tk.BooleanVar()
+                self.branch.set(True)
+                tk.Checkbutton(self.wbOptions, text=u"Branch", variable=self.branch).grid(column=0, row=4, columnspan=2)
+
+                tk.Button(self.wbOptions, text="Run", command=self._runWishbone).grid(column=1, row=5)
+                tk.Button(self.wbOptions, text="Cancel", command=self.wbOptions.destroy).grid(column=0, row=5)
+                self.wait_window(self.wbOptions)
 
     def _runWishbone(self):
-        self.wb = wishbone.wb.Wishbone(self.scdata)
+        self.data[self.curKey]['wb'] = wishbone.wb.Wishbone(self.data[self.curKey]['scdata'])
 
         if self.cell_gate.get() == 'Use cell gate':
-            self.wb.run_wishbone(start_cell=self.start.get(), k=self.k.get(), components_list=[int(comp) for comp in self.compList.get().split(',')], num_waypoints=self.numWaypoints.get())
+            self.data[self.curKey]['wb'].run_wishbone(start_cell=self.start.get(), k=self.k.get(), 
+                                                      components_list=[int(comp) for comp in self.compList.get().split(',')], 
+                                                      num_waypoints=self.numWaypoints.get())
         else:
             #randomly select start cell in gate
             print('Using cell gate:')
             print(self.cell_gate.get())
-            start_cell = random.sample(list(self.gates[self.cell_gate.get()]), 1)[0]
-            print(start_cell)
-            self.wb.run_wishbone(start_cell=start_cell, k=self.k.get(), components_list=[int(comp) for comp in self.compList.get().split(',')], num_waypoints=self.numWaypoints.get())
+            start_cell = random.sample(list(self.data[self.curKey]['gates'][self.cell_gate.get()]), 1)[0]
+            print('Start cell: ' + start_cell)
+            self.data[self.curKey]['wb'].run_wishbone(start_cell=start_cell, k=self.k.get(), 
+                                                      components_list=[int(comp) for comp in self.compList.get().split(',')], 
+                                                      num_waypoints=self.numWaypoints.get())
         
         #enable buttons
         self.wishboneMenu.entryconfig(0, state='normal')
         self.wishboneMenu.entryconfig(1, state='normal')
         self.wishboneMenu.entryconfig(2, state='normal')
-        self.WBButton.config(state='normal')
         self.wbOptions.destroy()
 
+    def runMagic(self):
+        for key in list(self.data):
+            if self.data[key]['state'].get() == True:
+                #pop up for parameters
+                self.magicOptions = tk.Toplevel()
+                self.magicOptions.title(key + ": MAGIC options")
+                self.curKey = key
+
+                tk.Label(self.magicOptions,text=u"Magic-ed data name:" ,fg="black",bg="white").grid(column=0, row=0)
+                self.nameVar = tk.StringVar()
+                self.nameVar.set(key + ' Magic')
+                tk.Entry(self.magicOptions, textvariable=self.nameVar).grid(column=1,row=0)
+
+                tk.Label(self.magicOptions,text=u"# of PCA components:" ,fg="black",bg="white").grid(column=0, row=1)
+                self.nCompVar = tk.IntVar()
+                self.nCompVar.set(0)
+                tk.Entry(self.magicOptions, textvariable=self.nCompVar).grid(column=1,row=1)
+
+                tk.Label(self.magicOptions,text=u"t:" ,fg="black",bg="white").grid(column=0, row=2)
+                self.tVar = tk.IntVar()
+                self.tVar.set(8)
+                tk.Entry(self.magicOptions, textvariable=self.tVar).grid(column=1,row=2)
+
+                tk.Label(self.magicOptions,text=u"kNN:" ,fg="black",bg="white").grid(column=0, row=3)
+                self.kNNVar = tk.IntVar()
+                self.kNNVar.set(20)
+                tk.Entry(self.magicOptions, textvariable=self.kNNVar).grid(column=1,row=3)
+
+                tk.Label(self.magicOptions,text=u"Epsilon:" ,fg="black",bg="white").grid(column=0, row=4)
+                self.epsilonVar = tk.IntVar()
+                self.epsilonVar.set(0)
+                tk.Entry(self.magicOptions, textvariable=self.epsilonVar).grid(column=1,row=4)
+
+                self.rescaleVar = tk.BooleanVar()
+                tk.Checkbutton(self.magicOptions, text=u"Rescale", variable=self.rescaleVar).grid(column=0, row=5, columnspan=2)
+
+                tk.Button(self.magicOptions, text="Cancel", command=self.magicOptions.destroy).grid(column=0, row=6)
+                tk.Button(self.magicOptions, text="Run", command=self._runMagic).grid(column=1, row=6)
+                self.wait_window(self.magicOptions)
+
+    def _runMagic(self):
+        scdata = self.data[self.curKey]['scdata'].run_magic(n_pca_components=self.nCompVar.get() if self.nCompVar.get() > 0 else None,
+                                                            t=self.tVar.get(), knn=self.kNNVar.get(), 
+                                                            epsilon=self.epsilonVar.get(), rescale=self.rescaleVar.get())
+        
+        self.data[self.nameVar.get()] = {'scdata' : scdata, 'wb' : None, 'state' : tk.BooleanVar(),
+                                         'genes' : scdata.data.columns.values, 'gates' : {}}
+        
+        #update data sets
+        for i in range(len(self.data)):
+            tk.Checkbutton(self, text=list(self.data.keys())[i], variable=list(self.data.values())[i]['state']).grid(column=0, row=i+1)
+        
+        self.magicOptions.destroy()
+
+    #TODO - multiple data sets
     def plotPCA(self):
         self.saveButton.config(state='normal')
         self.setGateButton.config(state='disabled')
@@ -426,6 +521,7 @@ class wishbone_gui(tk.Tk):
         tk.Button(self.PCAOptions, text="Cancel", command=self.PCAOptions.destroy).grid(column=0, row=2)
         self.wait_window(self.PCAOptions)
 
+    #TODO - multiple data sets
     def _plotPCA(self):
         self.resetCanvas()
         self.fig, self.ax = self.scdata.plot_pca_variance_explained(ylim=(0, self.yLimVar.get()), n_components=self.compVar.get())
@@ -438,6 +534,8 @@ class wishbone_gui(tk.Tk):
         self.saveButton.config(state='normal')
         self.PCAOptions.destroy()
 
+    #TODO - multiple data sets
+    #TODO - color by bector from any data set
     def plotTSNE(self):
         self.saveButton.config(state='normal')
         self.setGateButton.config(state='normal')
@@ -455,6 +553,7 @@ class wishbone_gui(tk.Tk):
         self.canvas.get_tk_widget().grid(column=1, row=1, rowspan=10, columnspan=4,sticky='NW') 
         self.currentPlot = 'tsne'
 
+    #TODO - multiple data sets
     def plotDM(self):
         self.saveButton.config(state='normal')
         self.setGateButton.config(state='disabled')
@@ -474,6 +573,7 @@ class wishbone_gui(tk.Tk):
         self.canvas.get_tk_widget().grid(column=1, row=1, rowspan=10, columnspan=4,sticky='W') 
         self.currentPlot = 'dm_components'
 
+    #TODO - multiple data sets
     def showGSEAResults(self):
         self.saveButton.config(state='disabled')
         self.component_menu.config(state='normal')
@@ -487,6 +587,7 @@ class wishbone_gui(tk.Tk):
         self.outputText(1)
         self.currentPlot = 'GSEA_result_'+self.diff_component.get()
 
+    #TODO - multiple data sets
     def updateComponent(self):
         self.resetCanvas()
         self.canvas = tk.Canvas(self, width=600, height=300)
@@ -494,6 +595,7 @@ class wishbone_gui(tk.Tk):
         self.outputText(int(self.diff_component.get().split(' ')[-1]))
         self.currentPlot = 'GSEA_result_'+self.diff_component.get()
 
+    #TODO - multiple data sets
     def outputText(self, diff_component):
         pos_text = str(self.reports[diff_component]['pos']).split('\n')
         pos_text = pos_text[1:len(pos_text)-1]
@@ -506,6 +608,7 @@ class wishbone_gui(tk.Tk):
         self.canvas.create_text(5, 150, anchor='nw', text='Negative correlations:\n\n', font=('Helvetica', 16, 'bold'))
         self.canvas.create_text(5, 200, anchor='nw', text=neg_text)
 
+    #TODO - multiple data sets
     def plotWBOnTsne(self):
         self.saveButton.config(state='normal')
         self.setGateButton.config(state='disabled')
@@ -523,6 +626,7 @@ class wishbone_gui(tk.Tk):
         self.canvas.get_tk_widget().grid(column=1, row=1, rowspan=10, columnspan=4)
         self.currentPlot = 'wishbone_on_tsne'
 
+    #TODO - multiple data sets
     def plotWBMarkerTrajectory(self):
         self.getGeneSelection()
         if len(self.selectedGenes) < 1:
@@ -552,6 +656,7 @@ class wishbone_gui(tk.Tk):
             #enable buttons
             self.wishboneMenu.entryconfig(2, state='normal')
 
+    #TODO - multiple data sets
     def plotWBHeatMap(self):
         self.getGeneSelection()
         if len(self.selectedGenes) < 1:
@@ -577,6 +682,7 @@ class wishbone_gui(tk.Tk):
             self.canvas.get_tk_widget().grid(column=1, row=1, rowspan=10, columnspan=5, sticky='W')
             self.currentPlot = 'wishbone_marker_heatmap'
 
+    #TODO - multiple data sets
     def scatterGeneExp(self):
         self.getGeneSelection()
         if len(self.selectedGenes) < 1:
@@ -600,6 +706,7 @@ class wishbone_gui(tk.Tk):
             self.canvas.get_tk_widget().grid(column=1, row=1, rowspan=10, columnspan=4,sticky='W')
             self.currentPlot = '_'.join(self.selectedGenes) + '_scatter'
 
+    #TODO - multiple data sets
     def plotGeneExpOntSNE(self):
         self.getGeneSelection()
         if len(self.selectedGenes) < 1:
@@ -623,6 +730,7 @@ class wishbone_gui(tk.Tk):
             self.currentPlot = '_'.join(self.selectedGenes) + '_tsne'
             self.geometry('950x550')
 
+    #TODO - multiple data sets
     def getGeneSelection(self):
         #popup menu to get selected genes
         self.geneSelection = tk.Toplevel()
@@ -664,6 +772,7 @@ class wishbone_gui(tk.Tk):
         if self.plotFileName != None:
             self.fig.savefig(self.plotFileName)
 
+    #TODO - multiple data sets
     def setGate(self):
         #pop up for gate name
         self.gateOptions = tk.Toplevel()
