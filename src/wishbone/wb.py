@@ -457,7 +457,7 @@ class SCData:
         self.tsne = pd.DataFrame(bh_sne(data, perplexity=perplexity),
                                  index=self.data.index, columns=['x', 'y'])
 
-    def plot_tsne(self, fig=None, ax=None, title='tSNE projection'):
+    def plot_tsne(self, fig=None, ax=None, color=None, title='tSNE projection'):
         """Plot tSNE projections of the data
         :param fig: matplotlib Figure object
         :param ax: matplotlib Axis object
@@ -466,8 +466,12 @@ class SCData:
         if self.tsne is None:
             raise RuntimeError('Please run tSNE using run_tsne before plotting ')
         fig, ax = get_fig(fig=fig, ax=ax)
-        plt.scatter(self.tsne['x'], self.tsne['y'], s=size, 
-            color=qualitative_colors(2)[1])
+        if isinstance(color, pd.Series):
+            plt.scatter(self.tsne['x'], self.tsne['y'], s=size, 
+                        c=color.values, cmap=cmap, edgecolors='none')
+        else:
+            plt.scatter(self.tsne['x'], self.tsne['y'], s=size, 
+                        color=qualitative_colors(2)[1])
         ax.xaxis.set_major_locator(plt.NullLocator())
         ax.yaxis.set_major_locator(plt.NullLocator())
         ax.set_title(title)
@@ -685,7 +689,7 @@ class SCData:
         self.diffusion_eigenvalues = pd.DataFrame(D)
 
 
-    def plot_diffusion_components(self, title='Diffusion Components'):
+    def plot_diffusion_components(self, other_data=None, title='Diffusion Components'):
         """ Plots the diffusion components on tSNE maps
         :return: fig, ax
         """
@@ -696,19 +700,34 @@ class SCData:
 
         height = int(2 * np.ceil(self.diffusion_eigenvalues.shape[0] / 5))
         width = 10
-        fig = plt.figure(figsize=[width, height])
         n_rows = int(height / 2)
         n_cols = int(width / 2)
+        if other_data:
+            height = height * 2
+            n_rows = n_rows * 2
+        fig = plt.figure(figsize=[width, height])
         gs = plt.GridSpec(n_rows, n_cols)
 
         for i in range(self.diffusion_eigenvectors.shape[1]):
             ax = plt.subplot(gs[i // n_cols, i % n_cols])
+
             plt.scatter(self.tsne['x'], self.tsne['y'], c=self.diffusion_eigenvectors[i],
                         cmap=cmap, edgecolors='none', s=size)
+
             ax.xaxis.set_major_locator(plt.NullLocator())
             ax.yaxis.set_major_locator(plt.NullLocator())
-            ax.set_aspect('equal')
             plt.title( 'Component %d' % i, fontsize=10 )
+
+        if other_data:
+            for i in range(other_data.diffusion_eigenvectors.shape[1]):
+                ax = plt.subplot(gs[(self.diffusion_eigenvectors.shape[1] + i) // n_cols, (self.diffusion_eigenvectors.shape[1] + i) % n_cols])
+
+                plt.scatter(other_data.tsne['x'], other_data.tsne['y'], c=other_data.diffusion_eigenvectors[i],
+                            cmap=cmap, edgecolors='none', s=size)
+
+                ax.xaxis.set_major_locator(plt.NullLocator())
+                ax.yaxis.set_major_locator(plt.NullLocator())
+                plt.title( 'Component %d' % i, fontsize=10 )
 
         # fig.suptitle(title, fontsize=12)
         return fig, ax
@@ -929,7 +948,7 @@ class SCData:
 
 
     # todo add option to plot phenograph cluster that these are being DE in.
-    def plot_gene_expression(self, genes):
+    def plot_gene_expression(self, genes, other_data=None):
         """ Plot gene expression on tSNE maps
         :param genes: Iterable of strings to plot on tSNE        
         """
@@ -948,11 +967,15 @@ class SCData:
         genes = set(genes).difference(not_in_dataframe)
 
         height = int(2 * np.ceil(len(genes) / 5))
-        width = 10
-        fig = plt.figure(figsize=[width, height+0.25])
+        width = 10 if len(genes) >= 5 else 2*len(genes)
         n_rows = int(height / 2)
         n_cols = int(width / 2)
-        gs = plt.GridSpec(n_rows, n_cols)
+        if other_data:
+            fig = plt.figure(figsize=[width, 2*(height+0.25)])
+            gs = plt.GridSpec(2*n_rows, n_cols)
+        else:
+            fig = plt.figure(figsize=[width, height+0.25])
+            gs = plt.GridSpec(n_rows, n_cols)
 
         axes = []
         for i, g in enumerate(genes):
@@ -967,6 +990,21 @@ class SCData:
             ax.set_title(g)
             ax.xaxis.set_major_locator(plt.NullLocator())
             ax.yaxis.set_major_locator(plt.NullLocator())
+
+        if other_data:
+            for i, g in enumerate(genes):
+                ax = plt.subplot(gs[(n_rows*n_cols +i) // n_cols, (n_rows*n_cols +i) % n_cols])
+                axes.append(ax)
+                if other_data.data_type == 'sc-seq':
+                    plt.scatter(other_data.tsne['x'], other_data.tsne['y'], c=np.arcsinh(other_data.data[g]),
+                                cmap=cmap, edgecolors='none', s=size)
+                else:
+                    plt.scatter(other_data.tsne['x'], other_data.tsne['y'], c=other_data.data[g],
+                                cmap=cmap, edgecolors='none', s=size)                
+                ax.set_title(g)
+                ax.xaxis.set_major_locator(plt.NullLocator())
+                ax.yaxis.set_major_locator(plt.NullLocator())
+        gs.tight_layout(fig)
 
         return fig, axes
 
@@ -992,6 +1030,10 @@ class SCData:
         if len(genes) < 2 or len(genes) > 3:
             raise RuntimeError('Please specify either 2 or 3 genes to scatter.')
 
+        gui_3d_flag = True
+        if ax == None:
+            gui_3d_flag = False
+
         fig, ax = get_fig(fig=fig, ax=ax)
         if len(genes) == 2:
             plt.scatter(self.data[genes[0]], self.data[genes[1]],
@@ -1001,7 +1043,8 @@ class SCData:
             ax.set_xlabel(genes[0])
             ax.set_ylabel(genes[1])
         else:
-            ax = fig.add_subplot(111, projection='3d')
+            if not gui_3d_flag:
+                ax = fig.add_subplot(111, projection='3d')
             ax.scatter(self.data[genes[0]], self.data[genes[1]], self.data[genes[2]],
                         s=size, color=qualitative_colors(2)[1])
             ax.xaxis.set_major_locator(plt.NullLocator())
@@ -1197,7 +1240,7 @@ class Wishbone:
 
     # Plotting functions
     # Function to plot wishbone results on tSNE
-    def plot_wishbone_on_tsne(self):
+    def plot_wishbone_on_tsne(self, other_data=None):
         """ Plot Wishbone results on tSNE maps
         """
         if self.trajectory is None:
@@ -1208,6 +1251,9 @@ class Wishbone:
         # Set up figure
         fig = plt.figure(figsize=[8, 4])
         gs = plt.GridSpec(1, 2)
+        if other_data:
+            fig = plt.figure(figsize=[8, 8])
+            gs = plt.GridSpec(2, 2)
 
         # Trajectory
         ax = plt.subplot(gs[0, 0])
@@ -1227,6 +1273,24 @@ class Wishbone:
             ax.yaxis.set_major_locator(plt.NullLocator())
             plt.title('Branch associations')
         
+        if other_data:
+            ax = plt.subplot(gs[1, 0])
+            plt.scatter( other_data.scdata.tsne['x'], other_data.scdata.tsne['y'],
+                edgecolors='none', s=size, cmap=cmap, c=other_data.trajectory )
+            ax.xaxis.set_major_locator(plt.NullLocator())
+            ax.yaxis.set_major_locator(plt.NullLocator())
+            plt.title('Wishbone trajectory')
+
+            # Branch
+            if self.branch is not None:
+                ax = plt.subplot(gs[1, 1])
+                plt.scatter( other_data.scdata.tsne['x'], other_data.scdata.tsne['y'],
+                    edgecolors='none', s=size, 
+                    color=[other_data.branch_colors[i] for i in other_data.branch])
+                ax.xaxis.set_major_locator(plt.NullLocator())
+                ax.yaxis.set_major_locator(plt.NullLocator())
+                plt.title('Branch associations')
+
         return fig, ax        
 
 
@@ -1476,7 +1540,7 @@ class Wishbone:
         return ret_values, fig, ax
 
 
-    def plot_marker_heatmap(self, marker_trends, trajectory_range=[0, 1]):
+    def plot_marker_heatmap(self, marker_trends, trajectory_range=[0, 1], other_data=None):
         """ Plot expression of markers as a heatmap
         :param marker_trends: Output from the plot_marker_trajectory function
         :param trajectory_range: Range of the trajectory in which to plot the results
@@ -1492,6 +1556,9 @@ class Wishbone:
         if self.branch is not None:
             fig = plt.figure(figsize = [16, 0.5*len(markers)])
             gs = plt.GridSpec( 1, 2 )
+            if other_data:
+                fig = plt.figure(figsize = [16, len(markers)])
+                gs = plt.GridSpec( 2, 2 )
 
             branches = np.sort(list(set(marker_trends.keys()).difference(['Trunk'])))
             for i,br in enumerate(branches):
@@ -1516,10 +1583,43 @@ class Wishbone:
                 # Labels
                 plt.xlabel( 'Wishbone trajectory' )
                 plt.title( br )
+
+            if other_data:
+                marker_trends_2 = other_data[1]
+                other_data = other_data[0]
+
+                branches = np.sort(list(set(marker_trends_2.keys()).difference(['Trunk'])))
+                for i,br in enumerate(branches):
+                    ax = plt.subplot( gs[1, i] )
+
+                    # Construct the full matrix
+                    mat = marker_trends_2['Trunk'].append( marker_trends_2[br][2:] )
+                    mat.index = range(mat.shape[0])
+
+                    # Start and end
+                    start = np.where(mat['x'] >= trajectory_range[0])[0][0]
+                    end = np.where(mat['x'] >= trajectory_range[1])[0][0]
+
+                    # Plot
+                    plot_mat = mat.ix[start:end]
+                    sns.heatmap(plot_mat[markers].T, 
+                        linecolor='none', cmap=cmap, vmin=0, vmax=1)            
+                    ax.xaxis.set_major_locator(plt.NullLocator())
+                    ticks = np.arange(trajectory_range[0], trajectory_range[1]+0.1, 0.1)
+                    plt.xticks([np.where(plot_mat['x'] >= i)[0][0] for i in ticks], ticks)
+
+                    # Labels
+                    plt.xlabel( 'Wishbone trajectory' )
+                    plt.title( br )
         else:
             # Plot values from the trunk alone
             fig = plt.figure(figsize = [8, 0.5*len(markers)])
-            ax = plt.gca()
+            gs = plt.GridSpec( 1, 1 )
+            if other_data:
+                fig = plt.figure(figsize = [8, len(markers)])
+                gs = plt.GridSpec( 2, 1 )
+
+            ax = plt.subplot( gs[0, 0] )
 
             # Construct the full matrix
             mat = marker_trends['Trunk']
@@ -1540,6 +1640,32 @@ class Wishbone:
             # Labels
             plt.xlabel( 'Wishbone trajectory' )
 
+            if other_data:
+                marker_trends_2 = other_data[1]
+                other_data = other_data[0]
+
+                x = plt.subplot( gs[1, 0] )
+
+                # Construct the full matrix
+                mat = marker_trends_2['Trunk']
+                mat.index = range(mat.shape[0])
+
+                # Start and end
+                start = np.where(mat['x'] >= trajectory_range[0])[0][0]
+                end = np.where(mat['x'] >= trajectory_range[1])[0][0]
+
+                # Plot
+                plot_mat = mat.ix[start:end]
+                sns.heatmap(plot_mat[markers].T, 
+                    linecolor='none', cmap=cmap, vmin=0, vmax=1)            
+                ax.xaxis.set_major_locator(plt.NullLocator())
+                ticks = np.arange(trajectory_range[0], trajectory_range[1]+0.1, 0.1)
+                plt.xticks([np.where(plot_mat['x'] >= i)[0][0] for i in ticks], ticks)
+
+                # Labels
+                plt.xlabel( 'Wishbone trajectory' )
+
+        gs.tight_layout(fig)
 
         return fig, ax
 
