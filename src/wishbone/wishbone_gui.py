@@ -4,9 +4,11 @@ import matplotlib
 matplotlib.use("TkAgg")
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2TkAgg
 import matplotlib.pyplot as plt
+import matplotlib.gridspec as gridspec
 from matplotlib.figure import Figure
 from matplotlib.patches import Rectangle
 from matplotlib.path import Path
+from functools import reduce
 import wishbone
 import os
 import sys
@@ -29,6 +31,7 @@ class wishbone_gui(tk.Tk):
         self.vals = None
         self.currentPlot = None
         self.data = {}
+        self.scseq = False
 
         #set up menu bar
         self.menubar = tk.Menu(self)
@@ -140,17 +143,19 @@ class wishbone_gui(tk.Tk):
         tk.Label(self.fileInfo,text=self.geneNameFile.split('/')[-1] ,fg="black",bg="white").grid(column=1, row=2)
 
     def processData(self):
-        #clear intro screen
-        for item in self.grid_slaves():
-            item.grid_forget()
 
-        tk.Label(self,text=u"Data sets:" , fg="black",bg="white").grid(column=0,row=0)
+        if len(self.data) == 0:
+            #clear intro screen
+            for item in self.grid_slaves():
+                item.grid_forget()
 
-        #set up canvas for plots
-        self.fig, self.ax = wishbone.wb.get_fig()
-        self.canvas = FigureCanvasTkAgg(self.fig, self)
-        self.canvas.show()
-        self.canvas.get_tk_widget().grid(column=1, row=1, rowspan=10, columnspan=4,sticky='NSEW')
+            tk.Label(self,text=u"Data sets:" , fg="black",bg="white").grid(column=0,row=0)
+
+            #set up canvas for plots
+            self.fig, self.ax = wishbone.wb.get_fig()
+            self.canvas = FigureCanvasTkAgg(self.fig, self)
+            self.canvas.show()
+            self.canvas.get_tk_widget().grid(column=1, row=1, rowspan=10, columnspan=4,sticky='NSEW')
 
         #load data based on input type
         if self.dataFileType == 'fcs':    # mass cytometry data
@@ -180,8 +185,11 @@ class wishbone_gui(tk.Tk):
         for i in range(len(self.data)):
             tk.Checkbutton(self, text=list(self.data.keys())[i], variable=list(self.data.values())[i]['state']).grid(column=0, row=i+1)
         
+        if self.scseq == False and scdata.data_type == 'sc-seq':
+            self.scseq = True
+
         #set up buttons based on data type
-        if scdata.data_type == 'sc-seq':
+        if self.scseq == True:
             self.saveButton = tk.Button(self, text=u"Save plot", state='disabled', command=self.savePlot)
             self.saveButton.grid(column = 3, row=0)
             self.diff_component = tk.StringVar()
@@ -231,7 +239,7 @@ class wishbone_gui(tk.Tk):
         self.analysisMenu.entryconfig(0, state='normal')
         self.fileMenu.entryconfig(1, state='normal')
         self.geneExpMenu.entryconfig(0, state='normal')
-        self.concatButton = tk.Button(self, text=u"Concatenate selected datasets", state='disabled', command=self.concatenateData)
+        self.concatButton = tk.Button(self, text=u"Concatenate selected datasets", state='disabled', wraplength=80, command=self.concatenateData)
         self.concatButton.grid(column=0, row=10)
         if len(self.data) > 1:
             self.concatButton.config(state='normal')
@@ -251,10 +259,10 @@ class wishbone_gui(tk.Tk):
             if self.data[key]['state'].get() == True:
                 pickleFileName = filedialog.asksaveasfilename(title=key + ': save wishbone data', defaultextension='.p', initialfile=key)
                 if pickleFileName != None:
-                    if self.wb != None:
-                        self.wb.save(pickleFileName)
+                    if self.data[key]['wb'] != None:
+                        self.data[key]['wb'].save(pickleFileName)
                     else:
-                        self.scdata.save_as_wishbone(pickleFileName)
+                        self.data[key]['scdata'].save_as_wishbone(pickleFileName)
 
     def concatenateData(self):
         self.concatOptions = tk.Toplevel()
@@ -320,6 +328,7 @@ class wishbone_gui(tk.Tk):
                 self.wait_window(self.tsneOptions)
 
     def _runTSNE(self):
+        print(self.curKey)
         if self.data[self.curKey]['scdata'].data_type == 'sc-seq':
             self.data[self.curKey]['scdata'].run_tsne(n_components=self.nCompVar.get(), perplexity=self.perplexityVar.get())
         else:
@@ -495,11 +504,9 @@ class wishbone_gui(tk.Tk):
         
         self.magicOptions.destroy()
 
-    #TODO - multiple data sets
     def plotPCA(self):
         self.saveButton.config(state='normal')
-        self.setGateButton.config(state='disabled')
-        if self.scdata.data_type == 'sc-seq':
+        if self.scseq == True:
             self.component_menu.config(state='disabled')
             self.updateButton.config(state='disabled')
             self.visMenu.entryconfig(6, state='disabled')
@@ -511,7 +518,7 @@ class wishbone_gui(tk.Tk):
         self.PCAOptions.title("PCA Plot Options")
         tk.Label(self.PCAOptions,text=u"Max variance explained (ylim):",fg="black",bg="white").grid(column=0, row=0)
         self.yLimVar = tk.DoubleVar()
-        self.yLimVar.set(round(self.scdata.pca['eigenvalues'][0][0], 2))
+        self.yLimVar.set(0.10)
         tk.Entry(self.PCAOptions, textvariable=self.yLimVar).grid(column=1,row=0)
         tk.Label(self.PCAOptions, text=u"Number of components:", fg='black', bg='white').grid(column=0, row=1)
         self.compVar = tk.IntVar()
@@ -521,73 +528,145 @@ class wishbone_gui(tk.Tk):
         tk.Button(self.PCAOptions, text="Cancel", command=self.PCAOptions.destroy).grid(column=0, row=2)
         self.wait_window(self.PCAOptions)
 
-    #TODO - multiple data sets
     def _plotPCA(self):
         self.resetCanvas()
-        self.fig, self.ax = self.scdata.plot_pca_variance_explained(ylim=(0, self.yLimVar.get()), n_components=self.compVar.get())
+        keys = [key for key in self.data if self.data[key]['state'].get() == True]
+        if len(keys) > 1:
+            self.fig = plt.figure(figsize=[8, 4 * int(np.ceil(len(keys)/2))])
+            gs = gridspec.GridSpec(int(np.ceil(len(keys)/2)), 2)
+            for i in range(len(keys)):
+                self.ax = self.fig.add_subplot(gs[int(i/2), i%2])
+                self.data[keys[i]]['scdata'].plot_pca_variance_explained(fig=self.fig, ax=self.ax, ylim=(0, self.yLimVar.get()), n_components=self.compVar.get())
+                self.ax.set_title(keys[i])
+            gs.tight_layout(self.fig)
+
+        else:
+            self.fig, self.ax = self.data[keys[0]]['scdata'].plot_pca_variance_explained(ylim=(0, self.yLimVar.get()), n_components=self.compVar.get())
+        
         self.canvas = FigureCanvasTkAgg(self.fig, self)
         self.canvas.show()
-        self.canvas.get_tk_widget().grid(column=1, row=1, rowspan=10, columnspan=4,sticky='NW') 
+        self.canvas.get_tk_widget().grid(column=1, row=1, rowspan=10, columnspan=4) 
         self.currentPlot = 'pca'
 
         #enable buttons
         self.saveButton.config(state='normal')
-        self.PCAOptions.destroy()
+        self.PCAOsudoptions.destroy()
 
-    #TODO - multiple data sets
-    #TODO - color by bector from any data set
     def plotTSNE(self):
+        #pop up for color by
+        self.TSNEOptions = tk.Toplevel()
+        self.TSNEOptions.title("tSNE Plot Options")
+
+        self.colorVar = tk.BooleanVar()
+        tk.Checkbutton(self.TSNEOptions, text=u"Color by gene", variable=self.colorVar).grid(column=0, row=0, columnspan=2)
+        
+        self.data_set = tk.StringVar()
+        self.data_set.set('Select data set')
+        self.data_menu = tk.OptionMenu(self.TSNEOptions, self.data_set,
+                                      *list(self.data.keys()))
+        self.data_menu.grid(row=1, column=0)
+        tk.Button(self.TSNEOptions, text="Use data set", command=self._updateGeneData).grid(column=1, row=1)
+
+        tk.Label(self.TSNEOptions,text=u"Gene:",fg="black",bg="white").grid(column=0, row=2)
+        tk.Entry(self.TSNEOptions).grid(column=1, row=2)
+
+        tk.Button(self.TSNEOptions, text="Plot", command=self._plotTSNE).grid(column=1, row=5)
+        tk.Button(self.TSNEOptions, text="Cancel", command=self.TSNEOptions.destroy).grid(column=0, row=5)
+        self.wait_window(self.TSNEOptions)
+
+    def _updateGeneData(self):
+        self.geneInput = wishbone.autocomplete_entry.AutocompleteEntry(self.data[self.data_set.get()]['genes'], self.TSNEOptions, listboxLength=3)
+        self.geneInput.grid(column=1, row=2)
+
+    def _plotTSNE(self):
+        keys = [key for key in self.data if self.data[key]['state'].get() == True]
+
         self.saveButton.config(state='normal')
-        self.setGateButton.config(state='normal')
-        if self.scdata.data_type == 'sc-seq':
+        if self.scseq == True:
             self.component_menu.config(state='disabled')
             self.updateButton.config(state='disabled')
-            self.visMenu.entryconfig(6, state='normal')
+            if len(keys) == 1:
+                self.visMenu.entryconfig(6, state='normal')
         else:
-            self.visMenu.entryconfig(4, state='normal')
+            if len(keys) == 1:
+                self.visMenu.entryconfig(4, state='normal')
+
+        if self.colorVar.get() == True:
+            color = self.data[self.data_set.get()]['scdata'].data[self.geneInput.var.get()]
+        else:
+            color = None
 
         self.resetCanvas()
-        self.fig, self.ax = self.scdata.plot_tsne()
+        if len(keys) > 1:
+            self.fig = plt.figure(figsize=[8, 4 * int(np.ceil(len(keys)/2))])
+            gs = gridspec.GridSpec(int(np.ceil(len(keys)/2)), 2)
+            for i in range(len(keys)):
+                self.ax = self.fig.add_subplot(gs[int(i/2), i%2])
+                self.data[keys[i]]['scdata'].plot_tsne(fig=self.fig, ax=self.ax, color=color)
+                self.ax.set_title(keys[i])
+            gs.tight_layout(self.fig)
+
+        else:
+            self.fig, self.ax = self.data[keys[0]]['scdata'].plot_tsne(color=color)
+
         self.canvas = FigureCanvasTkAgg(self.fig, self)
         self.canvas.show()
-        self.canvas.get_tk_widget().grid(column=1, row=1, rowspan=10, columnspan=4,sticky='NW') 
+        self.canvas.get_tk_widget().grid(column=1, row=1, rowspan=10, columnspan=4) 
         self.currentPlot = 'tsne'
+        self.TSNEOptions.destroy()
 
-    #TODO - multiple data sets
     def plotDM(self):
-        self.saveButton.config(state='normal')
-        self.setGateButton.config(state='disabled')
-        if self.scdata.data_type == 'sc-seq':
-            self.component_menu.config(state='disabled')
-            self.updateButton.config(state='disabled')
-            self.visMenu.entryconfig(6, state='disabled')
+
+        keys = [key for key in self.data if self.data[key]['state'].get() == True]
+        if len(keys) > 2:
+            self.DMError = tk.Toplevel()
+            self.DMError.title("Error -- too many datasets selected")
+            tk.Label(self.DMError,text=u"Please select up to two datasets to plot diffusion map components",fg="black",bg="white").grid(column=0, row=0)
+            tk.Button(self.DMError, text="Ok", command=self.DMError.destroy).grid(column=0, row=1)
+            self.wait_window(self.DMError)
+
         else:
-            self.visMenu.entryconfig(4, state='disabled')
+            self.saveButton.config(state='normal')
+            if self.scseq == True:
+                self.component_menu.config(state='disabled')
+                self.updateButton.config(state='disabled')
+                self.visMenu.entryconfig(6, state='disabled')
+            else:
+                self.visMenu.entryconfig(4, state='disabled')
 
-        self.geometry('950x550')
+            self.geometry('950x550')
+            self.resetCanvas()
 
-        self.resetCanvas()
-        self.fig, self.ax = self.scdata.plot_diffusion_components()
-        self.canvas = FigureCanvasTkAgg(self.fig, self)
-        self.canvas.show()
-        self.canvas.get_tk_widget().grid(column=1, row=1, rowspan=10, columnspan=4,sticky='W') 
-        self.currentPlot = 'dm_components'
+            self.fig, self.ax = self.data[keys[0]]['scdata'].plot_diffusion_components(other_data=self.data[keys[1]]['scdata'] if len(keys) > 1 else None)
+            for i in range(len(keys)):
+                plt.figtext(0.05, 0.75 - (0.5*i), keys[i], rotation='vertical')
 
-    #TODO - multiple data sets
+            self.canvas = FigureCanvasTkAgg(self.fig, self)
+            self.canvas.show()
+            self.canvas.get_tk_widget().grid(column=1, row=1, rowspan=10, columnspan=4,sticky='W') 
+            self.currentPlot = 'dm_components'
+
     def showGSEAResults(self):
-        self.saveButton.config(state='disabled')
-        self.component_menu.config(state='normal')
-        self.updateButton.config(state='normal')
-        self.setGateButton.config(state='disabled')
-        self.visMenu.entryconfig(6, state='disabled')
+        keys = [key for key in self.data if self.data[key]['state'].get() == True]
+        if len(keys) != 1:
+            self.GSEAError = tk.Toplevel()
+            self.GSEAError.title("Error -- too many datasets selected")
+            tk.Label(self.GSEAError,text=u"Please select exactly one dataset to view GSEA results.",fg="black",bg="white").grid(column=0, row=0)
+            tk.Button(self.GSEAError, text="Ok", command=self.GSEAError.destroy).grid(column=0, row=1)
+            self.wait_window(self.GSEAError)
+        else:
+            self.curKey = keys[0]
+            self.saveButton.config(state='disabled')
+            self.component_menu.config(state='normal')
+            self.updateButton.config(state='normal')
+            self.visMenu.entryconfig(6, state='disabled')
 
-        self.resetCanvas()
-        self.canvas = tk.Canvas(self, width=600, height=300)
-        self.canvas.grid(column=1, row=1, rowspan=17, columnspan=4)
-        self.outputText(1)
-        self.currentPlot = 'GSEA_result_'+self.diff_component.get()
+            self.resetCanvas()
+            self.canvas = tk.Canvas(self, width=600, height=300)
+            self.canvas.grid(column=1, row=1, rowspan=17, columnspan=4)
+            self.outputText(1)
+            self.currentPlot = 'GSEA_result_'+self.diff_component.get()
 
-    #TODO - multiple data sets
     def updateComponent(self):
         self.resetCanvas()
         self.canvas = tk.Canvas(self, width=600, height=300)
@@ -595,12 +674,11 @@ class wishbone_gui(tk.Tk):
         self.outputText(int(self.diff_component.get().split(' ')[-1]))
         self.currentPlot = 'GSEA_result_'+self.diff_component.get()
 
-    #TODO - multiple data sets
     def outputText(self, diff_component):
-        pos_text = str(self.reports[diff_component]['pos']).split('\n')
+        pos_text = str(self.data[self.curKey]['gsea_reports'][diff_component]['pos']).split('\n')
         pos_text = pos_text[1:len(pos_text)-1]
         pos_text = '\n'.join(pos_text)
-        neg_text = str(self.reports[diff_component]['neg']).split('\n')
+        neg_text = str(self.data[self.curKey]['gsea_reports'][diff_component]['neg']).split('\n')
         neg_text = neg_text[1:len(neg_text)-1]
         neg_text = '\n'.join(neg_text)
         self.canvas.create_text(5, 5, anchor='nw', text='Positive correlations:\n\n', font=('Helvetica', 16, 'bold'))
@@ -608,34 +686,19 @@ class wishbone_gui(tk.Tk):
         self.canvas.create_text(5, 150, anchor='nw', text='Negative correlations:\n\n', font=('Helvetica', 16, 'bold'))
         self.canvas.create_text(5, 200, anchor='nw', text=neg_text)
 
-    #TODO - multiple data sets
     def plotWBOnTsne(self):
-        self.saveButton.config(state='normal')
-        self.setGateButton.config(state='disabled')
-        if self.scdata.data_type == 'sc-seq':
-            self.component_menu.config(state='disabled')
-            self.updateButton.config(state='disabled')
-            self.visMenu.entryconfig(6, state='disabled')
-        else:
-            self.visMenu.entryconfig(4, state='disabled')
+        keys = [key for key in self.data if self.data[key]['state'].get() == True]
 
-        self.resetCanvas()
-        self.fig, self.ax = self.wb.plot_wishbone_on_tsne()
-        self.canvas = FigureCanvasTkAgg(self.fig, self)
-        self.canvas.show()
-        self.canvas.get_tk_widget().grid(column=1, row=1, rowspan=10, columnspan=4)
-        self.currentPlot = 'wishbone_on_tsne'
-
-    #TODO - multiple data sets
-    def plotWBMarkerTrajectory(self):
-        self.getGeneSelection()
-        if len(self.selectedGenes) < 1:
-            print('Error: must select at least one gene')
+        if len(keys) > 2:
+            self.WBError = tk.Toplevel()
+            self.WBError.title("Error -- too many datasets selected")
+            tk.Label(self.WBError,text=u"Please select up to two datasets to plot their wishbone trajectories",fg="black",bg="white").grid(column=0, row=0)
+            tk.Button(self.WBError, text="Ok", command=self.WBError.destroy).grid(column=0, row=1)
+            self.wait_window(self.WBError)
 
         else:
             self.saveButton.config(state='normal')
-            self.setGateButton.config(state='disabled')
-            if self.scdata.data_type == 'sc-seq':
+            if self.scseq == True:
                 self.component_menu.config(state='disabled')
                 self.updateButton.config(state='disabled')
                 self.visMenu.entryconfig(6, state='disabled')
@@ -643,10 +706,44 @@ class wishbone_gui(tk.Tk):
                 self.visMenu.entryconfig(4, state='disabled')
 
             self.resetCanvas()
-            self.vals, self.fig, self.ax = self.wb.plot_marker_trajectory(self.selectedGenes)
-            self.fig.set_size_inches(10, 4, forward=True)
+
+            self.fig, self.ax = self.data[keys[0]]['wb'].plot_wishbone_on_tsne(other_data=self.data[keys[1]]['wb'] if len(keys) > 1 else None)
+            for i in range(len(keys)):
+                    plt.figtext(0.05, 0.75 - (0.5*i), keys[i], rotation='vertical')
+            self.canvas = FigureCanvasTkAgg(self.fig, self)
+            self.canvas.show()
+            self.canvas.get_tk_widget().grid(column=1, row=1, rowspan=10, columnspan=4)
+            self.currentPlot = 'wishbone_on_tsne'
+
+    def plotWBMarkerTrajectory(self):
+        self.getGeneSelection()
+        if len(self.selectedGenes) < 1:
+            print('Error: must select at least one gene')
+
+        else:
+            self.saveButton.config(state='normal')
+            if self.scseq == True:
+                self.component_menu.config(state='disabled')
+                self.updateButton.config(state='disabled')
+                self.visMenu.entryconfig(6, state='disabled')
+            else:
+                self.visMenu.entryconfig(4, state='disabled')
+
+            self.resetCanvas()
+            keys = [key for key in self.data if self.data[key]['state'].get() == True]
+
+            self.fig = plt.figure(figsize=[14, 4 * len(keys)])
+            gs = gridspec.GridSpec(len(keys), 1)
+
+            for i in range(len(keys)):
+                self.ax = self.fig.add_subplot(gs[i, 0])
+                self.data[keys[i]]['wb'].plot_marker_trajectory(self.selectedGenes, fig=self.fig, ax=self.ax)
+                self.ax.set_title(keys[i])
+
+            self.fig.set_size_inches(10, 6, forward=True)
             self.fig.tight_layout()
             self.fig.subplots_adjust(right=0.8)
+                
             self.canvas = FigureCanvasTkAgg(self.fig, self)
             self.canvas.show()
             self.canvas.get_tk_widget().grid(column=1, row=1, rowspan=10, columnspan=5, sticky='W')
@@ -656,33 +753,44 @@ class wishbone_gui(tk.Tk):
             #enable buttons
             self.wishboneMenu.entryconfig(2, state='normal')
 
-    #TODO - multiple data sets
     def plotWBHeatMap(self):
-        self.getGeneSelection()
-        if len(self.selectedGenes) < 1:
-            print('Error: must select at least one gene')
+        keys = [key for key in self.data if self.data[key]['state'].get() == True]
+        if len(keys) > 2:
+            self.WBError = tk.Toplevel()
+            self.WBError.title("Error -- too many datasets selected")
+            tk.Label(self.WBError,text=u"Please select up to two datasets to plot expression heatmaps",fg="black",bg="white").grid(column=0, row=0)
+            tk.Button(self.WBError, text="Ok", command=self.WBError.destroy).grid(column=0, row=1)
+            self.wait_window(self.WBError)
 
         else:
-            self.saveButton.config(state='normal')
-            self.setGateButton.config(state='disabled')
-            if self.scdata.data_type == 'sc-seq':
-                self.component_menu.config(state='disabled')
-                self.updateButton.config(state='disabled')
-                self.visMenu.entryconfig(6, state='disabled')
+            self.getGeneSelection()
+            if len(self.selectedGenes) < 1:
+                print('Error: must select at least one gene')
             else:
-                self.visMenu.entryconfig(4, state='disabled')
+                self.saveButton.config(state='normal')
+                if self.scseq == True:
+                    self.component_menu.config(state='disabled')
+                    self.updateButton.config(state='disabled')
+                    self.visMenu.entryconfig(6, state='disabled')
+                else:
+                    self.visMenu.entryconfig(4, state='disabled')
 
-            self.resetCanvas()
-            self.vals, self.fig, self.ax = self.wb.plot_marker_trajectory(self.selectedGenes)
-            self.fig, self.ax = self.wb.plot_marker_heatmap(self.vals)
-            self.fig.set_size_inches(10, 4, forward=True)
-            self.fig.tight_layout()
-            self.canvas = FigureCanvasTkAgg(self.fig, self)
-            self.canvas.show()
-            self.canvas.get_tk_widget().grid(column=1, row=1, rowspan=10, columnspan=5, sticky='W')
-            self.currentPlot = 'wishbone_marker_heatmap'
+                self.resetCanvas()
 
-    #TODO - multiple data sets
+                vals1, tmp1, tmp2 = self.data[keys[0]]['wb'].plot_marker_trajectory(self.selectedGenes)
+                if len(keys) == 2:
+                    vals2, tmp1, tmp2 = self.data[keys[1]]['wb'].plot_marker_trajectory(self.selectedGenes)
+                self.fig, self.ax = self.data[keys[0]]['wb'].plot_marker_heatmap(vals1, other_data=[self.data[keys[1]]['wb'], vals2])
+                self.fig.set_size_inches(10, 4, forward=True)
+                self.fig.tight_layout()
+                for i in range(len(keys)):
+                    plt.figtext(0.01, 0.75 - (0.5*i), keys[i], rotation='vertical')
+
+                self.canvas = FigureCanvasTkAgg(self.fig, self)
+                self.canvas.show()
+                self.canvas.get_tk_widget().grid(column=1, row=1, rowspan=10, columnspan=5)
+                self.currentPlot = 'wishbone_marker_heatmap'
+
     def scatterGeneExp(self):
         self.getGeneSelection()
         if len(self.selectedGenes) < 1:
@@ -691,8 +799,7 @@ class wishbone_gui(tk.Tk):
             print('Error: too many genes selected. Must select either 2 or 3 genes to scatter')
         else:
             self.saveButton.config(state='normal')
-            self.setGateButton.config(state='disabled')
-            if self.scdata.data_type == 'sc-seq':
+            if self.scseq == True:
                 self.component_menu.config(state='disabled')
                 self.updateButton.config(state='disabled')
                 self.visMenu.entryconfig(6, state='disabled')
@@ -700,44 +807,74 @@ class wishbone_gui(tk.Tk):
                 self.visMenu.entryconfig(4, state='disabled')
 
             self.resetCanvas()
-            self.fig, self.ax = self.scdata.scatter_gene_expression(self.selectedGenes)
+            keys = [key for key in self.data if self.data[key]['state'].get() == True]
+            if len(keys) > 1:
+                self.fig = plt.figure(figsize=[8, 4 * int(np.ceil(len(keys)/2))])
+                gs = gridspec.GridSpec(int(np.ceil(len(keys)/2)), 2)
+                for i in range(len(keys)):
+                    if len(self.selectedGenes) == 3:
+                        self.ax = self.fig.add_subplot(gs[int(i/2), i%2], projection='3d')
+                    else:
+                        self.ax = self.fig.add_subplot(gs[int(i/2), i%2])
+                    self.data[keys[i]]['scdata'].scatter_gene_expression(self.selectedGenes, fig=self.fig, ax=self.ax)
+                    self.ax.set_title(keys[i])
+                gs.tight_layout(self.fig)
+
+            else:
+                self.fig, self.ax = self.scdata.scatter_gene_expression(self.selectedGenes)
+
             self.canvas = FigureCanvasTkAgg(self.fig, self)
             self.canvas.show()
-            self.canvas.get_tk_widget().grid(column=1, row=1, rowspan=10, columnspan=4,sticky='W')
+            self.canvas.get_tk_widget().grid(column=1, row=1, rowspan=10, columnspan=4)
             self.currentPlot = '_'.join(self.selectedGenes) + '_scatter'
 
-    #TODO - multiple data sets
     def plotGeneExpOntSNE(self):
-        self.getGeneSelection()
-        if len(self.selectedGenes) < 1:
-            print('Error: must select at least one gene')
+        keys = [key for key in self.data if self.data[key]['state'].get() == True]
 
-        else:
-            self.saveButton.config(state='normal')
-            self.setGateButton.config(state='disabled')
-            if self.scdata.data_type == 'sc-seq':
-                self.component_menu.config(state='disabled')
-                self.updateButton.config(state='disabled')
-                self.visMenu.entryconfig(6, state='disabled')
+        if len(keys) > 2:
+            self.GEError = tk.Toplevel()
+            self.GEError.title("Error -- too many datasets selected")
+            tk.Label(self.GEError,text=u"Please select up to two datasets to plot gene expression on tSNE",fg="black",bg="white").grid(column=0, row=0)
+            tk.Button(self.GEError, text="Ok", command=self.GEError.destroy).grid(column=0, row=1)
+            self.wait_window(self.GEError)
+
+        else:  
+            self.getGeneSelection()
+            if len(self.selectedGenes) < 1:
+                print('Error: must select at least one gene')
+
             else:
-                self.visMenu.entryconfig(4, state='disabled')
+                self.saveButton.config(state='normal')
+                if self.scseq == True:
+                    self.component_menu.config(state='disabled')
+                    self.updateButton.config(state='disabled')
+                    self.visMenu.entryconfig(6, state='disabled')
+                else:
+                    self.visMenu.entryconfig(4, state='disabled')
 
-            self.resetCanvas()
-            self.fig, self.ax = self.scdata.plot_gene_expression(self.selectedGenes)
-            self.canvas = FigureCanvasTkAgg(self.fig, self)
-            self.canvas.show()
-            self.canvas.get_tk_widget().grid(column=1, row=1, rowspan=10, columnspan=4,sticky='W')
-            self.currentPlot = '_'.join(self.selectedGenes) + '_tsne'
-            self.geometry('950x550')
+                self.resetCanvas()
+                self.fig, self.ax = self.data[keys[0]]['scdata'].plot_gene_expression(self.selectedGenes, other_data=self.data[keys[1]]['scdata'] if len(keys) > 1 else None)
+                for i in range(len(keys)):
+                    plt.figtext(0.01, 0.75 - (0.5*i), keys[i], rotation='vertical')
+                self.canvas = FigureCanvasTkAgg(self.fig, self)
+                self.canvas.show()
+                self.canvas.get_tk_widget().grid(column=1, row=1, rowspan=10, columnspan=4)
+                self.currentPlot = '_'.join(self.selectedGenes) + '_tsne'
+                self.geometry('950x550')
 
-    #TODO - multiple data sets
     def getGeneSelection(self):
         #popup menu to get selected genes
         self.geneSelection = tk.Toplevel()
         self.geneSelection.title("Select Genes")
         tk.Label(self.geneSelection,text=u"Genes:",fg="black",bg="white").grid(row=0)
 
-        self.geneInput = wishbone.autocomplete_entry.AutocompleteEntry(self.genes.tolist(), self.geneSelection, listboxLength=6)
+        keys = [key for key in self.data if self.data[key]['state'].get() == True]
+        if len(keys) > 1:
+            genes = reduce(np.intersect1d, tuple([self.data[key]['genes'] for key in keys])).tolist()
+        else:
+            genes = self.data[keys[0]]['genes'].tolist()
+
+        self.geneInput = wishbone.autocomplete_entry.AutocompleteEntry(genes, self.geneSelection, listboxLength=6)
         self.geneInput.grid(row=1)
         self.geneInput.bind('<Return>', self.AddToSelected)
 
@@ -772,14 +909,17 @@ class wishbone_gui(tk.Tk):
         if self.plotFileName != None:
             self.fig.savefig(self.plotFileName)
 
-    #TODO - multiple data sets
     def setGate(self):
+        keys = [key for key in self.data if self.data[key]['state'].get() == True]
+        if len(keys) > 1:
+            raise RuntimeError("Can only select a gate when one data set is plotted.")
+        self.curKey = keys[0]
         #pop up for gate name
         self.gateOptions = tk.Toplevel()
-        self.gateOptions.title("Create gate for start cells")
+        self.gateOptions.title(key + ": Create gate for start cells")
         tk.Label(self.gateOptions,text=u"Gate name:" ,fg="black",bg="white").grid(column=0, row=0)
         self.gateName = tk.StringVar()
-        self.gateName.set('Gate ' + str(len(self.gates) + 1))
+        self.gateName.set('Gate ' + str(len(self.data[self.curKey]['gates']) + 1))
         tk.Entry(self.gateOptions, textvariable=self.gateName).grid(column=1,row=0)
         tk.Button(self.gateOptions, text="Select gate", command=self._setGate).grid(column=1, row=1)
         tk.Button(self.gateOptions, text="Cancel", command=self.gateOptions.destroy).grid(column=0, row=1)
@@ -817,17 +957,23 @@ class wishbone_gui(tk.Tk):
                      [start_x + width, start_y + height], 
                      [start_x, start_y + height],
                      [start_x, start_y]])
-        gated_cells = self.scdata.tsne.index[gate.contains_points(self.scdata.tsne)]
-        self.gates[self.gateName.get()] = gated_cells
+        gated_cells = self.data[self.curKey]['scdata'].tsne.index[gate.contains_points(self.data[self.curKey]['scdata'].tsne)]
+        self.data[self.curKey]['gates'][self.gateName.get()] = gated_cells
 
         #replot tSNE w gate colored
         self.fig.clf()
-        plt.scatter(self.scdata.tsne['x'], self.scdata.tsne['y'], s=10, edgecolors='none', color='lightgrey')
-        plt.scatter(self.scdata.tsne.ix[gated_cells, 'x'], self.scdata.tsne.ix[gated_cells, 'y'], s=10, edgecolors='none')
+        plt.scatter(self.data[self.curKey]['scdata'].tsne['x'], 
+                    self.data[self.curKey]['scdata'].tsne['y'], 
+                    s=10, edgecolors='none', color='lightgrey')
+        plt.scatter(self.data[self.curKey]['scdata'].tsne.ix[gated_cells, 'x'], 
+                    self.data[self.curKey]['scdata'].tsne.ix[gated_cells, 'y'], 
+                    s=10, edgecolors='none')
         self.canvas.draw()
 
-        self.setGateButton.config(state='disabled')
-        self.visMenu.entryconfig(6, state='disabled')
+        if self.scseq == True:
+            self.visMenu.entryconfig(6, state='disabled')
+        else:
+            self.visMenu.entryconfig(4, state='disabled')
 
     def resetCanvas(self):
         self.fig.clf()
@@ -855,7 +1001,11 @@ def launch():
         app.focus_force()
 
     app.title('Wishbone')
-    app.mainloop()
+    # app.mainloop()
+    try:
+        app.mainloop()
+    except UnicodeDecodeError:
+        pass
 
 if __name__ == "__main__":
     launch()
