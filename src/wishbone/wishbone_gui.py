@@ -65,6 +65,7 @@ class wishbone_gui(tk.Tk):
         self.visMenu.add_cascade(label="Gene expression", menu=self.geneExpMenu)
         self.geneExpMenu.add_command(label="Scatter plot", state='disabled', command=self.scatterGeneExp)
         self.geneExpMenu.add_command(label="On tSNE", state='disabled', command=self.plotGeneExpOntSNE)
+        self.geneExpMenu.add_command(label="Compare data sets", state='disabled', command=self.scatterGeneExpAgainstOther)
         self.visMenu.add_command(label="Set gate", state='disabled', command=self.setGate)
         
         self.config(menu=self.menubar)
@@ -243,6 +244,7 @@ class wishbone_gui(tk.Tk):
         self.concatButton.grid(column=0, row=10)
         if len(self.data) > 1:
             self.concatButton.config(state='normal')
+            self.geneExpMenu.entryconfig(2, state='normal')
 
         if wb:
                 if isinstance(wb.trajectory, pd.Series):
@@ -861,6 +863,42 @@ class wishbone_gui(tk.Tk):
                 self.canvas.get_tk_widget().grid(column=1, row=1, rowspan=10, columnspan=4)
                 self.currentPlot = '_'.join(self.selectedGenes) + '_tsne'
                 self.geometry('950x550')
+
+    def scatterGeneExpAgainstOther(self):
+        keys = [key for key in self.data if self.data[key]['state'].get() == True]
+
+        if len(keys) != 2:
+            self.GEError = tk.Toplevel()
+            self.GEError.title("Error -- must select two datasets")
+            tk.Label(self.GEError,text=u"Please select exactly two datasets to compare gene expression",fg="black",bg="white").grid(column=0, row=0)
+            tk.Button(self.GEError, text="Ok", command=self.GEError.destroy).grid(column=0, row=1)
+            self.wait_window(self.GEError)    
+
+        else:  
+            self.getGeneSelection()
+            if len(self.selectedGenes) < 1:
+                print('Error: must select at least one gene')
+
+            else:
+                self.saveButton.config(state='normal')
+                if self.scseq == True:
+                    self.component_menu.config(state='disabled')
+                    self.updateButton.config(state='disabled')
+                    self.visMenu.entryconfig(6, state='disabled')
+                else:
+                    self.visMenu.entryconfig(4, state='disabled')
+
+                self.resetCanvas()
+                self.fig, self.axes = self.data[keys[0]]['scdata'].scatter_gene_expression_against_other_data(self.selectedGenes, 
+                                                                                       other_data=self.data[keys[1]]['scdata'])
+                for ax in self.axes:
+                    ax.set_xlabel(keys[0])
+                    ax.set_ylabel(keys[1])
+
+                self.canvas = FigureCanvasTkAgg(self.fig, self)
+                self.canvas.show()
+                self.canvas.get_tk_widget().grid(column=1, row=1, rowspan=10, columnspan=4)
+                self.currentPlot = '_'.join(self.selectedGenes) + '_compare_gene_exp'
 
     def getGeneSelection(self):
         #popup menu to get selected genes

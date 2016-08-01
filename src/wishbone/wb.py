@@ -1057,6 +1057,41 @@ class SCData:
         return fig, ax
 
 
+    def scatter_gene_expression_against_other_data(self, genes, other_data, fig=None, ax=None):
+
+        not_in_dataframe = set(genes).difference(self.data.columns)
+        if not_in_dataframe:
+            if len(not_in_dataframe) < len(genes):
+                print('The following genes were either not observed in the experiment, '
+                      'or the wrong gene symbol was used: {!r}'.format(not_in_dataframe))
+            else:
+                print('None of the listed genes were observed in the experiment, or the '
+                      'wrong symbols were used.')
+                return
+
+        # remove genes missing from experiment
+        genes = list(set(genes).difference(not_in_dataframe))
+
+        height = int(4 * np.ceil(len(genes) / 3))
+        width = 12 if len(genes) >= 3 else 4*len(genes)
+        n_rows = int(height / 4)
+        n_cols = int(width / 4)
+        fig = plt.figure(figsize=[width, height])
+        gs = plt.GridSpec(n_rows, n_cols)
+
+        axes = []
+        for i, g in enumerate(genes):
+            ax = plt.subplot(gs[i // n_cols, i % n_cols])
+            axes.append(ax)
+            plt.scatter(self.data[g], other_data.data[g], s=size, color=qualitative_colors(2)[1])             
+            ax.set_title(g)
+            ax.xaxis.set_major_locator(plt.NullLocator())
+            ax.yaxis.set_major_locator(plt.NullLocator())
+        gs.tight_layout(fig, pad=3, h_pad=3, w_pad=3)
+
+        return fig, axes
+
+
     def run_magic(self, n_pca_components=None, t=8, knn=20, epsilon=0, rescale=True):
 
         if self.data_type == 'sc-seq':
