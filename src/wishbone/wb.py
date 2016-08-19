@@ -26,6 +26,7 @@ with warnings.catch_warnings():
     import seaborn as sns
 
 from tsne import bh_sne
+from sklearn.manifold import TSNE
 from scipy.sparse import csr_matrix, find, vstack, hstack
 from scipy.sparse.linalg import eigs
 from numpy.linalg import norm
@@ -109,7 +110,7 @@ class SCData:
         self._library_sizes = None
 
 
-    def save(self, fout: str):# -> None:
+    def save(self, fout: str):  # -> None:
         """
         :param fout: str, name of archive to store pickled SCData data in. Should end
           in '.p'.
@@ -302,26 +303,10 @@ class SCData:
 
 
     @classmethod
-    def from_mtx(cls, mtx_file, gene_name_file, filter_cell_min=0, filter_cell_max=0, filter_gene_nonzero=None, filter_gene_mols=None, normalize=True):
+    def from_mtx(cls, mtx_file, gene_name_file):
 
         #Read in mtx file
         count_matrix = mmread(mtx_file)
-
-        if filter_cell_min != filter_cell_max:
-            sums = count_matrix.sum(axis=1)
-            to_keep = np.intersect1d(np.where(sums >= filter_cell_min)[0], 
-                                     np.where(sums <= filter_cell_max)[0])
-            count_matrix = vstack([count_matrix.getrow(i) for i in to_keep])
-
-        if filter_gene_nonzero != None:
-            nonzero = count_matrix.getnnz(axis=0)
-            to_keep = np.where(nonzero >= filter_gene_nonzero)[0]
-            count_matrix = hstack([count_matrix.getcol(i) for i in to_keep])
-
-        if filter_gene_mols != None:
-            sums = count_matrix.sum(axis=0)
-            to_keep = np.where(sums >= filter_gene_mols)[0]
-            count_matrix = hstack([count_matrix.getcol(i) for i in to_keep])
 
         gene_names = np.loadtxt(gene_name_file, dtype=np.dtype('S'))
         gene_names = np.array([gene.decode('utf-8') for gene in gene_names])
@@ -331,9 +316,28 @@ class SCData:
         # Construct class object
         scdata = cls( df, data_type='sc-seq' )
 
-        # Normalize if specified
-        if normalize == True:
-            scdata = scdata.normalize_scseq_data( )
+        return scdata
+
+
+    def filter_scseq_data(self, filter_cell_min=0, filter_cell_max=0, filter_gene_nonzero=None, filter_gene_mols=None):
+
+        scdata = SCData(data=self.data, metadata=self.metadata)
+
+        if filter_cell_min != filter_cell_max:
+            sums = scdata.data.sum(axis=1)
+            to_keep = np.intersect1d(np.where(sums >= filter_cell_min)[0], 
+                                     np.where(sums <= filter_cell_max)[0])
+            scdata.data = scdata.data.ix[scdata.data.index[to_keep], :].astype(np.float32)
+
+        if filter_gene_nonzero != None:
+            nonzero = scdata.data.astype(bool).sum(axis=0)
+            to_keep = np.where(nonzero >= filter_gene_nonzero)[0]
+            scdata.data = scdata.data.ix[:, to_keep].astype(np.float32)
+
+        if filter_gene_mols != None:
+            sums = scdata.data.sum(axis=0)
+            to_keep = np.where(sums >= filter_gene_mols)[0]
+            scdata.data = scdata.data.ix[:, to_keep].astype(np.float32)
 
         return scdata
 
@@ -360,6 +364,32 @@ class SCData:
         scdata._library_sizes = molecule_counts
 
         return scdata
+
+
+    def plot_molecules_per_cell_and_gene(self, fig=None, ax=None):
+
+        height = 4
+        width = 12
+        fig = plt.figure(figsize=[width, height])
+        gs = plt.GridSpec(1, 3)
+
+        for i in range(3):
+            ax = plt.subplot(gs[0, i])
+
+            if i == 0:
+                n, bins, patches = ax.hist(self.data.sum(axis=1))
+                plt.xlabel('Molecules per cell')
+            elif i == 1:
+                n, bins, patches = ax.hist(self.data.astype(bool).sum(axis=0))
+                plt.xlabel('Nonzero cells per gene')
+            else:
+                n, bins, patches = ax.hist(self.data.sum(axis=0))
+                plt.xlabel('Molecules per gene')
+            plt.xscale('log')
+            plt.ylabel('Frequency')
+            ax.tick_params(axis='x', labelsize=8)
+
+        return fig, ax
 
 
     def run_pca(self, n_components=100):
@@ -443,7 +473,7 @@ class SCData:
         data = deepcopy(self.data)
         if self.data_type == 'sc-seq':
             if self.pca is None:
-                raise RuntimeError('Please run PCA using run_pca before running tSNE for single cell RNA-seq')
+                self.run_pca()
             data -= np.min(np.ravel(data))
             data /= np.max(np.ravel(data))
             data = pd.DataFrame(np.dot(data, self.pca['loadings'].iloc[:, 0:n_components]),
@@ -453,11 +483,11 @@ class SCData:
         perplexity_limit = 15
         if data.shape[0] < 100 and perplexity > perplexity_limit:
             print('Reducing perplexity to %d since there are <100 cells in the dataset. ' % perplexity_limit)
-            perplexity = perplexity_limit
-        self.tsne = pd.DataFrame(bh_sne(data, perplexity=perplexity),
-                                 index=self.data.index, columns=['x', 'y'])
+        tsne = TSNE(n_components=2, init='random', random_state=sum(data.shape)) 
+		self.tsne = pd.DataFrame(tsne.fit_transform(data), perplexity=perplexity                       
+								 index=self.data.index, columns=['x', 'y'])
 
-    def plot_tsne(self, fig=None, ax=None, color=None, title='tSNE projection'):
+    def plot_tsne(self, fig=None, ax=None, density=False, color=None, title='tSNE projection'):
         """Plot tSNE projections of the data
         :param fig: matplotlib Figure object
         :param ax: matplotlib Axis object
@@ -469,6 +499,16 @@ class SCData:
         if isinstance(color, pd.Series):
             plt.scatter(self.tsne['x'], self.tsne['y'], s=size, 
                         c=color.values, cmap=cmap, edgecolors='none')
+        elif density == True:
+            # Calculate the point density
+            xy = np.vstack([self.tsne['x'], self.tsne['y']])
+            z = gaussian_kde(xy)(xy)
+
+            # Sort the points by density, so that the densest points are plotted last
+            idx = z.argsort()
+            x, y, z = self.tsne['x'][idx], self.tsne['y'][idx], z[idx]
+
+            plt.scatter(x, y, s=size, c=z, cmap=cmap, edgecolors='none')
         else:
             plt.scatter(self.tsne['x'], self.tsne['y'], s=size, 
                         color=qualitative_colors(2)[1])
@@ -952,19 +992,19 @@ class SCData:
         """ Plot gene expression on tSNE maps
         :param genes: Iterable of strings to plot on tSNE        
         """
+        if not isinstance(genes[0], pd.Series):
+            not_in_dataframe = set(genes).difference(self.data.columns)
+            if not_in_dataframe:
+                if len(not_in_dataframe) < len(genes):
+                    print('The following genes were either not observed in the experiment, '
+                          'or the wrong gene symbol was used: {!r}'.format(not_in_dataframe))
+                else:
+                    print('None of the listed genes were observed in the experiment, or the '
+                          'wrong symbols were used.')
+                    return
 
-        not_in_dataframe = set(genes).difference(self.data.columns)
-        if not_in_dataframe:
-            if len(not_in_dataframe) < len(genes):
-                print('The following genes were either not observed in the experiment, '
-                      'or the wrong gene symbol was used: {!r}'.format(not_in_dataframe))
-            else:
-                print('None of the listed genes were observed in the experiment, or the '
-                      'wrong symbols were used.')
-                return
-
-        # remove genes missing from experiment
-        genes = set(genes).difference(not_in_dataframe)
+            # remove genes missing from experiment
+            genes = set(genes).difference(not_in_dataframe)
 
         height = int(2 * np.ceil(len(genes) / 5))
         width = 10 if len(genes) >= 5 else 2*len(genes)
@@ -982,12 +1022,20 @@ class SCData:
             ax = plt.subplot(gs[i // n_cols, i % n_cols])
             axes.append(ax)
             if self.data_type == 'sc-seq':
-                plt.scatter(self.tsne['x'], self.tsne['y'], c=np.arcsinh(self.data[g]),
+                if isinstance(g, pd.Series):
+                    color = np.arcsinh(g)
+                else:
+                    color = np.arcsinh(self.data[g])
+                plt.scatter(self.tsne['x'], self.tsne['y'], c=color,
                             cmap=cmap, edgecolors='none', s=size)
             else:
-                plt.scatter(self.tsne['x'], self.tsne['y'], c=self.data[g],
+                if isinstance(g, pd.Series):
+                    color = g
+                else:
+                    color = self.data[g]
+                plt.scatter(self.tsne['x'], self.tsne['y'], c=color,
                             cmap=cmap, edgecolors='none', s=size)                
-            ax.set_title(g)
+            ax.set_title(g.name if isinstance(g, pd.Series) else g)
             ax.xaxis.set_major_locator(plt.NullLocator())
             ax.yaxis.set_major_locator(plt.NullLocator())
 
@@ -996,20 +1044,28 @@ class SCData:
                 ax = plt.subplot(gs[(n_rows*n_cols +i) // n_cols, (n_rows*n_cols +i) % n_cols])
                 axes.append(ax)
                 if other_data.data_type == 'sc-seq':
-                    plt.scatter(other_data.tsne['x'], other_data.tsne['y'], c=np.arcsinh(other_data.data[g]),
+                    if isinstance(g, pd.Series):
+                        color = np.arcsinh(g)
+                    else:
+                        color = np.arcsinh(other_data.data[g])
+                    plt.scatter(other_data.tsne['x'], other_data.tsne['y'], c=color,
                                 cmap=cmap, edgecolors='none', s=size)
                 else:
-                    plt.scatter(other_data.tsne['x'], other_data.tsne['y'], c=other_data.data[g],
+                    if isinstance(g, pd.Series):
+                        color = g
+                    else:
+                        color = other_data.data[g]
+                    plt.scatter(other_data.tsne['x'], other_data.tsne['y'], c=color,
                                 cmap=cmap, edgecolors='none', s=size)                
                 ax.set_title(g)
                 ax.xaxis.set_major_locator(plt.NullLocator())
                 ax.yaxis.set_major_locator(plt.NullLocator())
-        gs.tight_layout(fig)
+        # gs.tight_layout(fig)
 
         return fig, axes
 
 
-    def scatter_gene_expression(self, genes, fig=None, ax=None):
+    def scatter_gene_expression(self, genes, density=False, colorby=None, fig=None, ax=None):
         """ 2D or 3D scatter plot of expression of selected genes
         :param genes: Iterable of strings to scatter
         """
@@ -1036,17 +1092,49 @@ class SCData:
 
         fig, ax = get_fig(fig=fig, ax=ax)
         if len(genes) == 2:
-            plt.scatter(self.data[genes[0]], self.data[genes[1]],
-                        s=size, color=qualitative_colors(2)[1])
+            if density == True:
+                # Calculate the point density
+                xy = np.vstack([self.data[genes[0]], self.data[genes[1]]])
+                z = gaussian_kde(xy)(xy)
+
+                # Sort the points by density, so that the densest points are plotted last
+                idx = z.argsort()
+                x, y, z = self.data[genes[0]][idx], self.data[genes[1]][idx], z[idx]
+
+                plt.scatter(x, y, s=size, c=z, cmap=cmap)
+
+            elif isinstance(colorby, pd.Series):
+                plt.scatter(self.data[genes[0]], self.data[genes[1]],
+                            s=size, c=colorby, cmap=cmap)
+
+            else:
+                plt.scatter(self.data[genes[0]], self.data[genes[1]],
+                            s=size, color=qualitative_colors(2)[1])
             ax.xaxis.set_major_locator(plt.NullLocator())
             ax.yaxis.set_major_locator(plt.NullLocator())
             ax.set_xlabel(genes[0])
             ax.set_ylabel(genes[1])
+
         else:
             if not gui_3d_flag:
                 ax = fig.add_subplot(111, projection='3d')
-            ax.scatter(self.data[genes[0]], self.data[genes[1]], self.data[genes[2]],
-                        s=size, color=qualitative_colors(2)[1])
+
+            if density == True:
+                xyz = np.vstack([self.data[genes[0]],self.data[genes[1]],self.data[genes[2]]])
+                kde = gaussian_kde(xyz)
+                density = kde(xyz)
+
+                ax.scatter(self.data[genes[0]], self.data[genes[1]], self.data[genes[2]],
+                           s=size, c=density, cmap=cmap)
+
+            elif isinstance(colorby, pd.Series):
+                ax.scatter(self.data[genes[0]], self.data[genes[1]], self.data[genes[2]],
+                           s=size, c=colorby, cmap=cmap)
+
+
+            else:
+                ax.scatter(self.data[genes[0]], self.data[genes[1]], self.data[genes[2]],
+                            s=size, color=qualitative_colors(2)[1])
             ax.xaxis.set_major_locator(plt.NullLocator())
             ax.yaxis.set_major_locator(plt.NullLocator())
             ax.zaxis.set_major_locator(plt.NullLocator())
@@ -1057,7 +1145,7 @@ class SCData:
         return fig, ax
 
 
-    def scatter_gene_expression_against_other_data(self, genes, other_data, fig=None, ax=None):
+    def scatter_gene_expression_against_other_data(self, genes, other_data, density=False, colorby=None, fig=None, ax=None):
 
         not_in_dataframe = set(genes).difference(self.data.columns)
         if not_in_dataframe:
@@ -1083,7 +1171,20 @@ class SCData:
         for i, g in enumerate(genes):
             ax = plt.subplot(gs[i // n_cols, i % n_cols])
             axes.append(ax)
-            plt.scatter(self.data[g], other_data.data[g], s=size, color=qualitative_colors(2)[1])             
+            if density == True:
+                # Calculate the point density
+                xy = np.vstack([self.data[g], other_data.data[g]])
+                z = gaussian_kde(xy)(xy)
+
+                # Sort the points by density, so that the densest points are plotted last
+                idx = z.argsort()
+                x, y, z = self.data[g][idx], other_data.data[g][idx], z[idx]
+
+                plt.scatter(x, y, s=size, c=z, cmap=cmap)
+            elif isinstance(colorby, pd.Series):
+                plt.scatter(self.data[g], other_data.data[g], s=size, c=colorby, cmap=cmap) 
+            else:
+                plt.scatter(self.data[g], other_data.data[g], s=size, color=qualitative_colors(2)[1])             
             ax.set_title(g)
             ax.xaxis.set_major_locator(plt.NullLocator())
             ax.yaxis.set_major_locator(plt.NullLocator())

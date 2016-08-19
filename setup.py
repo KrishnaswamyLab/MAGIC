@@ -24,14 +24,14 @@ setup(name='wishbone',
           'numpy>=1.10.0',
           'pandas>=0.18.0',
           'scipy>=0.14.0',
-          'tsne==0.1.3',
+          'tsne',
           'matplotlib',
           'seaborn',
           'sklearn',
           'networkx',
           'fcsparser',
           'statsmodels'],
-      scripts=['src/wishbone/wishbone_gui.py'],
+      scripts=['src/wishbone/magic_gui.py'],
       )
 
 
