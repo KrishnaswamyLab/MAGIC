@@ -353,8 +353,8 @@ class wishbone_gui(tk.Tk):
             name = self.data_list.item(key)['text']
             self.data[name]['scdata'].run_diffusion_map()
 
-            self.data[name]['scdata'].diffusion_eigenvectors.columns = [str(i) for i in self.data[name]['scdata'].diffusion_eigenvectors.columns.values]
             scdata = wishbone.wb.SCData(self.data[name]['scdata'].diffusion_eigenvectors)
+            scdata.data.columns = [str(i) for i in scdata.data.columns.values]
             self.data[name + ' DM'] = {'scdata' : scdata, 'wb' : None, 'state' : tk.BooleanVar(), 'gates' : {},
                                        'genes' : scdata.data.columns.values}
         

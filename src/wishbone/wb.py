@@ -483,8 +483,8 @@ class SCData:
         perplexity_limit = 15
         if data.shape[0] < 100 and perplexity > perplexity_limit:
             print('Reducing perplexity to %d since there are <100 cells in the dataset. ' % perplexity_limit)
-        tsne = TSNE(n_components=2, init='random', random_state=sum(data.shape)) 
-		self.tsne = pd.DataFrame(tsne.fit_transform(data), perplexity=perplexity                       
+        tsne = TSNE(n_components=2, perplexity=perplexity, init='random', random_state=sum(data.shape)) 
+        self.tsne = pd.DataFrame(tsne.fit_transform(data),                       
 								 index=self.data.index, columns=['x', 'y'])
 
     def plot_tsne(self, fig=None, ax=None, density=False, color=None, title='tSNE projection'):
