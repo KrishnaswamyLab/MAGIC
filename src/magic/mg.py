@@ -27,13 +27,17 @@ with warnings.catch_warnings():
 
 from tsne import bh_sne
 from sklearn.manifold import TSNE
-from scipy.sparse import csr_matrix, find, vstack, hstack
+from sklearn.manifold.t_sne import _joint_probabilities, _joint_probabilities_nn
+from sklearn.metrics.pairwise import pairwise_distances
+from sklearn.neighbors import NearestNeighbors
+from scipy.spatial.distance import squareform
+from scipy.sparse import csr_matrix, find, vstack, hstack, issparse
 from scipy.sparse.linalg import eigs
 from numpy.linalg import norm
 from scipy.stats import gaussian_kde
 from scipy.io import mmread
 from numpy.core.umath_tests import inner1d
-from sklearn.neighbors import NearestNeighbors
+
 import fcsparser
 import phenograph
 
@@ -80,7 +84,8 @@ def density_2d(x, y):
 def impute_fast(data, L, t, rescale_to_max, L_t=None, tprev=None):
 
     #convert L to full matrix
-    L = L.todense()
+    if issparse(L):
+        L = L.todense()
 
     #L^t
     print('MAGIC: L_t = L^t')
@@ -90,7 +95,7 @@ def impute_fast(data, L, t, rescale_to_max, L_t=None, tprev=None):
         L_t = np.dot(L_t, np.linalg.matrix_power(L, t-tprev))
 
     print('MAGIC: data_new = L_t * data')
-    data_new = np.array(np.dot(data, L_t))
+    data_new = np.array(np.dot(L_t, data))
 
     #rescale data to 99th percentile
     if rescale_to_max == True:
@@ -155,7 +160,7 @@ class SCData:
           in '.p'.
         :return: None
         """
-        wb = magic.magic.Wishbone(self, True)
+        wb = magic.mg.Wishbone(self, True)
         wb.save(fout)
 
 
@@ -412,18 +417,23 @@ class SCData:
         width = 12
         fig = plt.figure(figsize=[width, height])
         gs = plt.GridSpec(1, 3)
-
+        colsum = self.data.sum(axis=0)
+        rowsum = self.data.sum(axis=1)
         for i in range(3):
             ax = plt.subplot(gs[0, i])
 
             if i == 0:
-                n, bins, patches = ax.hist(self.data.sum(axis=1))
+                n, bins, patches = ax.hist(rowsum, 
+                                   bins=np.arange(np.min(rowsum), np.max(rowsum), (np.max(rowsum)-np.min(rowsum))/20))
                 plt.xlabel('Molecules per cell')
             elif i == 1:
-                n, bins, patches = ax.hist(self.data.astype(bool).sum(axis=0))
+                temp = self.data.astype(bool).sum(axis=0)
+                n, bins, patches = ax.hist(temp,
+                                   bins=np.arange(np.min(temp), np.max(temp), (np.max(temp)-np.min(temp))/20))
                 plt.xlabel('Nonzero cells per gene')
             else:
-                n, bins, patches = ax.hist(self.data.sum(axis=0))
+                n, bins, patches = ax.hist(colsum,
+                                   bins=np.arange(np.min(colsum), np.max(colsum), (np.max(colsum)-np.min(colsum))/20))
                 plt.xlabel('Molecules per gene')
             plt.xscale('log')
             plt.ylabel('Frequency')
@@ -549,8 +559,8 @@ class SCData:
 
             plt.scatter(x, y, s=size, c=z, cmap=cmap, edgecolors='none')
         else:
-            plt.scatter(self.tsne['x'], self.tsne['y'], s=size, 
-                        color=qualitative_colors(2)[1])
+            plt.scatter(self.tsne['x'], self.tsne['y'], s=size, edgecolors='none'
+                        color=qualitative_colors(2)[1] if color == None else color)
         ax.set_title(title)
         return fig, ax
 
@@ -574,7 +584,7 @@ class SCData:
             sizes = self.library_sizes
         else:
             sizes = self.data.sum(axis=1)
-        plt.scatter(self.tsne['x'], self.tsne['y'], s=size, c=sizes, cmap=cmap)
+        plt.scatter(self.tsne['x'], self.tsne['y'], s=size, c=sizes, cmap=cmap, edgecolors='none')
         plt.colorbar()
         return fig, ax
  
@@ -798,6 +808,7 @@ class SCData:
 
                 plt.title( 'Component %d' % i, fontsize=10 )
 
+        gs.tight_layout(fig)
         # fig.suptitle(title, fontsize=12)
         return fig, ax
 
@@ -1021,7 +1032,7 @@ class SCData:
         """ Plot gene expression on tSNE maps
         :param genes: Iterable of strings to plot on tSNE        
         """
-        if not isinstance(genes[0], pd.Series):
+        if not isinstance(genes, dict):
             not_in_dataframe = set(genes).difference(self.data.columns)
             if not_in_dataframe:
                 if len(not_in_dataframe) < len(genes):
@@ -1051,46 +1062,50 @@ class SCData:
             ax = plt.subplot(gs[i // n_cols, i % n_cols])
             axes.append(ax)
             if self.data_type == 'sc-seq':
-                if isinstance(g, pd.Series):
-                    color = np.arcsinh(g)
+                if isinstance(genes, dict):
+                    color = np.arcsinh(genes[g])
                 else:
                     color = np.arcsinh(self.data[g])
                 plt.scatter(self.tsne['x'], self.tsne['y'], c=color,
                             cmap=cmap, edgecolors='none', s=size)
             else:
-                if isinstance(g, pd.Series):
-                    color = g
+                if isinstance(genes, dict):
+                    color = genes[g]
                 else:
                     color = self.data[g]
                 plt.scatter(self.tsne['x'], self.tsne['y'], c=color,
                             cmap=cmap, edgecolors='none', s=size)                
-            ax.set_title(g.name if isinstance(g, pd.Series) else g)
+            ax.set_title(g)
+            ax.set_xlabel('tsne_x')
+            ax.set_ylabel('tsne_y')
 
         if other_data:
             for i, g in enumerate(genes):
                 ax = plt.subplot(gs[(n_rows*n_cols +i) // n_cols, (n_rows*n_cols +i) % n_cols])
                 axes.append(ax)
                 if other_data.data_type == 'sc-seq':
-                    if isinstance(g, pd.Series):
-                        color = np.arcsinh(g)
+                    if isinstance(genes, dict):
+                        color = np.arcsinh(genes[g])
                     else:
                         color = np.arcsinh(other_data.data[g])
                     plt.scatter(other_data.tsne['x'], other_data.tsne['y'], c=color,
                                 cmap=cmap, edgecolors='none', s=size)
                 else:
-                    if isinstance(g, pd.Series):
-                        color = g
+                    if isinstance(genes, dict):
+                        color = genes[g]
                     else:
                         color = other_data.data[g]
                     plt.scatter(other_data.tsne['x'], other_data.tsne['y'], c=color,
                                 cmap=cmap, edgecolors='none', s=size)                
                 ax.set_title(g)
+                ax.set_xlabel('tsne_x')
+                ax.set_ylabel('tsne_y')
         # gs.tight_layout(fig)
 
         return fig, axes
 
 
-    def scatter_gene_expression(self, genes, density=False, colorby=None, fig=None, ax=None):
+    def scatter_gene_expression(self, genes, density=False, color=None, fig=None, ax=None):
         """ 2D or 3D scatter plot of expression of selected genes
         :param genes: Iterable of strings to scatter
         """
@@ -1126,15 +1141,15 @@ class SCData:
                 idx = z.argsort()
                 x, y, z = self.data[genes[0]][idx], self.data[genes[1]][idx], z[idx]
 
-                plt.scatter(x, y, s=size, c=z, cmap=cmap)
+                plt.scatter(x, y, s=size, c=z, cmap=cmap, edgecolors='none')
 
-            elif isinstance(colorby, pd.Series):
+            elif isinstance(color, pd.Series):
                 plt.scatter(self.data[genes[0]], self.data[genes[1]],
-                            s=size, c=colorby, cmap=cmap)
+                            s=size, c=color, cmap=cmap, edgecolors='none')
 
             else:
-                plt.scatter(self.data[genes[0]], self.data[genes[1]],
-                            s=size, color=qualitative_colors(2)[1])
+                plt.scatter(self.data[genes[0]], self.data[genes[1]], edgecolors='none'
+                            s=size, color=qualitative_colors(2)[1] if color == None else color)
             ax.set_xlabel(genes[0])
             ax.set_ylabel(genes[1])
 
@@ -1148,16 +1163,16 @@ class SCData:
                 density = kde(xyz)
 
                 ax.scatter(self.data[genes[0]], self.data[genes[1]], self.data[genes[2]],
-                           s=size, c=density, cmap=cmap)
+                           s=size, c=density, cmap=cmap, edgecolors='none')
 
-            elif isinstance(colorby, pd.Series):
+            elif isinstance(color, pd.Series):
                 ax.scatter(self.data[genes[0]], self.data[genes[1]], self.data[genes[2]],
-                           s=size, c=colorby, cmap=cmap)
+                           s=size, c=color, cmap=cmap, edgecolors='none')
 
 
             else:
-                ax.scatter(self.data[genes[0]], self.data[genes[1]], self.data[genes[2]],
-                            s=size, color=qualitative_colors(2)[1])
+                ax.scatter(self.data[genes[0]], self.data[genes[1]], self.data[genes[2]], edgecolors='none'
+                            s=size, color=qualitative_colors(2)[1] if color == None else color)
             ax.set_xlabel(genes[0])
             ax.set_ylabel(genes[1])
             ax.set_zlabel(genes[2])
@@ -1165,7 +1180,7 @@ class SCData:
         return fig, ax
 
 
-    def scatter_gene_expression_against_other_data(self, genes, other_data, density=False, colorby=None, fig=None, ax=None):
+    def scatter_gene_expression_against_other_data(self, genes, other_data, density=False, color=None, fig=None, ax=None):
 
         not_in_dataframe = set(genes).difference(self.data.columns)
         if not_in_dataframe:
@@ -1200,42 +1215,61 @@ class SCData:
                 idx = z.argsort()
                 x, y, z = self.data[g][idx], other_data.data[g][idx], z[idx]
 
-                plt.scatter(x, y, s=size, c=z, cmap=cmap)
-            elif isinstance(colorby, pd.Series):
-                plt.scatter(self.data[g], other_data.data[g], s=size, c=colorby, cmap=cmap) 
+                plt.scatter(x, y, s=size, c=z, cmap=cmap, edgecolors='none')
+            elif isinstance(color, pd.Series):
+                plt.scatter(self.data[g], other_data.data[g], s=size, c=color, cmap=cmap, edgecolors='none') 
             else:
-                plt.scatter(self.data[g], other_data.data[g], s=size, color=qualitative_colors(2)[1])             
-            ax.set_title(g)
+                plt.scatter(self.data[g], other_data.data[g], s=size, edgecolors='none'
+                            color=qualitative_colors(2)[1] if color == None else color)             
         gs.tight_layout(fig, pad=3, h_pad=3, w_pad=3)
 
         return fig, axes
 
 
-    def run_magic(self, n_pca_components=None, t=8, knn=20, epsilon=0, rescale=True):
+    def run_magic(self, kernel='gaussian', n_pca_components=None, t=8, knn=20, knn_autotune=0, epsilon=0, rescale=True, k_knn=100, perplexity=30):
 
+        if kernel not in ['gaussian', 'tsne']:
+            raise RuntimeError('Invalid kerne type. Must be either "gaussian" or "tsne".')
+
+        
         if self.data_type == 'sc-seq':
-            if self.pca:
-                pca_projected_data = self.pca['loadings'].values
-            elif n_pca_components != None:
+            if n_pca_components != None:
                 self.run_pca(n_components=n_pca_components)
-                pca_projected_data = self.pca['loadings'].values
+                pca_projected_data = np.dot(self.data.values, self.pca['loadings'].values)
             else:
                 pca_projected_data = self.data.values
         else:
             pca_projected_data = self.data.values
+        print(pca_projected_data.shape)
 
-        #run diffusion maps to get markov matrix
-        diffusion_map = magic.graph_diffusion.run_diffusion_map(pca_projected_data, knn=knn, normalization='markov', epsilon=epsilon, distance_metric='euclidean')
+        if kernel == 'gaussian':
+            #run diffusion maps to get markov matrix
+            diffusion_map = magic.graph_diffusion.run_diffusion_map(pca_projected_data, knn=knn, normalization='markov', 
+                                                                    epsilon=epsilon, distance_metric='euclidean', knn_autotune=knn_autotune)
+            L = diffusion_map['T']
+
+        else:
+            #tsne kernel
+            distances = pairwise_distances(pca_projected_data, squared=True)
+            if k_knn > 0:
+                neighbors_nn = np.argsort(distances, axis=0)[:, :k_knn]
+                P = _joint_probabilities_nn(distances, neighbors_nn, perplexity, 1)
+            else:
+                P = _joint_probabilities(distances, perplexity, 1)
+            P = squareform(P)
+
+            #markov normalize P
+            L = np.divide(P, np.sum(P, axis=1))
+        print(L.shape)
 
         #get imputed data matrix
-        new_data, L_t = impute_fast(self.data.values, diffusion_map['T'], t, rescale_to_max=rescale)
+        new_data, L_t = impute_fast(self.data.values, L, t, rescale_to_max=rescale)
 
         new_data = pd.DataFrame(new_data, index=self.data.index, columns=self.data.columns)
 
         # Construct class object
-        scdata = magic.magic.SCData(new_data, data_type=self.data_type)
+        scdata = magic.mg.SCData(new_data, data_type=self.data_type)
         self.magic = scdata
-
 
     def concatenate_data(self, other_data_sets, join='outer'):
 
@@ -1244,7 +1278,7 @@ class SCData:
         dfs.append(self.data)
         df_concat = pd.concat(dfs, join=join)
 
-        scdata = magic.magic.SCData(df_concat)
+        scdata = magic.mg.SCData(df_concat)
         return scdata
 
 
@@ -1303,7 +1337,7 @@ class Wishbone:
     @scdata.setter
     def scdata(self, item):
         if not (isinstance(item, SCData)):
-            raise TypeError('data must be of type magic.magic.SCData')
+            raise TypeError('data must be of type magic.mg.SCData')
         self._scdata = item
 
     @property
