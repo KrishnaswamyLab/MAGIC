@@ -559,7 +559,7 @@ class SCData:
 
             plt.scatter(x, y, s=size, c=z, cmap=cmap, edgecolors='none')
         else:
-            plt.scatter(self.tsne['x'], self.tsne['y'], s=size, edgecolors='none'
+            plt.scatter(self.tsne['x'], self.tsne['y'], s=size, edgecolors='none',
                         color=qualitative_colors(2)[1] if color == None else color)
         ax.set_title(title)
         return fig, ax
@@ -1148,7 +1148,7 @@ class SCData:
                             s=size, c=color, cmap=cmap, edgecolors='none')
 
             else:
-                plt.scatter(self.data[genes[0]], self.data[genes[1]], edgecolors='none'
+                plt.scatter(self.data[genes[0]], self.data[genes[1]], edgecolors='none',
                             s=size, color=qualitative_colors(2)[1] if color == None else color)
             ax.set_xlabel(genes[0])
             ax.set_ylabel(genes[1])
@@ -1171,7 +1171,7 @@ class SCData:
 
 
             else:
-                ax.scatter(self.data[genes[0]], self.data[genes[1]], self.data[genes[2]], edgecolors='none'
+                ax.scatter(self.data[genes[0]], self.data[genes[1]], self.data[genes[2]], edgecolors='none',
                             s=size, color=qualitative_colors(2)[1] if color == None else color)
             ax.set_xlabel(genes[0])
             ax.set_ylabel(genes[1])
@@ -1219,7 +1219,7 @@ class SCData:
             elif isinstance(color, pd.Series):
                 plt.scatter(self.data[g], other_data.data[g], s=size, c=color, cmap=cmap, edgecolors='none') 
             else:
-                plt.scatter(self.data[g], other_data.data[g], s=size, edgecolors='none'
+                plt.scatter(self.data[g], other_data.data[g], s=size, edgecolors='none',
                             color=qualitative_colors(2)[1] if color == None else color)             
         gs.tight_layout(fig, pad=3, h_pad=3, w_pad=3)
 
@@ -1271,12 +1271,25 @@ class SCData:
         scdata = magic.mg.SCData(new_data, data_type=self.data_type)
         self.magic = scdata
 
-    def concatenate_data(self, other_data_sets, join='outer'):
+    def concatenate_data(self, other_data_sets, join='outer', axis=0, names=[]):
 
         #concatenate dataframes
-        dfs = [data_set.data for data_set in other_data_sets]
-        dfs.append(self.data)
-        df_concat = pd.concat(dfs, join=join)
+        temp = self.data.copy()
+        if axis == 0:
+            temp.index = [names[0] + ' ' + i for i in self.data.index]
+        else:
+            temp.columns = [names[0] + ' ' + i for i in self.data.columns]
+        dfs = [temp]
+        count = 0
+        for data_set in other_data_sets:
+            count += 1
+            temp = data_set.data.copy()
+            if axis == 0:
+                temp.index = [names[count] + ' ' + i for i in data_set.data.index]
+            else:
+                temp.columns = [names[count] + ' ' + i for i in self.data.columns]
+            dfs.append(temp)
+        df_concat = pd.concat(dfs, join=join, axis=axis)
 
         scdata = magic.mg.SCData(df_concat)
         return scdata
