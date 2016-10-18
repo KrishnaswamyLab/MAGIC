@@ -25,7 +25,7 @@ with warnings.catch_warnings():
     warnings.simplefilter('ignore')  # catch experimental ipython widget warning
     import seaborn as sns
 
-from tsne import bh_sne
+# from tsne import bh_sne
 from sklearn.manifold import TSNE
 from sklearn.manifold.t_sne import _joint_probabilities, _joint_probabilities_nn
 from sklearn.metrics.pairwise import pairwise_distances
@@ -356,6 +356,7 @@ class SCData:
         gene_names = np.loadtxt(gene_name_file, dtype=np.dtype('S'))
         gene_names = np.array([gene.decode('utf-8') for gene in gene_names])
 
+        ### remove todense
         df = pd.DataFrame(count_matrix.todense(), columns=gene_names)
 
         # Construct class object
