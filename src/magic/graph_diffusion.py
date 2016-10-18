@@ -5,8 +5,8 @@ from sklearn.neighbors import NearestNeighbors
 from scipy.sparse import csr_matrix, find, issparse
 from scipy.sparse.linalg import eigs
 from numpy.linalg import norm
-from GraphDiffusion.bimarkov import bimarkov
-from GraphDiffusion.GetEigs import GetEigs
+from magic.bimarkov import bimarkov
+from magic.GetEigs import GetEigs
 
 def run_diffusion_map(data, knn=10, normalization='smarkov', 
                       epsilon=1, n_diffusion_components=10, 
