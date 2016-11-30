@@ -8,7 +8,7 @@ import matplotlib.gridspec as gridspec
 from matplotlib.figure import Figure
 from matplotlib.patches import Rectangle
 from matplotlib.path import Path
-from functools import reduce
+from functools import reduce, partial
 import magic
 import os
 import sys
@@ -31,13 +31,14 @@ class wishbone_gui(tk.Tk):
         self.vals = None
         self.currentPlot = None
         self.data = {}
-        self.scseq = False
 
         #set up menu bar
         self.menubar = tk.Menu(self)
         self.fileMenu = tk.Menu(self.menubar, tearoff=0)
         self.menubar.add_cascade(label="File", menu=self.fileMenu)
-        self.fileMenu.add_command(label="Load data", command=self.loadData)
+        self.fileMenu.add_command(label="Load csv file", command=self.loadCSV)
+        self.fileMenu.add_command(label="Load mtx file", command=self.loadMTX)
+        self.fileMenu.add_command(label="Load saved session from pickle file", command=self.loadPickle)
         self.fileMenu.add_command(label="Save data", state='disabled', command=self.saveData)
         self.fileMenu.add_command(label="Exit", command=self.quitWB)
 
@@ -52,17 +53,7 @@ class wishbone_gui(tk.Tk):
 
         self.visMenu = tk.Menu(self.menubar, tearoff=0)
         self.menubar.add_cascade(label="Visualization", menu=self.visMenu)
-        self.visMenu.add_command(label="Principal component analysis", state='disabled', command=self.plotPCA)
-        self.visMenu.add_command(label="tSNE", state='disabled', command=self.plotTSNE)
-        self.visMenu.add_command(label="Diffusion map", state='disabled', command=self.plotDM)
-        self.visMenu.add_command(label="GSEA Results", state='disabled', command=self.showGSEAResults)
-        self.wishboneMenu = tk.Menu(self)
-        self.visMenu.add_cascade(label="Wishbone", menu=self.wishboneMenu)
-        self.wishboneMenu.add_command(label="On tSNE", state='disabled', command=self.plotWBOnTsne)
-        self.wishboneMenu.add_command(label="Marker trajectory", state='disabled', command=self.plotWBMarkerTrajectory)
-        self.wishboneMenu.add_command(label="Heat map", state='disabled', command=self.plotWBHeatMap)
         self.visMenu.add_command(label="Scatter plot", state='disabled', command=self.scatterPlot)
-        self.visMenu.add_command(label="Set gate", state='disabled', command=self.setGate)
         
         self.config(menu=self.menubar)
 
@@ -78,7 +69,7 @@ class wishbone_gui(tk.Tk):
         self.geometry(self.geometry())       
         self.focus_force()
 
-    def loadData(self):
+    def loadCSV(self):
         self.dataFileName = filedialog.askopenfilename(title='Load data file', initialdir='~/.magic/data')
         if(self.dataFileName != ""):
             #pop up data options menu
@@ -91,45 +82,74 @@ class wishbone_gui(tk.Tk):
             self.fileNameEntryVar = tk.StringVar()
             tk.Entry(self.fileInfo, textvariable=self.fileNameEntryVar).grid(column=1,row=1)
 
-            self.dataFileType = self.dataFileName.split('.', 1)[1]
-            if  self.dataFileType == 'fcs':
-                tk.Label(self.fileInfo,text=u"Cofactor:" ,fg="black",bg="white").grid(column=0, row=2)
-                self.cofactorVar = tk.IntVar()
-                self.cofactorVar.set(5)
-                tk.Entry(self.fileInfo, textvariable=self.cofactorVar).grid(column=1,row=2)
-            elif self.dataFileType == 'csv':
-                self.normalizeVar = tk.BooleanVar()
-                tk.Checkbutton(self.fileInfo, text=u"Normalize", variable=self.normalizeVar).grid(column=0, row=2, columnspan=2)
-                tk.Label(self.fileInfo, text=u"The normalize parameter is used for correcting for library size among cells.").grid(column=0, row=3, columnspan=2)
-            elif self.dataFileType == 'mtx' or self.dataFileType == 'mtx.gz':
-                #get gene names file
-                tk.Button(self.fileInfo, text="Select gene names file", command=self.getGeneNameFile).grid(column=0, row=2)
+            tk.Button(self.fileInfo, text="Show distributions", command=partial(self.showRawDataDistributions, file_type='csv')).grid(column=0, row=3)
 
-                tk.Button(self.fileInfo, text="Show distributions", command=self.showRawDataDistributions).grid(column=0, row=3)
+            #filter parameters
+            self.filterCellMinVar = tk.StringVar()
+            tk.Label(self.fileInfo,text=u"Filter by molecules per cell. Min:" ,fg="black",bg="white").grid(column=0, row=4)
+            tk.Entry(self.fileInfo, textvariable=self.filterCellMinVar).grid(column=1,row=4)
+            
+            self.filterCellMaxVar = tk.StringVar()
+            tk.Label(self.fileInfo, text=u" Max:" ,fg="black",bg="white").grid(column=2, row=4)
+            tk.Entry(self.fileInfo, textvariable=self.filterCellMaxVar).grid(column=3,row=4)
+            
+            self.filterGeneNonzeroVar = tk.StringVar()
+            tk.Label(self.fileInfo,text=u"Filter by nonzero cells per gene. Min:" ,fg="black",bg="white").grid(column=0, row=5)
+            tk.Entry(self.fileInfo, textvariable=self.filterGeneNonzeroVar).grid(column=1,row=5)
+            
+            self.filterGeneMolsVar = tk.StringVar()
+            tk.Label(self.fileInfo,text=u"Filter by molecules per gene. Min:" ,fg="black",bg="white").grid(column=0, row=6)
+            tk.Entry(self.fileInfo, textvariable=self.filterGeneMolsVar).grid(column=1,row=6)
 
-                #filter parameters
-                self.filterCellMinVar = tk.StringVar()
-                tk.Label(self.fileInfo,text=u"Filter by molecules per cell. Min:" ,fg="black",bg="white").grid(column=0, row=4)
-                tk.Entry(self.fileInfo, textvariable=self.filterCellMinVar).grid(column=1,row=4)
-                
-                self.filterCellMaxVar = tk.StringVar()
-                tk.Label(self.fileInfo, text=u" Max:" ,fg="black",bg="white").grid(column=2, row=4)
-                tk.Entry(self.fileInfo, textvariable=self.filterCellMaxVar).grid(column=3,row=4)
-                
-                self.filterGeneNonzeroVar = tk.StringVar()
-                tk.Label(self.fileInfo,text=u"Filter by nonzero cells per gene. Min:" ,fg="black",bg="white").grid(column=0, row=5)
-                tk.Entry(self.fileInfo, textvariable=self.filterGeneNonzeroVar).grid(column=1,row=5)
-                
-                self.filterGeneMolsVar = tk.StringVar()
-                tk.Label(self.fileInfo,text=u"Filter by molecules per gene. Min:" ,fg="black",bg="white").grid(column=0, row=6)
-                tk.Entry(self.fileInfo, textvariable=self.filterGeneMolsVar).grid(column=1,row=6)
-
-                #normalize
-                self.normalizeVar = tk.BooleanVar()
-                tk.Checkbutton(self.fileInfo, text=u"Normalize by library size", variable=self.normalizeVar).grid(column=0, row=7, columnspan=4)
+            #normalize
+            self.normalizeVar = tk.BooleanVar()
+            tk.Checkbutton(self.fileInfo, text=u"Normalize by library size", variable=self.normalizeVar).grid(column=0, row=7, columnspan=4)
 
             tk.Button(self.fileInfo, text="Cancel", command=self.fileInfo.destroy).grid(column=1, row=8)
-            tk.Button(self.fileInfo, text="Load", command=self.processData).grid(column=2, row=8)
+            tk.Button(self.fileInfo, text="Load", command=partial(self.processData, file_type='csv')).grid(column=2, row=8)
+
+            self.wait_window(self.fileInfo)
+
+    def loadMTX(self):
+        self.dataFileName = filedialog.askopenfilename(title='Load data file', initialdir='~/.magic/data')
+        if(self.dataFileName != ""):
+            #pop up data options menu
+            self.fileInfo = tk.Toplevel()
+            self.fileInfo.title("Data options")
+            tk.Label(self.fileInfo, text=u"File name: ").grid(column=0, row=0)
+            tk.Label(self.fileInfo, text=self.dataFileName.split('/')[-1]).grid(column=1, row=0)
+
+            tk.Label(self.fileInfo,text=u"Name:" ,fg="black",bg="white").grid(column=0, row=1)
+            self.fileNameEntryVar = tk.StringVar()
+            tk.Entry(self.fileInfo, textvariable=self.fileNameEntryVar).grid(column=1,row=1)
+
+            tk.Button(self.fileInfo, text="Select gene names file", command=self.getGeneNameFile).grid(column=0, row=2)
+
+            tk.Button(self.fileInfo, text="Show distributions", command=partial(self.showRawDataDistributions, file_type='mtx')).grid(column=0, row=3)
+
+            #filter parameters
+            self.filterCellMinVar = tk.StringVar()
+            tk.Label(self.fileInfo,text=u"Filter by molecules per cell. Min:" ,fg="black",bg="white").grid(column=0, row=4)
+            tk.Entry(self.fileInfo, textvariable=self.filterCellMinVar).grid(column=1,row=4)
+            
+            self.filterCellMaxVar = tk.StringVar()
+            tk.Label(self.fileInfo, text=u" Max:" ,fg="black",bg="white").grid(column=2, row=4)
+            tk.Entry(self.fileInfo, textvariable=self.filterCellMaxVar).grid(column=3,row=4)
+            
+            self.filterGeneNonzeroVar = tk.StringVar()
+            tk.Label(self.fileInfo,text=u"Filter by nonzero cells per gene. Min:" ,fg="black",bg="white").grid(column=0, row=5)
+            tk.Entry(self.fileInfo, textvariable=self.filterGeneNonzeroVar).grid(column=1,row=5)
+            
+            self.filterGeneMolsVar = tk.StringVar()
+            tk.Label(self.fileInfo,text=u"Filter by molecules per gene. Min:" ,fg="black",bg="white").grid(column=0, row=6)
+            tk.Entry(self.fileInfo, textvariable=self.filterGeneMolsVar).grid(column=1,row=6)
+
+            #normalize
+            self.normalizeVar = tk.BooleanVar()
+            tk.Checkbutton(self.fileInfo, text=u"Normalize by library size", variable=self.normalizeVar).grid(column=0, row=7, columnspan=4)
+
+            tk.Button(self.fileInfo, text="Cancel", command=self.fileInfo.destroy).grid(column=1, row=8)
+            tk.Button(self.fileInfo, text="Load", command=partial(self.processData, file_type='mtx')).grid(column=2, row=8)
 
             self.wait_window(self.fileInfo)
 
@@ -137,9 +157,24 @@ class wishbone_gui(tk.Tk):
         self.geneNameFile = filedialog.askopenfilename(title='Select gene name file', initialdir='~/.magic/data')
         tk.Label(self.fileInfo,text=self.geneNameFile.split('/')[-1] ,fg="black",bg="white").grid(column=1, row=2)
 
-        self.scdata = magic.mg.SCData.from_mtx(os.path.expanduser(self.dataFileName), os.path.expanduser(self.geneNameFile))
+    def loadPickle(self):
+        if(self.dataFileName != ""):
+            #pop up data options menu
+            self.fileInfo = tk.Toplevel()
+            self.fileInfo.title("Data options")
+            tk.Label(self.fileInfo, text=u"File name: ").grid(column=0, row=0)
+            tk.Label(self.fileInfo, text=self.dataFileName.split('/')[-1]).grid(column=1, row=0)
 
-    def processData(self):
+            tk.Label(self.fileInfo,text=u"Name:" ,fg="black",bg="white").grid(column=0, row=1)
+            self.fileNameEntryVar = tk.StringVar()
+            tk.Entry(self.fileInfo, textvariable=self.fileNameEntryVar).grid(column=1,row=1)
+
+            tk.Button(self.fileInfo, text="Cancel", command=self.fileInfo.destroy).grid(column=0, row=2)
+            tk.Button(self.fileInfo, text="Load", command=partial(self.processData, file_type='pickle')).grid(column=0, row=2)
+
+            self.wait_window(self.fileInfo)
+
+    def processData(self, file_type='csv'):
 
         if len(self.data) == 0:
             #clear intro screen
@@ -157,100 +192,71 @@ class wishbone_gui(tk.Tk):
             self.canvas.show()
             self.canvas.get_tk_widget().grid(column=1, row=1, rowspan=10, columnspan=4,sticky='NSEW')
 
-        #load data based on input type
-        if self.dataFileType == 'fcs':    # mass cytometry data
-            scdata = magic.mg.SCData.from_fcs(os.path.expanduser(self.dataFileName), 
-                                                      cofactor=self.cofactorVar.get())
-            wb = None
-        elif self.dataFileType == 'csv':    # sc-seq data
-            scdata = magic.mg.SCData.from_csv(os.path.expanduser(self.dataFileName), data_type='sc-seq', 
-                                                      normalize=self.normalizeVar.get())
-            wb = None
-        elif self.dataFileType == 'mtx' or self.dataFileType == 'mtx.gz':   # sparse matrix
-            if len(self.filterCellMinVar.get()) > 0 or len(self.filterCellMaxVar.get()) > 0 or len(self.filterGeneNonzeroVar.get()) > 0 or len(self.filterGeneMolsVar.get()) > 0:
-                scdata = self.scdata.filter_scseq_data(filter_cell_min=int(self.filterCellMinVar.get()) if len(self.filterCellMinVar.get()) > 0 else 0, 
-                                                       filter_cell_max=int(self.filterCellMaxVar.get()) if len(self.filterCellMaxVar.get()) > 0 else 0, 
-                                                       filter_gene_nonzero=int(self.filterGeneNonzeroVar.get()) if len(self.filterGeneNonzeroVar.get()) > 0 else 0, 
-                                                       filter_gene_mols=int(self.filterGeneMolsVar.get()) if len(self.filterGeneMolsVar.get()) > 0 else 0)
-            else:
-                scdata = self.scdata
-            if self.normalizeVar.get() == True:
-                scdata = scdata.normalize_scseq_data() 
-            wb = None
-        else:   # pickled Wishbone object
+
+        if file_type == 'csv':    # sc-seq data
+            scdata = magic.mg.SCData.from_csv(os.path.expanduser(self.dataFileName), 
+                                                  data_type='sc-seq', normalize=False)
+        elif file_type == 'mtx':   # sparse matrix
+            scdata = magic.mg.SCData.from_mtx(os.path.expanduser(self.dataFileName), os.path.expanduser(self.geneNameFile))
+            
+        if len(self.filterCellMinVar.get()) > 0 or len(self.filterCellMaxVar.get()) > 0 or len(self.filterGeneNonzeroVar.get()) > 0 or len(self.filterGeneMolsVar.get()) > 0:
+            scdata.filter_scseq_data(filter_cell_min=int(self.filterCellMinVar.get()) if len(self.filterCellMinVar.get()) > 0 else 0, 
+                                     filter_cell_max=int(self.filterCellMaxVar.get()) if len(self.filterCellMaxVar.get()) > 0 else 0, 
+                                     filter_gene_nonzero=int(self.filterGeneNonzeroVar.get()) if len(self.filterGeneNonzeroVar.get()) > 0 else 0, 
+                                     filter_gene_mols=int(self.filterGeneMolsVar.get()) if len(self.filterGeneMolsVar.get()) > 0 else 0)
+
+        if self.normalizeVar.get() == True:
+            scdata = scdata.normalize_scseq_data() 
+        wb = None
+
+        if file_type == 'pickle':   # pickled Wishbone object
             wb = magic.mg.Wishbone.load(self.dataFileName)
             scdata = wb.scdata
 
         self.data[self.fileNameEntryVar.get()] = {'scdata' : scdata, 'wb' : wb, 'state' : tk.BooleanVar(),
                                                   'genes' : scdata.data.columns.values, 'gates' : {}}
         
-        self.data_list.insert('', 'end', text=self.fileNameEntryVar.get() + ' (' + str(scdata.data.shape[0]) + ' x ' + str(scdata.data.shape[1]) + ')')
+        self.data_list.insert('', 'end', text=self.fileNameEntryVar.get() + ' (' + str(scdata.data.shape[0]) + ' x ' + str(scdata.data.shape[1]) + ')', open=True)
         
-        if self.scseq == False and scdata.data_type == 'sc-seq':
-            self.scseq = True
+        #set up buttons
+        self.saveButton = tk.Button(self, text=u"Save plot", state='disabled', command=self.savePlot)
+        self.saveButton.grid(column = 3, row=0)
+        self.diff_component = tk.StringVar()
+        self.diff_component.set('Component 1')
+        self.component_menu = tk.OptionMenu(self, self.diff_component,
+                                            'Component 1', 'Component 2', 'Component 3',
+                                            'Component 4', 'Component 5', 'Component 6', 
+                                            'Component 7', 'Component 8', 'Component 9')
+        self.component_menu.config(state='disabled')
+        self.component_menu.grid(row=0, column=1)
+        self.updateButton = tk.Button(self, text=u"Update component", command=self.updateComponent, state='disabled')
+        self.updateButton.grid(column=2, row=0)
+        self.analysisMenu.entryconfig(5, state='normal')
 
-        #set up buttons based on data type
-        if self.scseq == True:
-            self.saveButton = tk.Button(self, text=u"Save plot", state='disabled', command=self.savePlot)
-            self.saveButton.grid(column = 3, row=0)
-            self.diff_component = tk.StringVar()
-            self.diff_component.set('Component 1')
-            self.component_menu = tk.OptionMenu(self, self.diff_component,
-                                                'Component 1', 'Component 2', 'Component 3',
-                                                'Component 4', 'Component 5', 'Component 6', 
-                                                'Component 7', 'Component 8', 'Component 9')
-            self.component_menu.config(state='disabled')
-            self.component_menu.grid(row=0, column=1)
-            self.updateButton = tk.Button(self, text=u"Update component", command=self.updateComponent, state='disabled')
-            self.updateButton.grid(column=2, row=0)
-            self.analysisMenu.entryconfig(5, state='normal')
-
-            #enable buttons based on current state of scdata object
-            self.analysisMenu.entryconfig(1, state='normal')
-            if scdata.pca:
-                self.visMenu.entryconfig(0, state='normal')
-            if isinstance(scdata.tsne, pd.DataFrame):
-                self.analysisMenu.entryconfig(2, state='normal')
-                self.visMenu.entryconfig(1, state='normal')
-
-            if isinstance(scdata.diffusion_eigenvectors, pd.DataFrame):
-                self.analysisMenu.entryconfig(3, state='normal')
-                self.analysisMenu.entryconfig(4, state='normal')
-                self.visMenu.entryconfig(2, state='normal')
-        else:
-            self.saveButton = tk.Button(self, text=u"Save plot", state='disabled', command=self.savePlot)
-            self.saveButton.grid(column = 4, row=0)
-
-            self.analysisMenu.delete(0)
-            self.analysisMenu.delete(2)
-            self.visMenu.delete(0)
-            self.visMenu.delete(2)
-            self.analysisMenu.entryconfig(1, state='normal')
+        #enable buttons based on current state of scdata object
+        self.analysisMenu.entryconfig(1, state='normal')
+        if isinstance(scdata.tsne, pd.DataFrame):
+            self.analysisMenu.entryconfig(2, state='normal')
+        if isinstance(scdata.diffusion_eigenvectors, pd.DataFrame):
             self.analysisMenu.entryconfig(3, state='normal')
-
-            #enable buttons based on current state of scdata object
-            if isinstance(scdata.tsne, pd.DataFrame):
-                self.visMenu.entryconfig(0, state='normal')
-            if isinstance(scdata.diffusion_eigenvectors, pd.DataFrame):
-                self.analysisMenu.entryconfig(2, state='normal')
-                self.visMenu.entryconfig(1, state='normal')
+            self.analysisMenu.entryconfig(4, state='normal')
 
         #enable buttons
         self.analysisMenu.entryconfig(0, state='normal')
         self.fileMenu.entryconfig(1, state='normal')
-        self.visMenu.entryconfig(5, state='normal')
+        self.visMenu.entryconfig(0, state='normal')
         self.concatButton = tk.Button(self, text=u"Concatenate selected datasets", state='disabled', wraplength=80, command=self.concatenateData)
         self.concatButton.grid(column=0, row=10)
         if len(self.data) > 1:
             self.concatButton.config(state='normal')
 
         if wb:
-                if isinstance(wb.trajectory, pd.Series):
-                    self.wishboneMenu.entryconfig(0, state='normal')
-                    self.wishboneMenu.entryconfig(1, state='normal')
-                    self.wishboneMenu.entryconfig(2, state='normal')
+            if isinstance(wb.trajectory, pd.Series):
+                self.wishboneMenu.entryconfig(0, state='normal')
+                self.wishboneMenu.entryconfig(1, state='normal')
+                self.wishboneMenu.entryconfig(2, state='normal')
 
-        self.geometry('800x550')
+        self.geometry('1000x700')
         #destroy pop up menu
         self.fileInfo.destroy()
 
@@ -295,7 +301,7 @@ class wishbone_gui(tk.Tk):
 
         self.data[self.nameVar.get()] = {'scdata' : scdata, 'wb' : None, 'state' : tk.BooleanVar(),
                                          'genes' : scdata.data.columns.values, 'gates' : {}}
-        self.data_list.insert('', 'end', text=self.nameVar.get() + ' (' + str(scdata.data.shape[0]) + ' x ' + str(scdata.data.shape[1]) + ')')
+        self.data_list.insert('', 'end', text=self.nameVar.get() + ' (' + str(scdata.data.shape[0]) + ' x ' + str(scdata.data.shape[1]) + ')', open=True)
 
         self.concatOptions.destroy()
 
@@ -320,16 +326,25 @@ class wishbone_gui(tk.Tk):
                     self.data[data_set_name]['scdata'].magic = None
             self.data_list.delete(key)
 
-    def showRawDataDistributions(self):
+    def showRawDataDistributions(self, file_type='csv'):
+        if file_type == 'csv':    # sc-seq data
+            scdata = magic.mg.SCData.from_csv(os.path.expanduser(self.dataFileName), 
+                                              data_type='sc-seq', normalize=False)
+        else:   # sparse matrix
+            scdata = magic.mg.SCData.from_mtx(os.path.expanduser(self.dataFileName), 
+                                              os.path.expanduser(self.geneNameFile))
+
         self.dataDistributions = tk.Toplevel()
         self.dataDistributions.title(self.fileNameEntryVar.get() + ": raw data distributions")
 
-        fig, ax = self.scdata.plot_molecules_per_cell_and_gene()
+        fig, ax = scdata.plot_molecules_per_cell_and_gene()
         fig.tight_layout()
 
         canvas = FigureCanvasTkAgg(fig, self.dataDistributions)
         canvas.show()
         canvas.get_tk_widget().grid(column=0, row=0, rowspan=10, columnspan=4,sticky='NSEW')
+        del scdata
+
         self.wait_window(self.dataDistributions)
 
     def runPCA(self):
@@ -337,9 +352,12 @@ class wishbone_gui(tk.Tk):
             curKey = self.data_list.item(key)['text'].split(' (')[0]
             self.data[curKey]['scdata'].run_pca()
 
+            self.data_list.insert(key, 'end', text=curKey + ' PCA' + 
+                              ' (' + str(self.data[curKey]['scdata'].pca['loadings'].shape[0]) + 
+                                ' x ' + str(self.data[curKey]['scdata'].pca['loadings'].shape[1]) + ')', open=True)
+
         #enable buttons
         self.analysisMenu.entryconfig(1, state='normal')
-        self.visMenu.entryconfig(0, state='normal')
 
     def runTSNE(self):
         for key in self.data_list.selection():
@@ -363,22 +381,15 @@ class wishbone_gui(tk.Tk):
 
     def _runTSNE(self):
         name = self.data_list.item(self.curKey)['text'].split(' (')[0]
-        if self.data[name]['scdata'].data_type == 'sc-seq':
-            self.data[name]['scdata'].run_tsne(n_components=self.nCompVar.get(), perplexity=self.perplexityVar.get())
-        else:
-            self.data[name]['scdata'].run_tsne(n_components=None, perplexity=self.perplexityVar.get())
+        self.data[name]['scdata'].run_tsne(n_components=self.nCompVar.get(), perplexity=self.perplexityVar.get())
         self.data[name]['gates'] = {}
 
         #enable buttons
-        if self.scseq == True:
-            self.analysisMenu.entryconfig(2, state='normal')
-            self.visMenu.entryconfig(1, state='normal')
-        else:
-            self.visMenu.entryconfig(0, state='normal')
+        self.analysisMenu.entryconfig(2, state='normal')
 
         self.data_list.insert(self.curKey, 'end', text=name + ' tSNE' + 
                               ' (' + str(self.data[name]['scdata'].tsne.shape[0]) + 
-                                ' x ' + str(self.data[name]['scdata'].tsne.shape[1]) + ')')
+                                ' x ' + str(self.data[name]['scdata'].tsne.shape[1]) + ')', open=True)
         self.tsneOptions.destroy()
 
     def runDM(self):
@@ -387,16 +398,11 @@ class wishbone_gui(tk.Tk):
             self.data[name]['scdata'].run_diffusion_map()
             self.data_list.insert(key, 'end', text=name + ' Diffusion components' +
                                   ' (' + str(self.data[name]['scdata'].diffusion_eigenvectors.shape[0]) + 
-                                 ' x ' + str(self.data[name]['scdata'].diffusion_eigenvectors.shape[1]) + ')')
+                                 ' x ' + str(self.data[name]['scdata'].diffusion_eigenvectors.shape[1]) + ')', open=True)
 
         #enable buttons
-        if self.scseq == True:
-            self.analysisMenu.entryconfig(3, state='normal')
-            self.analysisMenu.entryconfig(4, state='normal')
-            self.visMenu.entryconfig(2, state='normal')
-        else:
-            self.analysisMenu.entryconfig(2, state='normal')
-            self.visMenu.entryconfig(1, state='normal')
+        self.analysisMenu.entryconfig(3, state='normal')
+        self.analysisMenu.entryconfig(4, state='normal')
 
     def runGSEA(self):
 
@@ -417,8 +423,6 @@ class wishbone_gui(tk.Tk):
                 self.data[name]['gsea_reports'] = self.data[name]['scdata'].run_gsea(output_stem= os.path.expanduser(outputPrefix), 
                                                                                    gmt_file=(gmt_file_type, GSEAFileName.split('/')[-1]))
 
-            #enable buttons
-            self.visMenu.entryconfig(3, state='normal')
 
     def runWishbone(self):
         for key in self.data_list.selection():
@@ -491,7 +495,7 @@ class wishbone_gui(tk.Tk):
 
         self.data_list.insert(self.curKey, 'end', text=self.curName +' Wishbone' +
                               ' (' + str(self.data[name]['wb'].trajectory.shape[0]) + 
-                              ' x ' + str(self.data[name]['wb'].trajectory.shape[1]) + ')')
+                              ' x ' + str(self.data[name]['wb'].trajectory.shape[1]) + ')', open=True)
         self.wbOptions.destroy()
 
     def runMagic(self):
@@ -567,18 +571,14 @@ class wishbone_gui(tk.Tk):
         
         self.data_list.insert(self.curKey, 'end', text=name + ' MAGIC' +
                               ' (' + str(self.data[name]['scdata'].magic.data.shape[0]) + 
-                              ' x ' + str(self.data[name]['scdata'].magic.data.shape[1]) + ')')
+                              ' x ' + str(self.data[name]['scdata'].magic.data.shape[1]) + ')', open=True)
         
         self.magicOptions.destroy()
 
     def plotPCA(self):
         self.saveButton.config(state='normal')
-        if self.scseq == True:
-            self.component_menu.config(state='disabled')
-            self.updateButton.config(state='disabled')
-            self.visMenu.entryconfig(6, state='disabled')
-        else:
-            self.visMenu.entryconfig(4, state='disabled')
+        self.component_menu.config(state='disabled')
+        self.updateButton.config(state='disabled')
 
         #pop up for # components
         self.PCAOptions = tk.Toplevel()
@@ -603,6 +603,8 @@ class wishbone_gui(tk.Tk):
             gs = gridspec.GridSpec(int(np.ceil(len(keys)/2)), 2)
             for i in range(len(keys)):
                 name = self.data_list.item(keys[i])['text'].split(' (')[0]
+                if 'PCA' in name:
+                    name = name.split(' PCA')[0]
                 self.ax = self.fig.add_subplot(gs[int(i/2), i%2])
                 self.data[name]['scdata'].plot_pca_variance_explained(fig=self.fig, ax=self.ax, ylim=(0, self.yLimVar.get()), n_components=self.compVar.get())
                 self.ax.set_title(name)
@@ -610,6 +612,8 @@ class wishbone_gui(tk.Tk):
 
         else:
             name = self.data_list.item(keys[0])['text'].split(' (')[0]
+            if 'PCA' in name:
+                    name = name.split(' PCA')[0]
             self.fig, self.ax = self.data[name]['scdata'].plot_pca_variance_explained(ylim=(0, self.yLimVar.get()), n_components=self.compVar.get())
         
         self.canvas = FigureCanvasTkAgg(self.fig, self)
@@ -623,40 +627,47 @@ class wishbone_gui(tk.Tk):
 
     def plotTSNE(self):
         keys = self.data_list.selection()
-        self.getColorBy()
+        self.getScatterSelection(plot_type='tsne')
 
         self.saveButton.config(state='normal')
-        if self.scseq == True:
-            self.component_menu.config(state='disabled')
-            self.updateButton.config(state='disabled')
-            if len(keys) == 1:
-                self.visMenu.entryconfig(6, state='normal')
-        else:
-            if len(keys) == 1:
-                self.visMenu.entryconfig(4, state='normal')
+        self.component_menu.config(state='disabled')
+        self.updateButton.config(state='disabled')
 
-        if len(self.colorSelection) < 2:
+        self.colorSelection = self.colorVar.get().split(', ')
+        if (len(self.colorSelection) == 1 and len(self.colorSelection[0]) > 0) or len(self.colorSelection) > 1:
             self.resetCanvas()
-            self.fig = plt.figure(figsize=[8, 4 * int(np.ceil(len(keys)/2))])
-            gs = gridspec.GridSpec(int(np.ceil(len(keys)/2)), 2)
+            self.fig = plt.figure(figsize=[4*len(self.colorSelection), 4 * len(keys)])
+            gs = gridspec.GridSpec(len(keys), len(self.colorSelection))
             for i in range(len(keys)):
                 name = self.data_list.item(keys[i])['text'].split(' (')[0]
                 if 'tSNE' in name:
                     name = name.split(' tSNE')[0]
-                self.ax = self.fig.add_subplot(gs[int(i/2), i%2])
-                if self.colorVar.get() == 0:
-                    self.fig, self.ax = self.data[name]['scdata'].plot_tsne(fig=self.fig, ax=self.ax, color='black')
-                elif self.colorVar.get() == 1:
-                    self.fig, self.ax = self.data[name]['scdata'].plot_tsne(fig=self.fig, ax=self.ax, color='blue')
-                else:
-                    self.data[name]['scdata'].plot_tsne(fig=self.fig, ax=self.ax, density=True if self.colorVar.get() == 3 else False, 
-                                                        color=list(self.colorSelection.values())[0] if len(self.colorSelection) == 1 else None)
-                    if self.colorVar.get() == 3:
-                        self.ax.set_title('Colored by density')
+                for j in range(len(self.colorSelection)):
+                    self.ax = self.fig.add_subplot(gs[i, j])
+                    if self.colorSelection[j] == 'wishbone trajectory':
+                        self.fig, self.ax = self.data[name]['scdata'].plot_tsne(fig=self.fig, ax=self.ax,
+                                                                                color=self.data[name]['wb'].trajectory)
+                    elif self.colorSelection[j] == 'wishbone branches':
+                        self.fig, self.ax = self.data[name]['scdata'].plot_tsne(fig=self.fig, ax=self.ax, 
+                                                                                color=self.data[name]['wb'].branch)
+                    elif 'diffusion component' in self.colorSelection[j]:
+                        color = int(self.colorSelection[j].split('diffusion component ')[1])
+                        self.fig, self.ax = self.data[name]['scdata'].plot_tsne(fig=self.fig, ax=self.ax, 
+                                                                                color=self.data[name]['scdata'].diffusion_eigenvectors[color])
+                    elif 'magic' in self.colorSelection[j]:
+                        color = self.colorSelection[j].split(' magic')[0]
+                        self.fig, self.ax = self.data[name]['scdata'].plot_tsne(fig=self.fig, ax=self.ax, 
+                                                                                color=self.data[name]['scdata'].magic.data[color])
+                    elif self.colorSelection[j] in self.data[name]['scdata'].data.columns:
+                        self.fig, self.ax = self.data[name]['scdata'].plot_tsne(fig=self.fig, ax=self.ax, 
+                                                                                color=self.data[name]['scdata'].data[self.colorSelection[j]])
+                    elif self.colorSelection[j] == 'density':
+                        self.data[name]['scdata'].plot_tsne(fig=self.fig, ax=self.ax, density=True)
                     else:
-                        self.ax.set_title('Colored by ' + list(self.colorSelection.keys())[0])
-                self.ax.set_xlabel(name + ' tsne_x')
-                self.ax.set_ylabel(name + ' tsne_y')
+                        self.data[name]['scdata'].plot_tsne(fig=self.fig, ax=self.ax, color=self.colorSelection[j])
+                    self.ax.set_title('Color: ' + self.colorSelection[j])
+                    self.ax.set_xlabel(name + ' tsne_x')
+                    self.ax.set_ylabel(name + ' tsne_y')
             gs.tight_layout(self.fig)
 
             self.canvas = FigureCanvasTkAgg(self.fig, self)
@@ -664,8 +675,8 @@ class wishbone_gui(tk.Tk):
             self.canvas.get_tk_widget().grid(column=1, row=1, rowspan=10, columnspan=4) 
             self.currentPlot = 'tsne'
         
-        else:
-            self.plotGeneExpOntSNE()
+        # elif len(self.colorSelection) > 1:
+        #     self.plotGeneExpOntSNE()
 
     def plotDM(self):
 
@@ -679,12 +690,8 @@ class wishbone_gui(tk.Tk):
 
         else:
             self.saveButton.config(state='normal')
-            if self.scseq == True:
-                self.component_menu.config(state='disabled')
-                self.updateButton.config(state='disabled')
-                self.visMenu.entryconfig(6, state='disabled')
-            else:
-                self.visMenu.entryconfig(4, state='disabled')
+            self.component_menu.config(state='disabled')
+            self.updateButton.config(state='disabled')
 
             self.geometry('950x550')
             self.resetCanvas()
@@ -711,7 +718,6 @@ class wishbone_gui(tk.Tk):
             self.saveButton.config(state='disabled')
             self.component_menu.config(state='normal')
             self.updateButton.config(state='normal')
-            self.visMenu.entryconfig(6, state='disabled')
 
             self.resetCanvas()
             self.canvas = tk.Canvas(self, width=600, height=300)
@@ -750,12 +756,8 @@ class wishbone_gui(tk.Tk):
 
         else:
             self.saveButton.config(state='normal')
-            if self.scseq == True:
-                self.component_menu.config(state='disabled')
-                self.updateButton.config(state='disabled')
-                self.visMenu.entryconfig(6, state='disabled')
-            else:
-                self.visMenu.entryconfig(4, state='disabled')
+            self.component_menu.config(state='disabled')
+            self.updateButton.config(state='disabled')
 
             self.resetCanvas()
 
@@ -774,12 +776,8 @@ class wishbone_gui(tk.Tk):
 
         else:
             self.saveButton.config(state='normal')
-            if self.scseq == True:
-                self.component_menu.config(state='disabled')
-                self.updateButton.config(state='disabled')
-                self.visMenu.entryconfig(6, state='disabled')
-            else:
-                self.visMenu.entryconfig(4, state='disabled')
+            self.component_menu.config(state='disabled')
+            self.updateButton.config(state='disabled')
 
             self.resetCanvas()
             keys = self.data_list.selection()
@@ -821,12 +819,8 @@ class wishbone_gui(tk.Tk):
                 print('Error: must select at least one gene')
             else:
                 self.saveButton.config(state='normal')
-                if self.scseq == True:
-                    self.component_menu.config(state='disabled')
-                    self.updateButton.config(state='disabled')
-                    self.visMenu.entryconfig(6, state='disabled')
-                else:
-                    self.visMenu.entryconfig(4, state='disabled')
+                self.component_menu.config(state='disabled')
+                self.updateButton.config(state='disabled')
 
                 self.resetCanvas()
 
@@ -849,309 +843,154 @@ class wishbone_gui(tk.Tk):
 
     def scatterPlot(self):
         keys = self.data_list.selection()
-        if len(keys) == 1 and 'tSNE' in self.data_list.item(keys[0])['text']:
+        if 'tSNE' in self.data_list.item(keys[0])['text']:
             self.plotTSNE()
-        # else:
-        #     self.scatterOptions = tk.Toplevel()
-        #     self.scatterVar = tk.BooleanVar()
-        #     a = tk.Radiobutton(self.scatterOptions, text='Use genes as axes',
-        #                        variable=self.scatterVar, value=True)
-        #     b = tk.Radiobutton(self.scatterOptions, text='Use data sets as axes',
-        #                        variable=self.scatterVar, value=False)
-        #     a.grid(row=0, column=0)
-        #     b.grid(row=0, column=1)
-
-        #     tk.Button(self.scatterOptions, text="Plot", command=self.chooseScatterType).grid(row=1, column=1)
-        #     tk.Button(self.scatterOptions, text="Cancel", command=self.scatterOptions.destroy).grid(row=1, column=0)
-        #     self.wait_window(self.scatterOptions)
-
-    # def chooseScatterType(self):
-    #     self.scatterOptions.destroy()
-    #     if self.scatterVar.get() == True:
-    #         self.scatterGeneExp()
-    #     else:
-    #         self.scatterGeneExpAgainstOther()
+        elif 'PCA' in self.data_list.item(keys[0])['text']:
+            self.plotPCA()
         else:
-            self.getGeneSelection()
-            self.getColorBy()
-            if len(self.selectedGenes) < 1:
-                print('Error: must select at least one gene')
-            elif len(self.selectedGenes) > 3:
-                print('Error: too many genes selected. Must select either 2 or 3 genes to scatter')
-            else:
+            self.getScatterSelection()
+            xSelection = self.xVar.get().split(', ')
+            ySelection = self.yVar.get().split(', ')
+            zSelection = self.zVar.get().split(', ')
+            colorSelection = self.colorVar.get().split(', ')
+            if len(xSelection[0]) > 0 and len(ySelection[0]) > 0 and len(xSelection) == len(ySelection):
+                if len(colorSelection) == 1 and len(colorSelection) != len(xSelection):
+                    colorSelection = np.repeat(colorSelection, len(xSelection))
+
                 self.saveButton.config(state='normal')
-                if self.scseq == True:
-                    self.component_menu.config(state='disabled')
-                    self.updateButton.config(state='disabled')
-                    self.visMenu.entryconfig(6, state='disabled')
-                else:
-                    self.visMenu.entryconfig(4, state='disabled')
+                self.component_menu.config(state='disabled')
+                self.updateButton.config(state='disabled')
 
                 self.resetCanvas()
                 keys = self.data_list.selection()
-                self.fig = plt.figure(figsize=[8, 4 * int(np.ceil(len(keys)/2))])
-                gs = gridspec.GridSpec(int(np.ceil(len(keys)/2)), 2)
+                self.fig = plt.figure(figsize=[4*len(xSelection), 4 * len(keys)])
+                gs = gridspec.GridSpec(len(keys), len(xSelection))
                 self.ax = []
                 for i in range(len(keys)):
-                    if len(self.selectedGenes) == 3:
-                        self.ax.append(self.fig.add_subplot(gs[int(i/2), i%2], projection='3d'))
-                    else:
-                        self.ax.append(self.fig.add_subplot(gs[int(i/2), i%2]))
-
                     name = self.data_list.item(keys[i])['text'].split(' (')[0]
-                    if self.colorVar.get() == 0:
-                        self.data[name]['scdata'].scatter_gene_expression(self.selectedGenes, fig=self.fig, 
-                                                                          ax=self.ax[len(self.ax)-1], color='black')
-                    elif self.colorVar.get() == 1:
-                        self.data[name]['scdata'].scatter_gene_expression(self.selectedGenes, fig=self.fig, 
-                                                                          ax=self.ax[len(self.ax)-1], color='blue')
-                    else:
-                        self.data[name]['scdata'].scatter_gene_expression(self.selectedGenes, fig=self.fig, ax=self.ax[len(self.ax)-1], 
-                                                                          density=True if self.colorVar.get() == 3 else False, 
-                                                                          color=list(self.colorSelection.values())[0] if len(self.colorSelection) > 0 else None)
-                        if self.colorVar.get() == 3:
-                            self.ax[len(self.ax)-1].set_title('Colored by density')
-                        else:
-                            self.ax[len(self.ax)-1].set_title('Colored by ' + list(self.colorSelection.keys())[0])
+                    magic = False
+                    if 'MAGIC' in name:
+                        name = name.split(' MAGIC')[0]
+                        magic = True
 
-                    self.ax[len(self.ax)-1].set_xlabel(name + ' ' + self.selectedGenes[0])
-                    self.ax[len(self.ax)-1].set_ylabel(name + ' ' + self.selectedGenes[1])
-                    if len(self.selectedGenes) == 3:
-                        self.ax[len(self.ax)-1].set_zlabel(name + ' ' + self.selectedGenes[2])
+                    for j in range(len(xSelection)):
+                        if len(zSelection[0]) > 0 and len(zSelection) == len(xSelection):
+                            self.ax.append(self.fig.add_subplot(gs[i, j], projection='3d'))
+                            genes = [xSelection[j], ySelection[j], zSelection[j]]
+                        else:
+                            self.ax.append(self.fig.add_subplot(gs[i, j]))
+                            genes = [xSelection[j], ySelection[j]]
+
+                        if colorSelection[j] == 'wishbone trajectory':
+                            if magic:
+                                self.data[name]['scdata'].magic.scatter_gene_expression(genes, fig=self.fig, ax=self.ax[len(self.ax)-1],
+                                                                                                            color=self.data[name]['wb'].trajectory)
+                            else:
+                                self.data[name]['scdata'].scatter_gene_expression(genes, fig=self.fig, ax=self.ax[len(self.ax)-1],
+                                                                                                            color=self.data[name]['wb'].trajectory)
+                        elif colorSelection[j] == 'wishbone branches':
+                            if magic:
+                                self.data[name]['scdata'].magic.scatter_gene_expression(genes, fig=self.fig, ax=self.ax[len(self.ax)-1],
+                                                                                                            color=self.data[name]['wb'].branch)
+                            else:
+                                self.data[name]['scdata'].scatter_gene_expression(genes, fig=self.fig, ax=self.ax[len(self.ax)-1],
+                                                                                                            color=self.data[name]['wb'].branch)
+                        elif 'diffusion component' in colorSelection[j]:
+                            color = int(colorSelection[j].split('diffusion component ')[1])
+                            if magic:
+                                self.data[name]['scdata'].magic.scatter_gene_expression(genes, fig=self.fig, ax=self.ax[len(self.ax)-1],
+                                                                                                            color=self.data[name]['scdata'].diffusion_eigenvectors[color])
+                            else:
+                                self.data[name]['scdata'].scatter_gene_expression(genes, fig=self.fig, ax=self.ax[len(self.ax)-1],
+                                                                                                            color=self.data[name]['scdata'].diffusion_eigenvectors[color])
+                        elif 'magic' in colorSelection[j]:
+                            color = self.colorSelection[j].split(' magic')[0]
+                            if magic:
+                                self.data[name]['scdata'].magic.scatter_gene_expression(genes, fig=self.fig, ax=self.ax[len(self.ax)-1],
+                                                                                                            color=self.data[name]['scdata'].magic.data[color])
+                            else:
+                                self.data[name]['scdata'].scatter_gene_expression(genes, fig=self.fig, ax=self.ax[len(self.ax)-1],
+                                                                                                            color=self.data[name]['scdata'].magic.data[color])
+                        elif colorSelection[j] in self.data[name]['scdata'].data.columns:
+                            if magic:
+                                self.data[name]['scdata'].magic.scatter_gene_expression(genes, fig=self.fig, ax=self.ax[len(self.ax)-1],
+                                                                                                            color=self.data[name]['scdata'].magic.data[colorSelection[j]])
+                            else:
+                                self.data[name]['scdata'].scatter_gene_expression(genes, fig=self.fig, ax=self.ax[len(self.ax)-1],
+                                                                                                            color=self.data[name]['scdata'].data[colorSelection[j]])
+                        elif colorSelection[j] == 'density':
+                            if magic:
+                                self.data[name]['scdata'].magic.scatter_gene_expression(genes, fig=self.fig, ax=self.ax[len(self.ax)-1],
+                                                                                                            density=True)
+                            else:
+                                self.data[name]['scdata'].scatter_gene_expression(genes, fig=self.fig, ax=self.ax[len(self.ax)-1],
+                                                                                                            density=True)
+                        else:
+                            if magic:
+                                self.data[name]['scdata'].magic.scatter_gene_expression(genes, fig=self.fig, ax=self.ax[len(self.ax)-1],
+                                                                                                            color=colorSelection[j])
+                            else:
+                                self.data[name]['scdata'].scatter_gene_expression(genes, fig=self.fig, ax=self.ax[len(self.ax)-1],
+                                                                                                            color=colorSelection[j])
+
+                        self.ax[len(self.ax)-1].set_title('Color: ' + colorSelection[j])
+                        self.ax[len(self.ax)-1].set_xlabel(name + ' ' + xSelection[j])
+                        self.ax[len(self.ax)-1].set_ylabel(name + ' ' + ySelection[j])
+                        if len(genes) == 3:
+                            self.ax[len(self.ax)-1].set_zlabel(name + ' ' + zSelection[j])
+                
                 gs.tight_layout(self.fig, pad=1.2, w_pad=0.1)
                 
                 self.canvas = FigureCanvasTkAgg(self.fig, self)
                 self.canvas.get_tk_widget().grid(column=1, row=1, rowspan=10, columnspan=4)
                 self.canvas.show()
-                if len(self.selectedGenes) == 3:
-                    if len(keys) > 1:
+                if len(zSelection[0]) > 0 and len(zSelection) == len(xSelection):
                         for ax in self.ax:
                             ax.mouse_init()
-                    else:
-                        self.ax.mouse_init()
-                self.currentPlot = '_'.join(self.selectedGenes) + '_scatter'
-
-    def plotGeneExpOntSNE(self):
-        keys = self.data_list.selection()
-
-        if len(keys) > 2:
-            self.GEError = tk.Toplevel()
-            self.GEError.title("Error -- too many datasets selected")
-            tk.Label(self.GEError,text=u"Please select up to two datasets to plot gene expression on tSNE",fg="black",bg="white").grid(column=0, row=0)
-            tk.Button(self.GEError, text="Ok", command=self.GEError.destroy).grid(column=0, row=1)
-            self.wait_window(self.GEError)
-
-        else:  
-            self.saveButton.config(state='normal')
-            if self.scseq == True:
-                self.component_menu.config(state='disabled')
-                self.updateButton.config(state='disabled')
-                self.visMenu.entryconfig(6, state='disabled')
+                self.currentPlot = 'scatter'
             else:
-                self.visMenu.entryconfig(4, state='disabled')
+                print('Error: must select at least one gene for x and y. x and y must also have the same number of selections.')
 
-            self.resetCanvas()
-            name0 = self.data_list.item(keys[0])['text'].split(' (')[0]
-            if 'tSNE' in name0:
-                name0 = name0.split(' tSNE')[0]
-            name1 = self.data[self.data_list.item(keys[1])['text'].split(' (')[0]]['scdata'] if len(keys) > 1 else None
-            if 'tSNE' in name1:
-                name1 = name1.split(' tSNE')[0]
-            self.fig, self.ax = self.data[name0]['scdata'].plot_gene_expression(self.colorSelection, other_data=name1)
-            for i in range(len(keys)):
-                name = self.data_list.item(keys[i])['text'].split(' (')[0]
-                plt.figtext(0.01, 0.75 - (0.5*i), name, rotation='vertical')
-            self.fig.tight_layout()
-            self.canvas = FigureCanvasTkAgg(self.fig, self)
-            self.canvas.show()
-            self.canvas.get_tk_widget().grid(column=1, row=1, rowspan=10, columnspan=4)
-            self.currentPlot = '_'.join(self.colorSelection) + '_tsne'
-            self.geometry('950x550')
+    def getScatterSelection(self, plot_type=''):
+        #popup menu for scatter plot selections
+        self.scatterSelection = tk.Toplevel()
+        self.scatterSelection.title("Scatter plot options")
 
-    # def scatterGeneExpAgainstOther(self):
-    #     keys = self.data_list.selection()
-
-    #     if len(keys) != 2:
-    #         self.GEError = tk.Toplevel()
-    #         self.GEError.title("Error -- must select two datasets")
-    #         tk.Label(self.GEError,text=u"Please select exactly two datasets to compare gene expression",fg="black",bg="white").grid(column=0, row=0)
-    #         tk.Button(self.GEError, text="Ok", command=self.GEError.destroy).grid(column=0, row=1)
-    #         self.wait_window(self.GEError)    
-
-    #     else:  
-    #         self.getGeneSelection()
-    #         self.getColorBy()
-    #         if len(self.selectedGenes) < 1:
-    #             print('Error: must select at least one gene')
-
-    #         else:
-    #             self.saveButton.config(state='normal')
-    #             if self.scseq == True:
-    #                 self.component_menu.config(state='disabled')
-    #                 self.updateButton.config(state='disabled')
-    #                 self.visMenu.entryconfig(6, state='disabled')
-    #             else:
-    #                 self.visMenu.entryconfig(4, state='disabled')
-
-    #             name0 = self.data_list.item(keys[0])['text'].split(' (')[0]
-    #             name1 = self.data_list.item(keys[1])['text'].split(' (')[0]
-
-    #             self.resetCanvas()
-    #             if self.colorVar.get() == 0:
-    #                 self.fig, self.axes = self.data[name0]['scdata'].scatter_gene_expression_against_other_data(self.selectedGenes, other_data=self.data[name1]['scdata'],
-    #                                                                                                             color='black')
-    #             elif self.colorVar.get() == 1:
-    #                 self.fig, self.axes = self.data[name0]['scdata'].scatter_gene_expression_against_other_data(self.selectedGenes, other_data=self.data[name1]['scdata'],
-    #                                                                                                             color='blue')
-    #             else:
-    #                 self.fig, self.axes = self.data[name0]['scdata'].scatter_gene_expression_against_other_data(self.selectedGenes, other_data=self.data[name1]['scdata'],
-    #                                                                                                             density=True if self.colorVar.get() == 3 else False, 
-    #                                                                                                             color=list(self.colorSelection.values())[0] if len(self.colorSelection) > 0 else None)
-    #             i = 0
-    #             for ax in self.axes:
-    #                 if self.colorVar.get() == 3:
-    #                         ax.set_title('Colored by density')
-    #                 elif self.colorVar.get() == 2:
-    #                     ax.set_title('Colored by ' + list(self.colorSelection.keys())[0])
-    #                 ax.set_xlabel(name0 + ' ' + self.selectedGenes[i])
-    #                 ax.set_ylabel(name1 + ' ' + self.selectedGenes[i])
-    #                 i += 1
-
-    #             self.canvas = FigureCanvasTkAgg(self.fig, self)
-    #             self.canvas.show()
-    #             self.canvas.get_tk_widget().grid(column=1, row=1, rowspan=10, columnspan=4)
-    #             self.currentPlot = '_'.join(self.selectedGenes) + '_compare_gene_exp'
-
-    def getGeneSelection(self):
-        #popup menu to get selected genes
-        self.geneSelection = tk.Toplevel()
-        self.geneSelection.title("Select Genes")
-        tk.Label(self.geneSelection,text=u"Genes:",fg="black",bg="white").grid(row=0)
-
-        keys = self.data_list.selection()
-        if len(keys) > 1:
-            genes = reduce(np.intersect1d, tuple([self.data[self.data_list.item(key)['text'].split(' (')[0].rsplit(' ', 2)[0]]['genes'] for key in keys])).tolist()
+        #x
+        if plot_type == 'tsne':
+            tk.Label(self.scatterSelection, text=u"x: tsne_x", fg="black",bg="white").grid(row=0, column=0)
         else:
-            genes = self.data[self.data_list.item(keys[0])['text'].split(' (')[0]]['genes'].tolist()
+            tk.Label(self.scatterSelection, text=u"x:", fg="black",bg="white").grid(row=0, column=0)
+            self.xVar = tk.StringVar()
+            tk.Entry(self.scatterSelection, textvariable=self.xVar).grid(column=1,row=0)
 
-        self.geneInput = magic.autocomplete_entry.AutocompleteEntry(genes, self.geneSelection, listboxLength=6)
-        self.geneInput.grid(row=1)
-        self.geneInput.bind('<Return>', self.AddToSelected)
-
-        self.geneSelectBox = tk.Listbox(self.geneSelection, selectmode=tk.EXTENDED)
-        self.geneSelectBox.grid(row=2, rowspan=10)
-        self.geneSelectBox.bind('<BackSpace>', self.DeleteSelected)
-        self.selectedGenes = []
-
-        tk.Button(self.geneSelection, text="Use selected genes", command=self.geneSelection.destroy).grid(row=12)
-        tk.Button(self.geneSelection, text="Cancel", command=self.cancelGeneSelection).grid(row=13)
-        self.wait_window(self.geneSelection)
-    
-    def cancelGeneSelection(self):
-        self.selectedGenes = []
-        self.geneSelection.destroy()
-
-    def AddToSelected(self, event):
-        self.selectedGenes.append(self.geneInput.get())
-        self.geneSelectBox.insert(tk.END, self.selectedGenes[len(self.selectedGenes)-1])
-
-    def DeleteSelected(self, event):
-        selected = self.geneSelectBox.curselection()
-        pos = 0
-        for i in selected:
-            idx = int(i) - pos
-            self.geneSelectBox.delete( idx,idx )
-            self.selectedGenes = self.selectedGenes[:idx] + self.selectedGenes[idx+1:]
-            pos = pos + 1  
-
-    def getColorBy(self):
-        #pop up for color by
-        self.ColorOptions = tk.Toplevel()
-        self.ColorOptions.title("Plot color options")
-
-        self.colorVar = tk.IntVar()
-        tk.Label(self.ColorOptions, text=u"Solid color:", fg="black", bg="white").grid(column=0, row=0)
-        tk.Radiobutton(self.ColorOptions, text='Black', variable=self.colorVar, value=0).grid(column=1, row=0)
-        tk.Radiobutton(self.ColorOptions, text='Blue', variable=self.colorVar, value=1).grid(column=2, row=0)
-        tk.Radiobutton(self.ColorOptions, text='Data set', variable=self.colorVar, 
-                       value=2).grid(row=1, column=1)
-        tk.Radiobutton(self.ColorOptions, text='Density', variable=self.colorVar, 
-                       value=3).grid(row=1, column=2)
-
-        self.data_set = tk.StringVar()
-        self.data_set.set('Select data set')
-        data_sets = []
-        for item in self.data.keys():
-            if isinstance(self.data[item]['scdata'].tsne, pd.DataFrame):
-                data_sets.append(item + ' tSNE')
-            if isinstance(self.data[item]['scdata'].diffusion_eigenvectors, pd.DataFrame):
-                data_sets.append(item + ' Diffusion components')
-            if isinstance(self.data[item]['wb'], magic.mg.Wishbone):
-                data_sets.append(item + ' Wishbone')
-            data_sets.append(item)
-        self.data_menu = tk.OptionMenu(self.ColorOptions, self.data_set, *data_sets)
-        self.data_menu.grid(row=2, column=1)
-        
-        tk.Button(self.ColorOptions, text="Use data set", command=self._updateColorBy).grid(column=2, row=2)
-
-        tk.Label(self.ColorOptions,text=u"Select genes/components:",fg="black",bg="white").grid(column=0, row=3, columnspan=2)
-        tk.Entry(self.ColorOptions).grid(column=2, row=3)
-
-        self.colorSelectBox = tk.Listbox(self.ColorOptions, selectmode=tk.EXTENDED)
-        self.colorSelectBox.grid(row=4, rowspan=5, column=2)
-        self.colorSelectBox.bind('<BackSpace>', self.deleteColor)
-        self.colorSelection = {}
-
-        tk.Button(self.ColorOptions, text="Plot", command=self.ColorOptions.destroy).grid(column=1, row=11)
-        tk.Button(self.ColorOptions, text="Cancel", command=self._cancelColorBy).grid(column=0, row=11)
-        self.wait_window(self.ColorOptions)
-
-    def _updateColorBy(self):
-        if ' tSNE' in self.data_set.get():
-            self.colorDataName = self.data_set.get().split(' tSNE')[0]
-            self.colorInput = magic.autocomplete_entry.AutocompleteEntry(['tsne_x', 'tsne_y'], 
-                                                                         self.ColorOptions, listboxLength=3)
-        elif ' Diffusion components' in self.data_set.get():
-            self.colorDataName = self.data_set.get().split(' Diffusion components')[0]
-            self.colorInput = magic.autocomplete_entry.AutocompleteEntry(['Diffusion component ' + str(i) for i in range(len(self.data[self.colorDataName]['scdata'].diffusion_eigenvectors))], 
-                                                                         self.ColorOptions, listboxLength=3)
-        elif ' Wishbone' in self.data_set.get():
-            self.colorDataName = self.data_set.get().split(' Wishbone')[0]
-            self.colorInput = magic.autocomplete_entry.AutocompleteEntry(['Wishbone trajectory', 'Wishbone branches'], 
-                                                                         self.ColorOptions, listboxLength=3)
+        #y
+        if plot_type == 'tsne':
+            tk.Label(self.scatterSelection, text=u"y: tsne_y", fg="black",bg="white").grid(row=1, column=0)
         else:
-            self.colorInput = magic.autocomplete_entry.AutocompleteEntry(self.data[self.data_set.get()]['genes'], self.ColorOptions, listboxLength=3)
-        
-        self.colorInput.grid(column=2, row=3)
-        self.colorInput.bind('<Return>', self.addColor)
+            tk.Label(self.scatterSelection, text=u"y:", fg="black",bg="white").grid(row=1, column=0)
+            self.yVar = tk.StringVar()
+            tk.Entry(self.scatterSelection, textvariable=self.yVar).grid(column=1,row=1)
 
-    def _cancelColorBy(self):
-        self.colorSelection = {}
-        self.ColorOptions.destroy()
+        #z
+        if plot_type != 'tsne':
+            tk.Label(self.scatterSelection, text=u"z:", fg="black",bg="white").grid(row=2, column=0)
+            self.zVar = tk.StringVar()
+            tk.Entry(self.scatterSelection, textvariable=self.zVar).grid(column=1,row=2)
 
-    def addColor(self, event):
-        if ' tSNE' in self.data_set.get():
-            self.colorSelection[self.colorDataName + ' ' + self.colorInput.get()] = self.data[self.colorDataName]['scdata'].tsne[self.colorInput.get().split('tsne_')[1]]
-        elif ' Diffusion components' in self.data_set.get():
-            diff_num = int(self.colorInput.get().split('Diffusion component ')[1])
-            self.colorSelection[self.colorDataName + ' ' + self.colorInput.get()] = self.data[self.colorDataName]['scdata'].diffusion_eigenvectors[diff_num]
-        elif ' Wishbone' in self.data_set.get():
-            if 'trajectory' in self.colorInput.get():
-                self.colorSelection[self.colorDataName + ' ' + self.colorInput.get()] = self.data[self.colorDataName]['wb'].trajectory
-            else:
-                self.colorSelection[self.colorDataName + ' ' + self.colorInput.get()] = self.data[self.colorDataName]['wb'].branch
-        else:
-            self.colorSelection[self.data_set.get() + ' ' + self.colorInput.get()] = self.data[self.data_set.get()]['scdata'].data[self.colorInput.get()]
-        self.colorSelectBox.insert(tk.END, self.colorInput.get())
+        #color
+        tk.Label(self.scatterSelection, text=u"color:", fg="black",bg="white").grid(row=3, column=0)
+        self.colorVar = tk.StringVar()
+        self.colorVar.set('blue')
+        tk.Entry(self.scatterSelection, textvariable=self.colorVar).grid(column=1,row=3)
 
-    def deleteColor(self, event):
-        selected = self.colorSelectBox.curselection()
-        pos = 0
-        for i in selected:
-            idx = int(i) - pos
-            self.colorSelectBox.delete( idx,idx )
-            self.colorSelection = self.colorSelection[:idx] + self.colorSelection[idx+1:]
-            pos = pos + 1 
+        tk.Button(self.scatterSelection, text="Plot", command=self.scatterSelection.destroy).grid(column=1, row=4)
+        tk.Button(self.scatterSelection, text="Cancel", command=self._cancelScatter).grid(column=0, row=4)
+        self.wait_window(self.scatterSelection)
+
+    def _cancelScatter(self):
+        self.colorVar.set('')
+        self.scatterSelection.destroy()
 
     def savePlot(self):
         self.plotFileName = filedialog.asksaveasfilename(title='Save Plot', defaultextension='.png', initialfile=self.fileNameEntryVar.get()+"_"+self.currentPlot)
@@ -1218,11 +1057,6 @@ class wishbone_gui(tk.Tk):
                     self.data[self.curKey]['scdata'].tsne.ix[gated_cells, 'y'], 
                     s=10, edgecolors='none')
         self.canvas.draw()
-
-        if self.scseq == True:
-            self.visMenu.entryconfig(6, state='disabled')
-        else:
-            self.visMenu.entryconfig(4, state='disabled')
 
     def resetCanvas(self):
         self.fig.clf()
