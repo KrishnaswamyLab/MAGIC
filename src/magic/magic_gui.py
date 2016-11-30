@@ -437,9 +437,10 @@ class wishbone_gui(tk.Tk):
             tk.Label(self.wbOptions,text=u"Start cell:",fg="black",bg="white").grid(column=0,row=0)
             self.start = tk.StringVar()
             tk.Entry(self.wbOptions, textvariable=self.start).grid(column=1,row=0)
+            
+            self.cell_gate = tk.StringVar()
+            self.cell_gate.set('Use cell gate')
             if(len(self.data[self.curName]['gates']) > 0):
-                self.cell_gate = tk.StringVar()
-                self.cell_gate.set('Use cell gate')
                 self.gate_menu = tk.OptionMenu(self.wbOptions, self.cell_gate,
                                                *list(self.data[self.curName]['gates'].keys()))
                 self.gate_menu.grid(row=0, column=2)

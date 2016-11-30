@@ -28,7 +28,6 @@ with warnings.catch_warnings():
 # from tsne import bh_sne
 from sklearn.manifold import TSNE
 from sklearn.manifold.t_sne import _joint_probabilities, _joint_probabilities_nn
-from sklearn.metrics.pairwise import pairwise_distances
 from sklearn.neighbors import NearestNeighbors
 from scipy.spatial.distance import squareform
 from scipy.sparse import csr_matrix, find, vstack, hstack, issparse
@@ -81,36 +80,6 @@ def density_2d(x, y):
     i = np.argsort(z)
     return np.ravel(x)[i], np.ravel(y)[i], np.arcsinh(z[i])
 
-def impute_fast(data, L, t, rescale_to_max, L_t=None, tprev=None):
-
-    #convert L to full matrix
-    if issparse(L):
-        L = L.todense()
-
-    #L^t
-    print('MAGIC: L_t = L^t')
-    if L_t == None:
-        L_t = np.linalg.matrix_power(L, t)
-    else:
-        L_t = np.dot(L_t, np.linalg.matrix_power(L, t-tprev))
-
-    print('MAGIC: data_new = L_t * data')
-    data_new = np.array(np.dot(L_t, data))
-
-    #rescale data to 99th percentile
-    if rescale_to_max == True:
-        M99 = np.percentile(data, 99, axis=0)
-        M100 = data.max(axis=0)
-        indices = np.where(M99 == 0)[0]
-        M99[indices] = M100[indices]
-        M99_new = np.percentile(data_new, 99, axis=0)
-        M100_new = data_new.max(axis=0)
-        indices = np.where(M99_new == 0)[0]
-        M99_new[indices] = M100_new[indices]
-        max_ratio = np.divide(M99, M99_new)
-        data_new = np.multiply(data_new, np.matlib.repmat(max_ratio, len(data), 1))
-    
-    return data_new, L_t
         
 class SCData:
 
@@ -1223,42 +1192,8 @@ class SCData:
 
     def run_magic(self, kernel='gaussian', n_pca_components=None, t=8, knn=20, knn_autotune=0, epsilon=0, rescale=True, k_knn=100, perplexity=30):
 
-        if kernel not in ['gaussian', 'tsne']:
-            raise RuntimeError('Invalid kerne type. Must be either "gaussian" or "tsne".')
-
-        
-        if self.data_type == 'sc-seq':
-            if n_pca_components != None:
-                self.run_pca(n_components=n_pca_components)
-                pca_projected_data = np.dot(self.data.values, self.pca['loadings'].values)
-            else:
-                pca_projected_data = self.data.values
-        else:
-            pca_projected_data = self.data.values
-        print(pca_projected_data.shape)
-
-        if kernel == 'gaussian':
-            #run diffusion maps to get markov matrix
-            diffusion_map = magic.graph_diffusion.run_diffusion_map(pca_projected_data, knn=knn, normalization='markov', 
-                                                                    epsilon=epsilon, distance_metric='euclidean', knn_autotune=knn_autotune)
-            L = diffusion_map['T']
-
-        else:
-            #tsne kernel
-            distances = pairwise_distances(pca_projected_data, squared=True)
-            if k_knn > 0:
-                neighbors_nn = np.argsort(distances, axis=0)[:, :k_knn]
-                P = _joint_probabilities_nn(distances, neighbors_nn, perplexity, 1)
-            else:
-                P = _joint_probabilities(distances, perplexity, 1)
-            P = squareform(P)
-
-            #markov normalize P
-            L = np.divide(P, np.sum(P, axis=1))
-        print(L.shape)
-
-        #get imputed data matrix
-        new_data, L_t = impute_fast(self.data.values, L, t, rescale_to_max=rescale)
+        new_data = magic.MAGIC.magic(self.data.values, kernel=kernel, n_pca_components=n_pca_components, t=t, knn=knn, 
+                                     knn_autotune=knn_autotune, epsilon=epsilon, rescale=rescale, k_knn=k_knn, perplexity=perplexity)
 
         new_data = pd.DataFrame(new_data, index=self.data.index, columns=self.data.columns)
 
@@ -1415,7 +1350,7 @@ class Wishbone:
         s = s[0]
 
         # Run the algorithm
-        res = magic.core.wishbone(
+        res = magic.wishbone.wishbone(
             self.scdata.diffusion_eigenvectors.ix[:, components_list].values,
             s=s, k=k, l=k, num_waypoints=num_waypoints, branch=branch)
 
