@@ -367,8 +367,6 @@ class SCData:
 
     def filter_scseq_data(self, filter_cell_min=0, filter_cell_max=0, filter_gene_nonzero=None, filter_gene_mols=None):
 
-        scdata = SCData(data=self.data, metadata=self.metadata)
-
         if filter_cell_min != filter_cell_max:
             sums = scdata.data.sum(axis=1)
             to_keep = np.intersect1d(np.where(sums >= filter_cell_min)[0], 
@@ -384,8 +382,6 @@ class SCData:
             sums = scdata.data.sum(axis=0)
             to_keep = np.where(sums >= filter_gene_mols)[0]
             scdata.data = scdata.data.ix[:, to_keep].astype(np.float32)
-
-        return scdata
 
 
     def normalize_scseq_data(self):
@@ -418,25 +414,23 @@ class SCData:
         width = 12
         fig = plt.figure(figsize=[width, height])
         gs = plt.GridSpec(1, 3)
-        colsum = self.data.sum(axis=0)
-        rowsum = self.data.sum(axis=1)
+        colsum = np.log10(self.data.sum(axis=0))
+        rowsum = np.log10(self.data.sum(axis=1))
         for i in range(3):
             ax = plt.subplot(gs[0, i])
 
             if i == 0:
-                n, bins, patches = ax.hist(rowsum, 
-                                   bins=np.arange(np.min(rowsum), np.max(rowsum), (np.max(rowsum)-np.min(rowsum))/20))
-                plt.xlabel('Molecules per cell')
+                print(np.min(rowsum))
+                print(np.max(rowsum))
+                n, bins, patches = ax.hist(rowsum, bins='auto')
+                plt.xlabel('Molecules per cell (log10 scale)')
             elif i == 1:
-                temp = self.data.astype(bool).sum(axis=0)
-                n, bins, patches = ax.hist(temp,
-                                   bins=np.arange(np.min(temp), np.max(temp), (np.max(temp)-np.min(temp))/20))
-                plt.xlabel('Nonzero cells per gene')
+                temp = np.log10(self.data.astype(bool).sum(axis=0))
+                n, bins, patches = ax.hist(temp, bins='auto')
+                plt.xlabel('Nonzero cells per gene (log10 scale)')
             else:
-                n, bins, patches = ax.hist(colsum,
-                                   bins=np.arange(np.min(colsum), np.max(colsum), (np.max(colsum)-np.min(colsum))/20))
-                plt.xlabel('Molecules per gene')
-            plt.xscale('log')
+                n, bins, patches = ax.hist(colsum, bins='auto') 
+                plt.xlabel('Molecules per gene (log10 scale)')
             plt.ylabel('Frequency')
             ax.tick_params(axis='x', labelsize=8)
 
