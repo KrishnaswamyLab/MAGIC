@@ -6,12 +6,16 @@ from sklearn.manifold.t_sne import _joint_probabilities, _joint_probabilities_nn
 from scipy.spatial.distance import squareform
 from sklearn.neighbors import NearestNeighbors
 
-def magic(data, kernel='gaussian', n_pca_components=None, t=8, knn=20, 
-          knn_autotune=0, epsilon=0, rescale=True, k_knn=100, perplexity=30):
+def magic(data, unnormalized_data, kernel='gaussian', n_pca_components=None, t=8, knn=20, 
+          knn_autotune=0, epsilon=0, rescale=0, k_knn=100, perplexity=30):
 
-    if kernel not in ['gaussian', 'tsne']:
-        raise RuntimeError('Invalid kernel type. Must be either "gaussian" or "tsne".')
+    if kernel not in ['gaussian']:
+        raise RuntimeError('Invalid kernel type. Must be "gaussian".')
 
+    #library size normalization
+    #create data_norm
+
+    #always pass in data_norm
     if n_pca_components != None:
         pca_loadings = run_pca(data, n_components=n_pca_components)
         pca_projected_data = np.dot(data, pca_loadings)
@@ -23,21 +27,22 @@ def magic(data, kernel='gaussian', n_pca_components=None, t=8, knn=20,
         L = compute_markov(pca_projected_data, knn=knn, epsilon=epsilon, 
                                        distance_metric='euclidean', knn_autotune=knn_autotune)
 
-    else:
-        #tsne kernel
-        distances = pairwise_distances(pca_projected_data, squared=True)
-        if k_knn > 0:
-            neighbors_nn = np.argsort(distances, axis=0)[:, :k_knn]
-            P = _joint_probabilities_nn(distances, neighbors_nn, perplexity, 1)
-        else:
-            P = _joint_probabilities(distances, perplexity, 1)
-        P = squareform(P)
+    #remove tsne kernel for now
+    # else:
+    #     distances = pairwise_distances(pca_projected_data, squared=True)
+    #     if k_knn > 0:
+    #         neighbors_nn = np.argsort(distances, axis=0)[:, :k_knn]
+    #         P = _joint_probabilities_nn(distances, neighbors_nn, perplexity, 1)
+    #     else:
+    #         P = _joint_probabilities(distances, perplexity, 1)
+    #     P = squareform(P)
 
-        #markov normalize P
-        L = np.divide(P, np.sum(P, axis=1))
+    ## QUESTION -- should this happen for gaussian kernel too??
+    #     #markov normalize P
+    #     L = np.divide(P, np.sum(P, axis=1))
 
-    #get imputed data matrix
-    new_data, L_t = impute_fast(data, L, t, rescale_to_max=rescale)
+    #get imputed data matrix -- by default use data_norm but give user option to pick
+    new_data, L_t = impute_fast(unnormalized_data, L, t, rescale_percent=rescale)
 
     return new_data
 
@@ -81,7 +86,7 @@ def run_pca(data, n_components=100):
     return M
 
 
-def impute_fast(data, L, t, rescale_to_max, L_t=None, tprev=None):
+def impute_fast(data, L, t, rescale_percent=0, L_t=None, tprev=None):
 
     #convert L to full matrix
     if issparse(L):
@@ -97,13 +102,13 @@ def impute_fast(data, L, t, rescale_to_max, L_t=None, tprev=None):
     print('MAGIC: data_new = L_t * data')
     data_new = np.array(np.dot(L_t, data))
 
-    #rescale data to 99th percentile
-    if rescale_to_max == True:
-        M99 = np.percentile(data, 99, axis=0)
+    #rescale data
+    if rescale_percent != 0:
+        M99 = np.percentile(data, rescale_percent, axis=0)
         M100 = data.max(axis=0)
         indices = np.where(M99 == 0)[0]
         M99[indices] = M100[indices]
-        M99_new = np.percentile(data_new, 99, axis=0)
+        M99_new = np.percentile(data_new, rescale_percent, axis=0)
         M100_new = data_new.max(axis=0)
         indices = np.where(M99_new == 0)[0]
         M99_new[indices] = M100_new[indices]
@@ -166,3 +171,15 @@ def compute_markov(data, knn=10, epsilon=1, distance_metric='euclidean', knn_aut
     T = csr_matrix((D, (range(N), range(N))), shape=[N, N]).dot(W)
 
     return T
+
+
+def optimal_t(data, th=0.001):
+    S = np.linalg.svd(data)
+    S = np.power(S, 2)
+    nse = np.zeros(32)
+
+    for t in range(32):
+        S_t = np.power(S, t)
+        P = np.divide(S_t, np.sum(S_t, axis=0))
+        nse[t] = np.sum(P[np.where(P > th)[0]])
+
