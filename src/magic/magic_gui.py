@@ -58,8 +58,9 @@ class wishbone_gui(tk.Tk):
         self.config(menu=self.menubar)
 
         #intro screen
-        tk.Label(self, text=u"MAGIC", font=('Helvetica', 48), fg="black", bg="white", padx=100, pady=50).grid(row=0)
-        tk.Label(self, text=u"To get started, select a data file by clicking File > Load Data", fg="black", bg="white", padx=100, pady=25).grid(row=1)
+        tk.Label(self, text=u"MAGIC", font=('Helvetica', 48), fg="black", bg="white", padx=100, pady=20).grid(row=0)
+        tk.Label(self, text=u"Markov Affinity-Based Graph Imputation of Cells", font=('Helvetica', 25), fg="black", bg="white", padx=100, pady=40).grid(row=1)
+        tk.Label(self, text=u"To get started, select a data file by clicking File > Load Data", fg="black", bg="white", padx=100, pady=25).grid(row=2)
 
         #update
         self.protocol('WM_DELETE_WINDOW', self.quitWB)
@@ -103,7 +104,7 @@ class wishbone_gui(tk.Tk):
 
             #normalize
             self.normalizeVar = tk.BooleanVar()
-            tk.Checkbutton(self.fileInfo, text=u"Normalize by library size", variable=self.normalizeVar).grid(column=0, row=7, columnspan=4)
+            tk.Checkbutton(self.fileInfo, text=u"Normalize by library size (Not required for MAGIC)", variable=self.normalizeVar).grid(column=0, row=7, columnspan=4)
 
             tk.Button(self.fileInfo, text="Cancel", command=self.fileInfo.destroy).grid(column=1, row=8)
             tk.Button(self.fileInfo, text="Load", command=partial(self.processData, file_type='csv')).grid(column=2, row=8)
@@ -185,6 +186,10 @@ class wishbone_gui(tk.Tk):
             self.data_list.heading('#0', text='Data sets')
             self.data_list.grid(column=0, row=0, rowspan=11, sticky='NS')
             self.data_list.bind('<BackSpace>', self._deleteDataItem)
+            #make Treeview scrollable
+            ysb = ttk.Scrollbar(orient=tk.VERTICAL, command=self.data_list.yview)
+            xsb = ttk.Scrollbar(orient=tk.HORIZONTAL, command=self.data_list.xview)
+            self.data_list.configure(yscroll=ysb.set, xscroll=xsb.set)
 
             #set up canvas for plots
             self.fig, self.ax = magic.mg.get_fig()
@@ -371,17 +376,30 @@ class wishbone_gui(tk.Tk):
                 self.nCompVar = tk.IntVar()
                 self.nCompVar.set(15)
                 tk.Entry(self.tsneOptions, textvariable=self.nCompVar).grid(column=1,row=0)
+
             tk.Label(self.tsneOptions,text=u"Perplexity:" ,fg="black",bg="white").grid(column=0, row=1)
             self.perplexityVar = tk.IntVar()
             self.perplexityVar.set(30)
             tk.Entry(self.tsneOptions, textvariable=self.perplexityVar).grid(column=1,row=1)
-            tk.Button(self.tsneOptions, text="Run", command=self._runTSNE).grid(column=1, row=2)
-            tk.Button(self.tsneOptions, text="Cancel", command=self.tsneOptions.destroy).grid(column=0, row=2)
+
+            tk.Label(self.tsneOptions,text=u"Number of iterations:" ,fg="black",bg="white").grid(column=0, row=2)
+            self.iterVar = tk.IntVar()
+            self.iterVar.set(1000)
+            tk.Entry(self.tsneOptions, textvariable=self.iterVar).grid(column=1,row=2)
+
+            tk.Label(self.tsneOptions,text=u"Angle:" ,fg="black",bg="white").grid(column=0, row=3)
+            self.angleVar = tk.DoubleVar()
+            self.angleVar.set(0.5)
+            tk.Entry(self.tsneOptions, textvariable=self.angleVar).grid(column=1,row=3)
+
+            tk.Button(self.tsneOptions, text="Run", command=self._runTSNE).grid(column=1, row=4)
+            tk.Button(self.tsneOptions, text="Cancel", command=self.tsneOptions.destroy).grid(column=0, row=4)
             self.wait_window(self.tsneOptions)
 
     def _runTSNE(self):
         name = self.data_list.item(self.curKey)['text'].split(' (')[0]
-        self.data[name]['scdata'].run_tsne(n_components=self.nCompVar.get(), perplexity=self.perplexityVar.get())
+        self.data[name]['scdata'].run_tsne(n_components=self.nCompVar.get(), perplexity=self.perplexityVar.get(),
+                                           n_iter=self.iterVar.get(), angle=self.angleVar.get())
         self.data[name]['gates'] = {}
 
         #enable buttons
@@ -506,12 +524,13 @@ class wishbone_gui(tk.Tk):
             self.magicOptions.title(self.data_list.item(key)['text'].split(' (')[0] + ": MAGIC options")
             self.curKey = key
 
-            tk.Label(self.magicOptions, text=u"Kernel type:", fg="black",bg="white").grid(column=0, row=0)
-            self.kernelType = tk.StringVar()
-            self.kernelType.set('gaussian')
-            kernel_types = ['gaussian', 'tsne']
-            self.kernel_menu = tk.OptionMenu(self.magicOptions, self.kernelType, *kernel_types)
-            self.kernel_menu.grid(row=0, column=1)
+            #only allow gaussian kernel for now
+            # tk.Label(self.magicOptions, text=u"Kernel type:", fg="black",bg="white").grid(column=0, row=0)
+            # self.kernelType = tk.StringVar()
+            # self.kernelType.set('gaussian')
+            # kernel_types = ['gaussian', 'tsne']
+            # self.kernel_menu = tk.OptionMenu(self.magicOptions, self.kernelType, *kernel_types)
+            # self.kernel_menu.grid(row=0, column=1)
 
             tk.Label(self.magicOptions,text=u"# of PCA components:" ,fg="black",bg="white").grid(column=0, row=1)
             self.nCompVar = tk.IntVar()
@@ -523,7 +542,8 @@ class wishbone_gui(tk.Tk):
             self.tVar.set(8)
             tk.Entry(self.magicOptions, textvariable=self.tVar).grid(column=1,row=2)
 
-            tk.Label(self.magicOptions, text=u"Gaussian kernel only:", fg="black", bg="white").grid(column=0, row=3, columnspan=2)
+            #only allow gaussian kernel for now
+            # tk.Label(self.magicOptions, text=u"Gaussian kernel only:", fg="black", bg="white").grid(column=0, row=3, columnspan=2)
             
             tk.Label(self.magicOptions,text=u"kNN:" ,fg="black",bg="white").grid(column=0, row=4)
             self.kNNVar = tk.IntVar()
@@ -540,32 +560,37 @@ class wishbone_gui(tk.Tk):
             self.epsilonVar.set(0)
             tk.Entry(self.magicOptions, textvariable=self.epsilonVar).grid(column=1,row=6)
 
-            tk.Label(self.magicOptions, text=u"tSNE kernel only:", fg='black', bg='white').grid(column=0, row=7, columnspan=2)
+            tk.Label(self.magicOptions, text=u"(Epsilon 0 is the uniform kernel)",fg="black",bg="white").grid(column=0,columnspan=2,row=7)
+            #only allow gaussian kernel for now
+            # tk.Label(self.magicOptions, text=u"tSNE kernel only:", fg='black', bg='white').grid(column=0, row=7, columnspan=2)
 
-            tk.Label(self.magicOptions,text=u"Perplexity:" ,fg="black",bg="white").grid(column=0, row=8)
-            self.perplexityVar = tk.IntVar()
-            self.perplexityVar.set(30)
-            tk.Entry(self.magicOptions, textvariable=self.perplexityVar).grid(column=1,row=8)
+            # tk.Label(self.magicOptions,text=u"Perplexity:" ,fg="black",bg="white").grid(column=0, row=8)
+            # self.perplexityVar = tk.IntVar()
+            # self.perplexityVar.set(30)
+            # tk.Entry(self.magicOptions, textvariable=self.perplexityVar).grid(column=1,row=8)
 
-            tk.Label(self.magicOptions,text=u"k_kNN:" ,fg="black",bg="white").grid(column=0, row=9)
-            self.k_kNNVar = tk.IntVar()
-            self.k_kNNVar.set(100)
-            tk.Entry(self.magicOptions, textvariable=self.k_kNNVar).grid(column=1,row=9)
+            # tk.Label(self.magicOptions,text=u"k_kNN:" ,fg="black",bg="white").grid(column=0, row=9)
+            # self.k_kNNVar = tk.IntVar()
+            # self.k_kNNVar.set(100)
+            # tk.Entry(self.magicOptions, textvariable=self.k_kNNVar).grid(column=1,row=9)
 
-            self.rescaleVar = tk.BooleanVar()
-            tk.Checkbutton(self.magicOptions, text=u"Rescale data to 99th percentile", variable=self.rescaleVar).grid(column=0, row=10, columnspan=2)
+            self.rescaleVar = tk.IntVar()
+            self.rescaleVar.set(0)
+            tk.Label(self.magicOptions, text=u"Rescale data to ",fg="black", bg="white").grid(column=0, row=8)
+            tk.Entry(self.magicOptions, textvariable=self.rescaleVar).grid(column=1, row=8)
+            tk.Label(self.magicOptions, text=u" percentile",fg="black", bg="white").grid(column=2, row=8)
 
-            tk.Button(self.magicOptions, text="Cancel", command=self.magicOptions.destroy).grid(column=0, row=11)
-            tk.Button(self.magicOptions, text="Run", command=self._runMagic).grid(column=1, row=11)
+            tk.Button(self.magicOptions, text="Cancel", command=self.magicOptions.destroy).grid(column=0, row=9)
+            tk.Button(self.magicOptions, text="Run", command=self._runMagic).grid(column=1, row=9)
             self.wait_window(self.magicOptions)
 
     def _runMagic(self):
         name = self.data_list.item(self.curKey)['text'].split(' (')[0]
         self.data[name]['scdata'].run_magic(n_pca_components=self.nCompVar.get() if self.nCompVar.get() > 0 else None,
                                             t=self.tVar.get(), knn=self.kNNVar.get(), epsilon=self.epsilonVar.get(), 
-                                            rescale=self.rescaleVar.get(), knn_autotune=self.autotuneVar.get(),
-                                            perplexity=self.perplexityVar.get(), k_knn=self.k_kNNVar.get(),
-                                            kernel=self.kernelType.get())
+                                            rescale_percent=self.rescaleVar.get(), knn_autotune=self.autotuneVar.get(),
+                                            # perplexity=self.perplexityVar.get(), k_knn=self.k_kNNVar.get(),
+                                            kernel='gaussian')
         
         self.data[name + ' MAGIC'] = {'scdata' : self.data[name]['scdata'].magic, 'wb' : None, 'state' : tk.BooleanVar(),
                                       'genes' : self.data[name]['scdata'].magic.data.columns.values, 'gates' : {}}
@@ -651,8 +676,8 @@ class wishbone_gui(tk.Tk):
                     elif self.colorSelection[j] == 'wishbone branches':
                         self.fig, self.ax = self.data[name]['scdata'].plot_tsne(fig=self.fig, ax=self.ax, 
                                                                                 color=self.data[name]['wb'].branch)
-                    elif 'diffusion component' in self.colorSelection[j]:
-                        color = int(self.colorSelection[j].split('diffusion component ')[1])
+                    elif 'DC' in self.colorSelection[j]:
+                        color = int(self.colorSelection[j].split('DC ')[1])
                         self.fig, self.ax = self.data[name]['scdata'].plot_tsne(fig=self.fig, ax=self.ax, 
                                                                                 color=self.data[name]['scdata'].diffusion_eigenvectors[color])
                     elif 'magic' in self.colorSelection[j]:
@@ -666,9 +691,9 @@ class wishbone_gui(tk.Tk):
                         self.data[name]['scdata'].plot_tsne(fig=self.fig, ax=self.ax, density=True)
                     else:
                         self.data[name]['scdata'].plot_tsne(fig=self.fig, ax=self.ax, color=self.colorSelection[j])
-                    self.ax.set_title('Color: ' + self.colorSelection[j])
-                    self.ax.set_xlabel(name + ' tsne_x')
-                    self.ax.set_ylabel(name + ' tsne_y')
+                    self.ax.set_title(name + ' (color =' + self.colorSelection[j] + ')')
+                    self.ax.set_xlabel('tSNE1')
+                    self.ax.set_ylabel('tSNE2')
             gs.tight_layout(self.fig)
 
             self.canvas = FigureCanvasTkAgg(self.fig, self)
@@ -885,25 +910,25 @@ class wishbone_gui(tk.Tk):
                         if colorSelection[j] == 'wishbone trajectory':
                             if magic:
                                 self.data[name]['scdata'].magic.scatter_gene_expression(genes, fig=self.fig, ax=self.ax[len(self.ax)-1],
-                                                                                                            color=self.data[name]['wb'].trajectory)
+                                                                                        color=self.data[name]['wb'].trajectory)
                             else:
                                 self.data[name]['scdata'].scatter_gene_expression(genes, fig=self.fig, ax=self.ax[len(self.ax)-1],
-                                                                                                            color=self.data[name]['wb'].trajectory)
+                                                                                  color=self.data[name]['wb'].trajectory)
                         elif colorSelection[j] == 'wishbone branches':
                             if magic:
                                 self.data[name]['scdata'].magic.scatter_gene_expression(genes, fig=self.fig, ax=self.ax[len(self.ax)-1],
-                                                                                                            color=self.data[name]['wb'].branch)
+                                                                                        color=self.data[name]['wb'].branch)
                             else:
                                 self.data[name]['scdata'].scatter_gene_expression(genes, fig=self.fig, ax=self.ax[len(self.ax)-1],
-                                                                                                            color=self.data[name]['wb'].branch)
-                        elif 'diffusion component' in colorSelection[j]:
-                            color = int(colorSelection[j].split('diffusion component ')[1])
+                                                                                  color=self.data[name]['wb'].branch)
+                        elif 'DC' in colorSelection[j]:
+                            color = int(colorSelection[j].split('DC ')[1])
                             if magic:
                                 self.data[name]['scdata'].magic.scatter_gene_expression(genes, fig=self.fig, ax=self.ax[len(self.ax)-1],
-                                                                                                            color=self.data[name]['scdata'].diffusion_eigenvectors[color])
+                                                                                        color=self.data[name]['scdata'].diffusion_eigenvectors[color])
                             else:
                                 self.data[name]['scdata'].scatter_gene_expression(genes, fig=self.fig, ax=self.ax[len(self.ax)-1],
-                                                                                                            color=self.data[name]['scdata'].diffusion_eigenvectors[color])
+                                                                                  color=self.data[name]['scdata'].diffusion_eigenvectors[color])
                         elif 'magic' in colorSelection[j]:
                             color = self.colorSelection[j].split(' magic')[0]
                             if magic:
@@ -933,12 +958,14 @@ class wishbone_gui(tk.Tk):
                             else:
                                 self.data[name]['scdata'].scatter_gene_expression(genes, fig=self.fig, ax=self.ax[len(self.ax)-1],
                                                                                                             color=colorSelection[j])
-
-                        self.ax[len(self.ax)-1].set_title('Color: ' + colorSelection[j])
-                        self.ax[len(self.ax)-1].set_xlabel(name + ' ' + xSelection[j])
-                        self.ax[len(self.ax)-1].set_ylabel(name + ' ' + ySelection[j])
+                        if magic:
+                            self.ax[len(self.ax)-1].set_title(name + ' MAGIC (color = ' + colorSelection[j] + ')')
+                        else:
+                            self.ax[len(self.ax)-1].set_title(name + ' (color = ' + colorSelection[j] + ')')
+                        self.ax[len(self.ax)-1].set_xlabel(xSelection[j])
+                        self.ax[len(self.ax)-1].set_ylabel(ySelection[j])
                         if len(genes) == 3:
-                            self.ax[len(self.ax)-1].set_zlabel(name + ' ' + zSelection[j])
+                            self.ax[len(self.ax)-1].set_zlabel(zSelection[j])
                 
                 gs.tight_layout(self.fig, pad=1.2, w_pad=0.1)
                 
@@ -959,7 +986,7 @@ class wishbone_gui(tk.Tk):
 
         #x
         if plot_type == 'tsne':
-            tk.Label(self.scatterSelection, text=u"x: tsne_x", fg="black",bg="white").grid(row=0, column=0)
+            tk.Label(self.scatterSelection, text=u"x: tSNE1", fg="black",bg="white").grid(row=0, column=0)
         else:
             tk.Label(self.scatterSelection, text=u"x:", fg="black",bg="white").grid(row=0, column=0)
             self.xVar = tk.StringVar()
@@ -967,7 +994,7 @@ class wishbone_gui(tk.Tk):
 
         #y
         if plot_type == 'tsne':
-            tk.Label(self.scatterSelection, text=u"y: tsne_y", fg="black",bg="white").grid(row=1, column=0)
+            tk.Label(self.scatterSelection, text=u"y: tSNE2", fg="black",bg="white").grid(row=1, column=0)
         else:
             tk.Label(self.scatterSelection, text=u"y:", fg="black",bg="white").grid(row=1, column=0)
             self.yVar = tk.StringVar()
@@ -980,7 +1007,7 @@ class wishbone_gui(tk.Tk):
             tk.Entry(self.scatterSelection, textvariable=self.zVar).grid(column=1,row=2)
 
         #color
-        tk.Label(self.scatterSelection, text=u"color:", fg="black",bg="white").grid(row=3, column=0)
+        tk.Label(self.scatterSelection, text=u"color (gene, diffusion component, or density):", fg="black",bg="white").grid(row=3, column=0)
         self.colorVar = tk.StringVar()
         self.colorVar.set('blue')
         tk.Entry(self.scatterSelection, textvariable=self.colorVar).grid(column=1,row=3)
