@@ -97,6 +97,7 @@ class SCData:
         if metadata is None:
             metadata = pd.DataFrame(index=data.index, dtype='O')
         self._data = data
+        self._unnormalized_data = data
         self._metadata = metadata
         self._data_type = data_type
         self._normalized = False
@@ -170,6 +171,16 @@ class SCData:
         if not (isinstance(item, pd.DataFrame)):
             raise TypeError('SCData.data must be of type DataFrame')
         self._data = item
+
+    @property 
+    def unnormalized_data(self):
+        return self._unnormalized_data
+
+    @unnormalized_data.setter
+    def unnormalized_data(self, item):
+        if not (isinstance(item, pd.DataFrame)):
+            raise TypeError('SCData.unnormalized_data must be of type DataFrame')
+        self._unnormalized_data = item
 
     @property
     def metadata(self):
@@ -474,7 +485,7 @@ class SCData:
         return fig, ax
 
 
-    def run_tsne(self, n_components=15, perplexity=30):
+    def run_tsne(self, n_components=15, perplexity=30, n_iter=1000, angle=0.5):
         """ Run tSNE on the data. tSNE is run on the principal component projections
         for single cell RNA-seq data and on the expression matrix for mass cytometry data
         :param n_components: Number of components to use for running tSNE for single cell 
@@ -496,7 +507,7 @@ class SCData:
         perplexity_limit = 15
         if data.shape[0] < 100 and perplexity > perplexity_limit:
             print('Reducing perplexity to %d since there are <100 cells in the dataset. ' % perplexity_limit)
-        tsne = TSNE(n_components=2, perplexity=perplexity, init='random', random_state=sum(data.shape)) 
+        tsne = TSNE(n_components=2, perplexity=perplexity, init='random', random_state=sum(data.shape), n_iter=n_iter, angle=angle) 
         self.tsne = pd.DataFrame(tsne.fit_transform(data),                       
 								 index=self.data.index, columns=['x', 'y'])
 
@@ -1190,10 +1201,10 @@ class SCData:
         return fig, axes
 
 
-    def run_magic(self, kernel='gaussian', n_pca_components=None, t=8, knn=20, knn_autotune=0, epsilon=0, rescale=True, k_knn=100, perplexity=30):
+    def run_magic(self, kernel='gaussian', n_pca_components=None, t=8, knn=20, knn_autotune=0, epsilon=0, rescale_percent=0, k_knn=100, perplexity=30):
 
-        new_data = magic.MAGIC.magic(self.data.values, kernel=kernel, n_pca_components=n_pca_components, t=t, knn=knn, 
-                                     knn_autotune=knn_autotune, epsilon=epsilon, rescale=rescale, k_knn=k_knn, perplexity=perplexity)
+        new_data = magic.MAGIC.magic(self.data.values, self.unnormalized_data.values, kernel=kernel, n_pca_components=n_pca_components, t=t, knn=knn, 
+                                     knn_autotune=knn_autotune, epsilon=epsilon, rescale=rescale_percent, k_knn=k_knn, perplexity=perplexity)
 
         new_data = pd.DataFrame(new_data, index=self.data.index, columns=self.data.columns)
 
