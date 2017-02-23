@@ -1,13 +1,14 @@
 import numpy as np
 import pandas as pd
-from scipy.sparse import issparse, csr_matrix
+from scipy.sparse import issparse, csr_matrix, find
 from sklearn.metrics.pairwise import pairwise_distances
 from sklearn.manifold.t_sne import _joint_probabilities, _joint_probabilities_nn
+from sklearn.decomposition import PCA
 from scipy.spatial.distance import squareform
 from sklearn.neighbors import NearestNeighbors
 
-def magic(data, unnormalized_data, kernel='gaussian', n_pca_components=None, t=8, knn=20, 
-          knn_autotune=0, epsilon=0, rescale=0, k_knn=100, perplexity=30):
+def magic(data, kernel='gaussian', n_pca_components=20, random_pca=True, 
+          t=6, knn=30, knn_autotune=10, epsilon=1, rescale=99, k_knn=100, perplexity=30):
 
     if kernel not in ['gaussian']:
         raise RuntimeError('Invalid kernel type. Must be "gaussian".')
@@ -17,8 +18,7 @@ def magic(data, unnormalized_data, kernel='gaussian', n_pca_components=None, t=8
 
     #always pass in data_norm
     if n_pca_components != None:
-        pca_loadings = run_pca(data, n_components=n_pca_components)
-        pca_projected_data = np.dot(data, pca_loadings)
+        pca_projected_data = run_pca(data, n_components=n_pca_components, random=random_pca)
     else:
         pca_projected_data = data
 
@@ -42,48 +42,19 @@ def magic(data, unnormalized_data, kernel='gaussian', n_pca_components=None, t=8
     #     L = np.divide(P, np.sum(P, axis=1))
 
     #get imputed data matrix -- by default use data_norm but give user option to pick
-    new_data, L_t = impute_fast(unnormalized_data, L, t, rescale_percent=rescale)
+    new_data, L_t = impute_fast(data, L, t, rescale_percent=rescale)
 
     return new_data
 
 
-def run_pca(data, n_components=100):
+def run_pca(data, n_components=100, random=True):
 
-    X = data
-    # Make sure data is zero mean
-    X = np.subtract(X, np.amin(X))
-    X = np.divide(X, np.amax(X))
+    solver = 'randomized'
+    if random != True:
+        solver = 'full'
 
-    # Compute covariance matrix
-    if (X.shape[1] < X.shape[0]):
-        C = np.cov(X, rowvar=0)
-    # if N>D, we better use this matrix for the eigendecomposition
-    else:
-        C = np.multiply((1/X.shape[0]), np.dot(X, X.T))
-
-    # Perform eigendecomposition of C
-    C[np.where(np.isnan(C))] = 0
-    C[np.where(np.isinf(C))] = 0
-    l, M = np.linalg.eig(C)
-
-    # Sort eigenvectors in descending order
-    ind = np.argsort(l)[::-1]
-    l = l[ind]
-    if n_components < 1:
-        n_components = np.where(np.cumsum(np.divide(l, np.sum(l)), axis=0) >= n_components)[0][0] + 1
-        print('Embedding into ' + str(n_components) + ' dimensions.')
-    if n_components > M.shape[1]:
-        n_components = M.shape[1]
-        print('Target dimensionality reduced to ' + str(n_components) + '.')
-
-    M = M[:, ind[:n_components]]
-    l = l[:n_components]
-
-    # Apply mapping on the data
-    if X.shape[1] >= X.shape[0]:
-        M = np.multiply(np.dot(X.T, M), (1 / np.sqrt(X.shape[0] * l)).T)
-
-    return M
+    pca = PCA(n_components=n_components, svd_solver=solver)
+    return pca.fit_transform(data)
 
 
 def impute_fast(data, L, t, rescale_percent=0, L_t=None, tprev=None):
