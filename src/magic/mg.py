@@ -29,6 +29,7 @@ with warnings.catch_warnings():
 from sklearn.manifold import TSNE
 from sklearn.manifold.t_sne import _joint_probabilities, _joint_probabilities_nn
 from sklearn.neighbors import NearestNeighbors
+from sklearn.decomposition import PCA
 from scipy.spatial.distance import squareform
 from scipy.sparse import csr_matrix, find, vstack, hstack, issparse
 from scipy.sparse.linalg import eigs
@@ -46,7 +47,9 @@ import magic
 with warnings.catch_warnings():
     warnings.simplefilter('ignore')  # catch experimental ipython widget warning
     sns.set(context="paper", style='ticks', font_scale=1.5, font='Bitstream Vera Sans')
-cmap = matplotlib.cm.Spectral_r
+
+matplotlib.rcParams['image.cmap'] = 'viridis'
+# cmap = matplotlib.cm.Spectral_r
 size = 8
 
 
@@ -97,7 +100,6 @@ class SCData:
         if metadata is None:
             metadata = pd.DataFrame(index=data.index, dtype='O')
         self._data = data
-        self._unnormalized_data = data
         self._metadata = metadata
         self._data_type = data_type
         self._normalized = False
@@ -114,7 +116,6 @@ class SCData:
         # Library size
         self._library_sizes = None
 
-
     def save(self, fout: str):  # -> None:
         """
         :param fout: str, name of archive to store pickled SCData data in. Should end
@@ -123,16 +124,6 @@ class SCData:
         """
         with open(fout, 'wb') as f:
             pickle.dump(vars(self), f)
-
-    def save_as_wishbone(self, fout: str):
-        """
-        :param fout: str, name of archive to store pickled Wishbone data in. Should end
-          in '.p'.
-        :return: None
-        """
-        wb = magic.mg.Wishbone(self, True)
-        wb.save(fout)
-
 
     @classmethod
     def load(cls, fin):
@@ -172,16 +163,6 @@ class SCData:
             raise TypeError('SCData.data must be of type DataFrame')
         self._data = item
 
-    @property 
-    def unnormalized_data(self):
-        return self._unnormalized_data
-
-    @unnormalized_data.setter
-    def unnormalized_data(self, item):
-        if not (isinstance(item, pd.DataFrame)):
-            raise TypeError('SCData.unnormalized_data must be of type DataFrame')
-        self._unnormalized_data = item
-
     @property
     def metadata(self):
         return self._metadata
@@ -198,7 +179,7 @@ class SCData:
 
     @pca.setter
     def pca(self, item):
-        if not (isinstance(item, dict) or item is None):
+        if not (isinstance(item, pd.DataFrame) or item is None):
             raise TypeError('self.pca must be a dictionary of pd.DataFrame object')
         self._pca = item
 
@@ -275,13 +256,19 @@ class SCData:
 
 
     @classmethod
-    def from_csv(cls, counts_csv_file, data_type, normalize=True):
+    def from_csv(cls, counts_csv_file, data_type, cell_axis=0, 
+        delimiter=',', row_header=0, col_header=0, normalize=True):
+
         if not data_type in ['sc-seq', 'masscyt']:
             raise RuntimeError('data_type must be either sc-seq or masscyt')
 
         # Read in csv file
-        df = pd.DataFrame.from_csv( counts_csv_file )
+        df = pd.DataFrame.from_csv( counts_csv_file, sep=delimiter, 
+                                    header=row_header, index_col=col_header)
 
+        if cell_axis != 0:
+            df = df.transpose()
+            
         # Construct class object
         scdata = cls( df, data_type=data_type )
 
@@ -388,6 +375,9 @@ class SCData:
         return scdata
 
 
+    def log_transform_scseq_data(self, pseudocount=0.1):
+        scdata.data = np.add(np.log(scdata.data), pseudocount)
+        
     def plot_molecules_per_cell_and_gene(self, fig=None, ax=None):
 
         height = 4
@@ -417,50 +407,18 @@ class SCData:
         return fig, ax
 
 
-    def run_pca(self, n_components=100):
+    def run_pca(self, n_components=100, random=True):
         """
         Principal component analysis of the data. 
         :param n_components: Number of components to project the data
         """
+        
+        solver = 'randomized'
+        if random != True:
+            solver = 'full'
 
-        X = self.data.values
-        # Make sure data is zero mean
-        X = np.subtract(X, np.amin(X))
-        X = np.divide(X, np.amax(X))
-
-        # Compute covariance matrix
-        if (X.shape[1] < X.shape[0]):
-            C = np.cov(X, rowvar=0)
-        # if N>D, we better use this matrix for the eigendecomposition
-        else:
-            C = np.multiply((1/X.shape[0]), np.dot(X, X.T))
-
-        # Perform eigendecomposition of C
-        C[np.where(np.isnan(C))] = 0
-        C[np.where(np.isinf(C))] = 0
-        l, M = np.linalg.eig(C)
-
-        # Sort eigenvectors in descending order
-        ind = np.argsort(l)[::-1]
-        l = l[ind]
-        if n_components < 1:
-            n_components = np.where(np.cumsum(np.divide(l, np.sum(l)), axis=0) >= n_components)[0][0] + 1
-            print('Embedding into ' + str(n_components) + ' dimensions.')
-        if n_components > M.shape[1]:
-            n_components = M.shape[1]
-            print('Target dimensionality reduced to ' + str(n_components) + '.')
-
-        M = M[:, ind[:n_components]]
-        l = l[:n_components]
-
-        # Apply mapping on the data
-        if X.shape[1] >= X.shape[0]:
-            M = np.multiply(np.dot(X.T, M), (1 / np.sqrt(X.shape[0] * l)).T)
-
-        loadings = pd.DataFrame(data=M, index=self.data.columns)
-        l = pd.DataFrame(l)
-
-        self.pca = {'loadings': loadings, 'eigenvalues': l}
+        pca = PCA(n_components=n_components, svd_solver=solver)
+        self.pca = pd.DataFrame(data=pca.fit_transform(self.data.values), index=self.data.index)
 
 
     def plot_pca_variance_explained(self, n_components=30,
@@ -485,7 +443,7 @@ class SCData:
         return fig, ax
 
 
-    def run_tsne(self, n_components=15, perplexity=30, n_iter=1000, angle=0.5):
+    def run_tsne(self, n_components=50, perplexity=30, n_iter=1000, theta=0.5):
         """ Run tSNE on the data. tSNE is run on the principal component projections
         for single cell RNA-seq data and on the expression matrix for mass cytometry data
         :param n_components: Number of components to use for running tSNE for single cell 
@@ -498,16 +456,13 @@ class SCData:
         if self.data_type == 'sc-seq':
             if self.pca is None:
                 self.run_pca()
-            data -= np.min(np.ravel(data))
-            data /= np.max(np.ravel(data))
-            data = pd.DataFrame(np.dot(data, self.pca['loadings'].iloc[:, 0:n_components]),
-                                index=self.data.index)
+            data = self.pca
 
         # Reduce perplexity if necessary
         perplexity_limit = 15
         if data.shape[0] < 100 and perplexity > perplexity_limit:
             print('Reducing perplexity to %d since there are <100 cells in the dataset. ' % perplexity_limit)
-        tsne = TSNE(n_components=2, perplexity=perplexity, init='random', random_state=sum(data.shape), n_iter=n_iter, angle=angle) 
+        tsne = TSNE(n_components=2, perplexity=perplexity, init='random', random_state=sum(data.shape), n_iter=n_iter, angle=theta) 
         self.tsne = pd.DataFrame(tsne.fit_transform(data),                       
 								 index=self.data.index, columns=['x', 'y'])
 
@@ -574,10 +529,7 @@ class SCData:
 
         data = deepcopy(self.data)
         if self.data_type == 'sc-seq':
-            data -= np.min(np.ravel(data))
-            data /= np.max(np.ravel(data))
-            data = pd.DataFrame(np.dot(data, self.pca['loadings'].iloc[:, 0:n_pca_components]),
-                                index=self.data.index)
+            data = self.pca
 
         communities, graph, Q = phenograph.cluster(data, **kwargs)
         self.cluster_assignments = pd.Series(communities, index=data.index)
@@ -660,8 +612,8 @@ class SCData:
 
 
 
-    def run_diffusion_map(self, knn=10, epsilon=1, 
-        n_diffusion_components=10, n_pca_components=15, markers=None):
+    def run_diffusion_map(self, knn=10, epsilon=1, distance_metric='euclidean',
+        n_diffusion_components=10, n_pca_components=15, markers=None, knn_autotune=0):
         """ Run diffusion maps on the data. Run on the principal component projections
         for single cell RNA-seq data and on the expression matrix for mass cytometry data
         :param knn: Number of neighbors for graph construction to determine distances between cells
@@ -673,26 +625,21 @@ class SCData:
         """
 
         data = deepcopy(self.data)
-        if self.data_type == 'sc-seq':
-            if self.pca is None:
-                raise RuntimeError('Please run PCA using run_pca before running diffusion maps for single cell RNA-seq')
-
-            data = deepcopy(self.data)
-            data -= np.min(np.ravel(data))
-            data /= np.max(np.ravel(data))
-            data = pd.DataFrame(np.dot(data, self.pca['loadings'].iloc[:, 0:n_pca_components]),
-                                index=self.data.index)
-
-        if markers is None:
-            markers = self.data.columns
-
-        if self.data_type == 'masscyt':
-            data = deepcopy(self.data[markers])
+        N = data.shape[0]
 
         # Nearest neighbors
-        N = data.shape[0]
-        nbrs = NearestNeighbors(n_neighbors=knn).fit(data)
+        nbrs = NearestNeighbors(n_neighbors=knn, metric=distance_metric).fit(data)
         distances, indices = nbrs.kneighbors(data)
+
+        if knn_autotune > 0:
+            print('Autotuning distances')
+            for j in reversed(range(N)):
+                temp = sorted(distances[j])
+                lMaxTempIdxs = min(knn_autotune, len(temp))
+                if lMaxTempIdxs == 0 or temp[lMaxTempIdxs] == 0:
+                    distances[j] = 0
+                else:
+                    distances[j] = np.divide(distances[j], temp[lMaxTempIdxs])
 
         # Adjacency matrix
         rows = np.zeros(N * knn, dtype=np.int32)
@@ -705,29 +652,29 @@ class SCData:
             cols[inds] = i
             dists[inds] = distances[i, :]
             location += knn
-        W = csr_matrix( (dists, (rows, cols)), shape=[N, N] )
+        if epsilon > 0:
+            W = csr_matrix( (dists, (rows, cols)), shape=[N, N] )
+        else:
+            W = csr_matrix( (np.ones(dists.shape), (rows, cols)), shape=[N, N] )
 
         # Symmetrize W
         W = W + W.T
 
-        # Convert to affinity (with selfloops)
-        rows, cols, dists = find(W)
-        rows = np.append(rows, range(N))
-        cols = np.append(cols, range(N))
-        dists = np.append(dists/(epsilon ** 2), np.zeros(N))
-        W = csr_matrix( (np.exp(-dists), (rows, cols)), shape=[N, N] )
+        if epsilon > 0:
+            # Convert to affinity (with selfloops)
+            rows, cols, dists = find(W)
+            rows = np.append(rows, range(N))
+            cols = np.append(cols, range(N))
+            dists = np.append(dists/(epsilon ** 2), np.zeros(N))
+            W = csr_matrix( (np.exp(-dists), (rows, cols)), shape=[N, N] )
 
         # Create D
         D = np.ravel(W.sum(axis = 1))
         D[D!=0] = 1/D[D!=0]
 
-        # Symmetric markov normalization
-        D = csr_matrix((np.sqrt(D), (range(N), range(N))),  shape=[N, N])
-        P = D
-        T = D.dot(W).dot(D)
-        T = (T + T.T) / 2
-
-
+        #markov normalization
+        T = csr_matrix((D, (range(N), range(N))), shape=[N, N]).dot(W)
+        
         # Eigen value decomposition
         D, V = eigs(T, n_diffusion_components, tol=1e-4, maxiter=1000)
         D = np.real(D)
@@ -1042,14 +989,14 @@ class SCData:
                 else:
                     color = np.arcsinh(self.data[g])
                 plt.scatter(self.tsne['x'], self.tsne['y'], c=color,
-                            cmap=cmap, edgecolors='none', s=size)
+                            edgecolors='none', s=size)
             else:
                 if isinstance(genes, dict):
                     color = genes[g]
                 else:
                     color = self.data[g]
                 plt.scatter(self.tsne['x'], self.tsne['y'], c=color,
-                            cmap=cmap, edgecolors='none', s=size)                
+                            edgecolors='none', s=size)                
             ax.set_title(g)
             ax.set_xlabel('tsne_x')
             ax.set_ylabel('tsne_y')
@@ -1064,14 +1011,14 @@ class SCData:
                     else:
                         color = np.arcsinh(other_data.data[g])
                     plt.scatter(other_data.tsne['x'], other_data.tsne['y'], c=color,
-                                cmap=cmap, edgecolors='none', s=size)
+                                edgecolors='none', s=size)
                 else:
                     if isinstance(genes, dict):
                         color = genes[g]
                     else:
                         color = other_data.data[g]
                     plt.scatter(other_data.tsne['x'], other_data.tsne['y'], c=color,
-                                cmap=cmap, edgecolors='none', s=size)                
+                                edgecolors='none', s=size)                
                 ax.set_title(g)
                 ax.set_xlabel('tsne_x')
                 ax.set_ylabel('tsne_y')
@@ -1096,7 +1043,7 @@ class SCData:
                 return
 
         # remove genes missing from experiment
-        genes = list(set(genes).difference(not_in_dataframe))
+        # genes = list(set(genes).difference(not_in_dataframe))
 
         if len(genes) < 2 or len(genes) > 3:
             raise RuntimeError('Please specify either 2 or 3 genes to scatter.')
@@ -1116,11 +1063,11 @@ class SCData:
                 idx = z.argsort()
                 x, y, z = self.data[genes[0]][idx], self.data[genes[1]][idx], z[idx]
 
-                plt.scatter(x, y, s=size, c=z, cmap=cmap, edgecolors='none')
+                plt.scatter(x, y, s=size, c=z, edgecolors='none')
 
             elif isinstance(color, pd.Series):
                 plt.scatter(self.data[genes[0]], self.data[genes[1]],
-                            s=size, c=color, cmap=cmap, edgecolors='none')
+                            s=size, c=color, edgecolors='none')
 
             else:
                 plt.scatter(self.data[genes[0]], self.data[genes[1]], edgecolors='none',
@@ -1138,11 +1085,11 @@ class SCData:
                 density = kde(xyz)
 
                 ax.scatter(self.data[genes[0]], self.data[genes[1]], self.data[genes[2]],
-                           s=size, c=density, cmap=cmap, edgecolors='none')
+                           s=size, c=density, edgecolors='none')
 
             elif isinstance(color, pd.Series):
                 ax.scatter(self.data[genes[0]], self.data[genes[1]], self.data[genes[2]],
-                           s=size, c=color, cmap=cmap, edgecolors='none')
+                           s=size, c=color, edgecolors='none')
 
 
             else:
@@ -1190,9 +1137,9 @@ class SCData:
                 idx = z.argsort()
                 x, y, z = self.data[g][idx], other_data.data[g][idx], z[idx]
 
-                plt.scatter(x, y, s=size, c=z, cmap=cmap, edgecolors='none')
+                plt.scatter(x, y, s=size, c=z, edgecolors='none')
             elif isinstance(color, pd.Series):
-                plt.scatter(self.data[g], other_data.data[g], s=size, c=color, cmap=cmap, edgecolors='none') 
+                plt.scatter(self.data[g], other_data.data[g], s=size, c=color, edgecolors='none') 
             else:
                 plt.scatter(self.data[g], other_data.data[g], s=size, edgecolors='none',
                             color=qualitative_colors(2)[1] if color == None else color)             
@@ -1201,9 +1148,9 @@ class SCData:
         return fig, axes
 
 
-    def run_magic(self, kernel='gaussian', n_pca_components=None, t=8, knn=20, knn_autotune=0, epsilon=0, rescale_percent=0, k_knn=100, perplexity=30):
+    def run_magic(self, kernel='gaussian', n_pca_components=20, random_pca=True, t=6, knn=30, knn_autotune=10, epsilon=1, rescale_percent=99, k_knn=100, perplexity=30):
 
-        new_data = magic.MAGIC.magic(self.data.values, self.unnormalized_data.values, kernel=kernel, n_pca_components=n_pca_components, t=t, knn=knn, 
+        new_data = magic.MAGIC.magic(self.data.values, kernel=kernel, n_pca_components=n_pca_components, random_pca=random_pca, t=t, knn=knn, 
                                      knn_autotune=knn_autotune, epsilon=epsilon, rescale=rescale_percent, k_knn=k_knn, perplexity=perplexity)
 
         new_data = pd.DataFrame(new_data, index=self.data.index, columns=self.data.columns)
@@ -1234,682 +1181,3 @@ class SCData:
 
         scdata = magic.mg.SCData(df_concat)
         return scdata
-
-
-class Wishbone:
-
-    def __init__(self, scdata, ignore_dm_check=False):
-        """
-        Container class for Wishbone
-        :param data:  SCData object
-        """
-        if not ignore_dm_check and scdata.diffusion_eigenvectors is None:
-            raise RuntimeError('Please use scdata with diffusion maps run for Wishbone')
-
-        self._scdata = scdata
-        self._trajectory = None
-        self._branch = None
-        self._waypoints = None
-        self._branch_colors = None
-
-    def __repr__(self):
-        c, g = self.scdata.data.shape
-        _repr = ('Wishbone object: {c} cells x {g} genes\n'.format(g=g, c=c))
-        for k, v in sorted(vars(self).items()):
-            if not (k == '_scdata'):
-                _repr += '\n{}={}'.format(k[1:], 'None' if v is None else 'True')
-        return _repr
-
-    def save(self, fout: str):# -> None:
-        """
-        :param fout: str, name of archive to store pickled Experiment data in. Should end
-          in '.p'.
-        :return: None
-        """
-        with open(fout, 'wb') as f:
-            pickle.dump(vars(self), f)
-
-    @classmethod
-    def load(cls, fin):
-        """
-
-        :param fin: str, name of pickled archive containing Experiment data
-        :return: Experiment
-        """
-        with open(fin, 'rb') as f:
-            data = pickle.load(f)
-        wb = cls(data['_scdata'], True)
-        del data['_scdata']
-        for k, v in data.items():
-            setattr(wb, k[1:], v)
-        return wb
-
-    @property
-    def scdata(self):
-        return self._scdata
-
-    @scdata.setter
-    def scdata(self, item):
-        if not (isinstance(item, SCData)):
-            raise TypeError('data must be of type magic.mg.SCData')
-        self._scdata = item
-
-    @property
-    def branch(self):
-        return self._branch
-
-    @branch.setter
-    def branch(self, item):
-        if not (isinstance(item, pd.Series) or item is None):
-            raise TypeError('self.branch must be a pd.Series object')
-        self._branch = item
-
-    @property
-    def trajectory(self):
-        return self._trajectory
-
-    @trajectory.setter
-    def trajectory(self, item):
-        if not (isinstance(item, pd.Series) or item is None):
-            raise TypeError('self.trajectory must be a pd.Series object')
-        self._trajectory = item
-
-    @property
-    def waypoints(self):
-        return self._waypoints
-
-    @waypoints.setter
-    def waypoints(self, item):
-        if not (isinstance(item, list) or item is None):
-            raise TypeError('self.waypoints must be a list object')
-        self._waypoints = item
-
-
-    @property
-    def branch_colors(self):
-        return self._branch_colors
-
-    @branch_colors.setter
-    def branch_colors(self, item):
-        if not (isinstance(item, dict) or item is None):
-            raise TypeError('self.branch_colors a pd.Series object')
-        self._branch_colors = item
-
-
-    def run_wishbone(self, start_cell, branch=True, k=15,
-        components_list=[1, 2, 3], num_waypoints=250):
-        """ Function to run Wishbone. 
-        :param start_cell: Desired start cell. This has to be a cell in self.scdata.index
-        :param branch: Use True for Wishbone and False for Wanderlust
-        :param k: Number of nearest neighbors for graph construction
-        :param components_list: List of components to use for running Wishbone
-        :param num_waypoints: Number of waypoints to sample 
-        :return:
-        """
-
-        # Start cell index
-        s = np.where(self.scdata.diffusion_eigenvectors.index == start_cell)[0]
-        if len(s) == 0:
-            raise RuntimeError( 'Start cell %s not found in data. Please rerun with correct start cell' % start_cell)
-        if isinstance(num_waypoints, list):
-            if len(pd.Index(num_waypoints).difference(self.scdata.data.index)) > 0:
-                warnings.warn('Some of the specified waypoints are not in the data. These will be removed')
-                num_waypoints = list(self.scdata.data.index.intersection(num_waypoints))
-        elif num_waypoints > self.scdata.data.shape[0]:
-            raise RuntimeError('num_waypoints parameter is higher than the number of cells in the dataset. \
-                Please select a smaller number')
-        s = s[0]
-
-        # Run the algorithm
-        res = magic.wishbone.wishbone(
-            self.scdata.diffusion_eigenvectors.ix[:, components_list].values,
-            s=s, k=k, l=k, num_waypoints=num_waypoints, branch=branch)
-
-        # Assign results
-        trajectory = res['Trajectory']
-        branches = res['Branches']
-        trajectory = (trajectory - np.min(trajectory)) / (np.max(trajectory) - np.min(trajectory))
-        self.trajectory = pd.Series(trajectory, index=self.scdata.data.index)
-        self.branch = None
-        if branch:
-            self.branch = pd.Series([np.int(i) for i in branches], index=self.scdata.data.index)
-        self.waypoints = list(self.scdata.data.index[res['Waypoints']])
-
-        # Set branch colors
-        if branch:
-            self.branch_colors = dict( zip([2, 1, 3], qualitative_colors(3)))
-
-
-    # Plotting functions
-    # Function to plot wishbone results on tSNE
-    def plot_wishbone_on_tsne(self, other_data=None):
-        """ Plot Wishbone results on tSNE maps
-        """
-        if self.trajectory is None:
-            raise RuntimeError('Please run Wishbone run_wishbone before plotting')
-        if self.scdata.tsne is None:
-            raise RuntimeError('Please run tSNE using scdata.run_tsne before plotting')
-
-        # Set up figure
-        fig = plt.figure(figsize=[8, 4])
-        gs = plt.GridSpec(1, 2)
-        if other_data:
-            fig = plt.figure(figsize=[8, 8])
-            gs = plt.GridSpec(2, 2)
-
-        # Trajectory
-        ax = plt.subplot(gs[0, 0])
-        plt.scatter( self.scdata.tsne['x'], self.scdata.tsne['y'],
-            edgecolors='none', s=size, cmap=cmap, c=self.trajectory )
-        plt.title('Wishbone trajectory')
-
-        # Branch
-        if self.branch is not None:
-            ax = plt.subplot(gs[0, 1])
-            plt.scatter( self.scdata.tsne['x'], self.scdata.tsne['y'],
-                edgecolors='none', s=size, 
-                color=[self.branch_colors[i] for i in self.branch])
-            plt.title('Branch associations')
-        
-        if other_data:
-            ax = plt.subplot(gs[1, 0])
-            plt.scatter( other_data.scdata.tsne['x'], other_data.scdata.tsne['y'],
-                edgecolors='none', s=size, cmap=cmap, c=other_data.trajectory )
-            plt.title('Wishbone trajectory')
-
-            # Branch
-            if self.branch is not None:
-                ax = plt.subplot(gs[1, 1])
-                plt.scatter( other_data.scdata.tsne['x'], other_data.scdata.tsne['y'],
-                    edgecolors='none', s=size, 
-                    color=[other_data.branch_colors[i] for i in other_data.branch])
-                plt.title('Branch associations')
-
-        return fig, ax        
-
-
-
-    # Function to plot trajectory
-    def plot_marker_trajectory(self, markers, show_variance=False,
-        no_bins=150, smoothing_factor=1, min_delta=0.1, fig=None, ax=None):
-        """Plot marker trends along trajectory
-
-        :param markers: Iterable of markers/genes to be plotted. 
-        :param show_variance: Logical indicating if the trends should be accompanied with variance
-        :param no_bins: Number of bins for calculating marker density
-        :param smoothing_factor: Parameter controling the degree of smoothing
-        :param min_delta: Minimum difference in marker expression after normalization to show separate trends for the two branches
-        :param fig: matplotlib Figure object
-        :param ax: matplotlib Axis object
-        :return Dictionary containing the determined trends for the different branches
-        """
-        if self.trajectory is None:
-            raise RuntimeError('Please run Wishbone run_wishbone before plotting')
-        # if self.scdata.data_type == 'sc-seq' and show_variance:
-        #     raise RuntimeError('Variance calculation is currently not supported for single-cell RNA-seq')
-
-        # Compute bin locations and bin memberships
-        trajectory = self.trajectory.copy()
-        # Sort trajectory
-        trajectory = trajectory.sort_values()
-        bins = np.linspace(np.min(trajectory), np.max(trajectory), no_bins)
-        
-        # Compute gaussian weights for points at each location
-        # Standard deviation estimated from Silverman's approximation
-        stdev = np.std(trajectory) * 1.34 * len(trajectory) **(-1/5) * smoothing_factor
-        weights = np.exp(-((np.tile(trajectory, [no_bins, 1]).T - 
-            bins) ** 2 / (2 * stdev**2))) * (1/(2*np.pi*stdev ** 2) ** 0.5) 
-
-
-        # Adjust weights if data has branches
-        if self.branch is not None:
-
-            plot_branch = True
-
-            # Branch of the trunk
-            trunk = self.branch[trajectory.index[0]]
-            branches = list( set( self.branch).difference([trunk]))
-            linetypes = pd.Series([':', '--'], index=branches)
-
-
-            # Counts of branch cells in each bin
-            branch_counts = pd.DataFrame(np.zeros([len(bins)-1, 3]), columns=[1, 2, 3])
-            for j in branch_counts.columns:
-                branch_counts[j] = pd.Series([sum(self.branch[trajectory.index[(trajectory > bins[i-1]) & \
-                    (trajectory < bins[i])]] == j) for i in range(1, len(bins))])
-            # Frequencies
-            branch_counts = branch_counts.divide( branch_counts.sum(axis=1), axis=0)
-
-            # Identify the bin with the branch point by looking at the weights
-            weights = pd.DataFrame(weights, index=trajectory.index, columns=range(no_bins))
-            bp_bin = weights.columns[np.where(branch_counts[trunk] < 0.9)[0][0]] + 0
-            if bp_bin < 0:
-                bp_bin = 3
-
-        else:
-            plot_branch = False
-            bp_bin = no_bins
-
-        weights_copy = weights.copy()
-        
-        # Plot marker tsne_res
-        xaxis = bins
-
-        # Set up return object
-        ret_values = dict()
-        ret_values['Trunk'] = pd.DataFrame( xaxis[0:bp_bin], columns=['x'])
-        ret_values['Branch1'] = pd.DataFrame( xaxis[(bp_bin-2):], columns=['x'])
-        ret_values['Branch2'] = pd.DataFrame( xaxis[(bp_bin-2):], columns=['x'])
-
-        # Marker colors
-        colors = qualitative_colors( len(markers) )
-        scaling_factor = 2
-        linewidth = 3
-
-        # Set up plot
-        fig, ax = get_fig(fig, ax, figsize=[14, 4])
-
-        for marker,color in zip(markers, colors):
-
-            # Marker expression repeated no bins times
-            y = self.scdata.data.ix[trajectory.index, marker]
-            rep_mark = np.tile(y, [no_bins, 1]).T
-
-
-            # Normalize y
-            y_min = np.percentile(y, 1)
-            y = (y - y_min)/(np.percentile(y, 99) - y_min)
-            y[y < 0] = 0; y[y >  1] = 1;
-            norm_rep_mark = pd.DataFrame(np.tile(y, [no_bins, 1])).T
-
-
-            if not plot_branch:
-                # Weight and plot 
-                vals = (rep_mark * weights)/sum(weights)
-
-                # Normalize
-                vals = vals.sum(axis=0)
-                vals = vals - np.min(vals)
-                vals = vals/np.max(vals)
-                
-                # Plot
-                plt.plot(xaxis, vals, label=marker, color=color, linewidth=linewidth)
-
-                # Show errors if specified
-                if show_variance:
-
-                    # Scale the marks based on y and values to be plotted
-                    temp = (( norm_rep_mark - vals - np.min(y))/np.max(y)) ** 2
-                    # Calculate standard deviations
-                    wstds = inner1d(np.asarray(temp).T, np.asarray(weights).T) / weights.sum()
-
-                    plt.fill_between(xaxis, vals - scaling_factor*wstds, 
-                        vals + scaling_factor*wstds, alpha=0.2, color=color)
-
-                # Return values
-                ret_values['Trunk'][marker] = vals[0:bp_bin]
-                ret_values['Branch1'][marker] = vals[(bp_bin-2):]
-                ret_values['Branch2'][marker] = vals[(bp_bin-2):]
-
-            else: # Branching trajectory
-                rep_mark = pd.DataFrame(rep_mark, index=trajectory.index, columns=range(no_bins))
-
-                plot_split = True
-                # Plot trunk first
-                weights = weights_copy.copy()
-
-                plot_vals = ((rep_mark * weights)/np.sum(weights)).sum()
-                trunk_vals = plot_vals[0:bp_bin]
-
-                branch_vals = []
-                for br in branches:
-                    # Mute weights of the branch cells and plot
-                    weights = weights_copy.copy()
-                    weights.ix[self.branch.index[self.branch == br], :] = 0
-
-                    plot_vals = ((rep_mark * weights)/np.sum(weights)).sum()
-                    branch_vals.append( plot_vals[(bp_bin-1):] )
-
-                # Min and max
-                temp = trunk_vals.append( branch_vals[0] ).append( branch_vals[1] )
-                min_val = np.min(temp)
-                max_val = np.max(temp)
-
-
-                # Plot the trunk
-                plot_vals = ((rep_mark * weights)/np.sum(weights)).sum()
-                plot_vals = (plot_vals - min_val)/(max_val - min_val)
-                plt.plot(xaxis[0:bp_bin], plot_vals[0:bp_bin], 
-                    label=marker, color=color, linewidth=linewidth)
-
-                if show_variance:
-                    # Calculate weighted stds for plotting
-                    # Scale the marks based on y and values to be plotted
-                    temp = (( norm_rep_mark - plot_vals - np.min(y))/np.max(y)) ** 2 
-                    # Calculate standard deviations
-                    wstds = inner1d(np.asarray(temp).T, np.asarray(weights).T) / weights.sum()
-
-                    # Plot
-                    plt.fill_between(xaxis[0:bp_bin], plot_vals[0:bp_bin] - scaling_factor*wstds[0:bp_bin], 
-                        plot_vals[0:bp_bin] + scaling_factor*wstds[0:bp_bin], alpha=0.1, color=color)
-
-                # Add values to return values
-                ret_values['Trunk'][marker] = plot_vals[0:bp_bin]
-
-
-
-                # Identify markers which need a split
-                if sum( abs(pd.Series(branch_vals[0]) - pd.Series(branch_vals[1])) > min_delta ) < 5:
-                    # Split not necessary, plot the trunk values
-                    plt.plot(xaxis[(bp_bin-1):], plot_vals[(bp_bin-1):], 
-                        color=color, linewidth=linewidth)
-    
-                    # Add values to return values
-                    ret_values['Branch1'][marker] = list(plot_vals[(bp_bin-2):])
-                    ret_values['Branch2'][marker] = list(plot_vals[(bp_bin-2):])
-
-                    if show_variance:
-                        # Calculate weighted stds for plotting
-                        # Scale the marks based on y and values to be plotted
-                        temp = (( norm_rep_mark - plot_vals - np.min(y))/np.max(y)) ** 2 
-                        wstds = inner1d(np.asarray(temp).T, np.asarray(weights).T) / weights.sum()
-                        # Plot
-                        plt.fill_between(xaxis[(bp_bin-1):], plot_vals[(bp_bin-1):] - scaling_factor*wstds[(bp_bin-1):], 
-                            plot_vals[(bp_bin-1):] + scaling_factor*wstds[(bp_bin-1):], alpha=0.1, color=color)
-                else:
-                    # Plot the two branches separately
-                    for br_ind,br in enumerate(branches):
-                        # Mute weights of the branch cells and plot
-                        weights = weights_copy.copy()
-
-                        # Smooth weigths
-                        smooth_bins = 10
-                        if bp_bin < smooth_bins:
-                            smooth_bins = bp_bin - 1
-                        for i in range(smooth_bins):
-                            weights.ix[self.branch == br, bp_bin + i - smooth_bins] *= ((smooth_bins - i)/smooth_bins) * 0.25
-                        weights.ix[self.branch == br, (bp_bin):weights.shape[1]] = 0
-
-                        # Calculate values to be plotted
-                        plot_vals = ((rep_mark * weights)/np.sum(weights)).sum()
-                        plot_vals = (plot_vals - min_val)/(max_val - min_val)
-                        plt.plot(xaxis[(bp_bin-2):], plot_vals[(bp_bin-2):], 
-                            linetypes[br], color=color, linewidth=linewidth)
-
-                        if show_variance:
-                            # Calculate weighted stds for plotting
-                            # Scale the marks based on y and values to be plotted
-                            temp = (( norm_rep_mark - plot_vals - np.min(y))/np.max(y)) ** 2 
-                            # Calculate standard deviations
-                            wstds = inner1d(np.asarray(temp).T, np.asarray(weights).T) / weights.sum()
-
-                            # Plot
-                            plt.fill_between(xaxis[(bp_bin-1):], plot_vals[(bp_bin-1):] - scaling_factor*wstds[(bp_bin-1):], 
-                                plot_vals[(bp_bin-1):] + scaling_factor*wstds[(bp_bin-1):], alpha=0.1, color=color)
-
-                        # Add values to return values
-                        ret_values['Branch%d' % (br_ind + 1)][marker] = list(plot_vals[(bp_bin-2):])
-
-
-        # Clean up the plotting
-        # Clean xlim
-        plt.legend(loc=2, bbox_to_anchor=(1, 1), prop={'size':16})
-        
-        # Annotations
-        # Add trajectory as underlay
-        cm = matplotlib.cm.Spectral_r
-        yval = plt.ylim()[0]
-        yval = 0
-        plt.scatter( trajectory, np.repeat(yval - 0.1, len(trajectory)), 
-            c=trajectory, cmap=cm, edgecolors='none', s=size)
-        sns.despine()
-        plt.xticks( np.arange(0, 1.1, 0.1) )
-
-        # Clean xlim
-        plt.xlim([-0.05, 1.05])
-        plt.ylim([-0.2, 1.1 ])
-        plt.xlabel('Wishbone trajectory')
-        plt.ylabel('Normalized expression')
-
-        return ret_values, fig, ax
-
-
-    def plot_marker_heatmap(self, marker_trends, trajectory_range=[0, 1], other_data=None):
-        """ Plot expression of markers as a heatmap
-        :param marker_trends: Output from the plot_marker_trajectory function
-        :param trajectory_range: Range of the trajectory in which to plot the results
-        """
-        if trajectory_range[0] >= trajectory_range[1]:
-            raise RuntimeError('Start cannot exceed end in trajectory_range')
-        if trajectory_range[0] < 0 or trajectory_range[1] > 1:
-            raise RuntimeError('Please use a range between (0, 1)')
-
-        # Set up figure
-        markers = marker_trends['Trunk'].columns[1:]
-
-        if self.branch is not None:
-            fig = plt.figure(figsize = [16, 0.5*len(markers)])
-            gs = plt.GridSpec( 1, 2 )
-            if other_data:
-                fig = plt.figure(figsize = [16, len(markers)])
-                gs = plt.GridSpec( 2, 2 )
-
-            branches = np.sort(list(set(marker_trends.keys()).difference(['Trunk'])))
-            for i,br in enumerate(branches):
-                ax = plt.subplot( gs[0, i] )
-
-                # Construct the full matrix
-                mat = marker_trends['Trunk'].append( marker_trends[br][2:] )
-                mat.index = range(mat.shape[0])
-
-                # Start and end
-                start = np.where(mat['x'] >= trajectory_range[0])[0][0]
-                end = np.where(mat['x'] >= trajectory_range[1])[0][0]
-
-                # Plot
-                plot_mat = mat.ix[start:end]
-                sns.heatmap(plot_mat[markers].T, 
-                    linecolor='none', cmap=cmap, vmin=0, vmax=1)            
-                ax.xaxis.set_major_locator(plt.NullLocator())
-                ticks = np.arange(trajectory_range[0], trajectory_range[1]+0.1, 0.1)
-                plt.xticks([np.where(plot_mat['x'] >= i)[0][0] for i in ticks], ticks)
-
-                # Labels
-                plt.xlabel( 'Wishbone trajectory' )
-                plt.title( br )
-
-            if other_data:
-                marker_trends_2 = other_data[1]
-                other_data = other_data[0]
-
-                branches = np.sort(list(set(marker_trends_2.keys()).difference(['Trunk'])))
-                for i,br in enumerate(branches):
-                    ax = plt.subplot( gs[1, i] )
-
-                    # Construct the full matrix
-                    mat = marker_trends_2['Trunk'].append( marker_trends_2[br][2:] )
-                    mat.index = range(mat.shape[0])
-
-                    # Start and end
-                    start = np.where(mat['x'] >= trajectory_range[0])[0][0]
-                    end = np.where(mat['x'] >= trajectory_range[1])[0][0]
-
-                    # Plot
-                    plot_mat = mat.ix[start:end]
-                    sns.heatmap(plot_mat[markers].T, 
-                        linecolor='none', cmap=cmap, vmin=0, vmax=1)            
-                    ax.xaxis.set_major_locator(plt.NullLocator())
-                    ticks = np.arange(trajectory_range[0], trajectory_range[1]+0.1, 0.1)
-                    plt.xticks([np.where(plot_mat['x'] >= i)[0][0] for i in ticks], ticks)
-
-                    # Labels
-                    plt.xlabel( 'Wishbone trajectory' )
-                    plt.title( br )
-        else:
-            # Plot values from the trunk alone
-            fig = plt.figure(figsize = [8, 0.5*len(markers)])
-            gs = plt.GridSpec( 1, 1 )
-            if other_data:
-                fig = plt.figure(figsize = [8, len(markers)])
-                gs = plt.GridSpec( 2, 1 )
-
-            ax = plt.subplot( gs[0, 0] )
-
-            # Construct the full matrix
-            mat = marker_trends['Trunk']
-            mat.index = range(mat.shape[0])
-
-            # Start and end
-            start = np.where(mat['x'] >= trajectory_range[0])[0][0]
-            end = np.where(mat['x'] >= trajectory_range[1])[0][0]
-
-            # Plot
-            plot_mat = mat.ix[start:end]
-            sns.heatmap(plot_mat[markers].T, 
-                linecolor='none', cmap=cmap, vmin=0, vmax=1)            
-            ax.xaxis.set_major_locator(plt.NullLocator())
-            ticks = np.arange(trajectory_range[0], trajectory_range[1]+0.1, 0.1)
-            plt.xticks([np.where(plot_mat['x'] >= i)[0][0] for i in ticks], ticks)
-
-            # Labels
-            plt.xlabel( 'Wishbone trajectory' )
-
-            if other_data:
-                marker_trends_2 = other_data[1]
-                other_data = other_data[0]
-
-                x = plt.subplot( gs[1, 0] )
-
-                # Construct the full matrix
-                mat = marker_trends_2['Trunk']
-                mat.index = range(mat.shape[0])
-
-                # Start and end
-                start = np.where(mat['x'] >= trajectory_range[0])[0][0]
-                end = np.where(mat['x'] >= trajectory_range[1])[0][0]
-
-                # Plot
-                plot_mat = mat.ix[start:end]
-                sns.heatmap(plot_mat[markers].T, 
-                    linecolor='none', cmap=cmap, vmin=0, vmax=1)            
-                ax.xaxis.set_major_locator(plt.NullLocator())
-                ticks = np.arange(trajectory_range[0], trajectory_range[1]+0.1, 0.1)
-                plt.xticks([np.where(plot_mat['x'] >= i)[0][0] for i in ticks], ticks)
-
-                # Labels
-                plt.xlabel( 'Wishbone trajectory' )
-
-        gs.tight_layout(fig)
-
-        return fig, ax
-
-
-    def plot_derivatives(self, marker_trends, trajectory_range=[0, 1]):
-        """ Plot change in expression of markers along trajectory
-        :param marker_trends: Output from the plot_marker_trajectory function
-        :param trajectory_range: Range of the trajectory in which to plot the results
-        """
-        if trajectory_range[0] >= trajectory_range[1]:
-            raise RuntimeError('Start cannot exceed end in trajectory_range')
-        if trajectory_range[0] < 0 or trajectory_range[1] > 1:
-            raise RuntimeError('Please use a range between (0, 1)')
-
-
-        # Set up figure
-        markers = marker_trends['Trunk'].columns[1:]
-
-        if self.branch is not None:
-            fig = plt.figure(figsize = [16, 0.5*len(markers)])
-            gs = plt.GridSpec( 1, 2 )
-
-            branches = np.sort(list(set(marker_trends.keys()).difference(['Trunk'])))
-            for i,br in enumerate(branches):
-                ax = plt.subplot( gs[0, i] )
-
-                # Construct the full matrix
-                mat = marker_trends['Trunk'].append( marker_trends[br][2:] )
-                mat.index = range(mat.shape[0])
-
-                # Start and end
-                start = np.where(mat['x'] >= trajectory_range[0])[0][0]
-                end = np.where(mat['x'] >= trajectory_range[1])[0][0]
-
-                # Plot
-                diffs = mat[markers].diff()
-                diffs[diffs.isnull()] = 0
-
-                # Update the branch points diffs
-                bp_bin = marker_trends['Trunk'].shape[0]
-                diffs.ix[bp_bin-1] = marker_trends[br].ix[0:1, markers].diff().ix[1]
-                diffs.ix[bp_bin] = marker_trends[br].ix[1:2, markers].diff().ix[2]
-                diffs = diffs.ix[start:end]
-                mat = mat.ix[start:end]
-
-                # Differences
-                vmax = max(0.05,  abs(diffs).max().max() )
-                # Plot
-                sns.heatmap(diffs.T, linecolor='none', 
-                    cmap=matplotlib.cm.RdBu_r, vmin=-vmax, vmax=vmax)
-                ax.xaxis.set_major_locator(plt.NullLocator())
-                ticks = np.arange(trajectory_range[0], trajectory_range[1]+0.1, 0.1)
-                plt.xticks([np.where(mat['x'] >= i)[0][0] for i in ticks], ticks)
-
-                # Labels
-                plt.xlabel( 'Wishbone trajectory' )
-                plt.title( br )
-        else:
-            # Plot values from the trunk alone
-            fig = plt.figure(figsize = [8, 0.5*len(markers)])
-            ax = plt.gca()
-
-            # Construct the full matrix
-            mat = marker_trends['Trunk']
-            mat.index = range(mat.shape[0])
-
-            # Start and end
-            start = np.where(mat['x'] >= trajectory_range[0])[0][0]
-            end = np.where(mat['x'] >= trajectory_range[1])[0][0]
-
-            # Plot
-            diffs = mat[markers].diff()
-            diffs[diffs.isnull()] = 0
-            diffs = diffs.ix[start:end]
-            mat = mat.ix[start:end]
-
-            # Differences
-            vmax = max(0.05,  abs(diffs).max().max() )
-            # Plot
-            sns.heatmap(diffs.T, linecolor='none', 
-                cmap=matplotlib.cm.RdBu_r, vmin=-vmax, vmax=vmax)
-            ax.xaxis.set_major_locator(plt.NullLocator())
-            ticks = np.arange(trajectory_range[0], trajectory_range[1]+0.1, 0.1)
-            plt.xticks([np.where(mat['x'] >= i)[0][0] for i in ticks], ticks)
-
-            # Labels
-            plt.xlabel( 'Wishbone trajectory' )
-
-        return fig, ax
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
