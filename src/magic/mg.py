@@ -49,7 +49,6 @@ with warnings.catch_warnings():
     sns.set(context="paper", style='ticks', font_scale=1.5, font='Bitstream Vera Sans')
 
 matplotlib.rcParams['image.cmap'] = 'viridis'
-# cmap = matplotlib.cm.Spectral_r
 size = 8
 
 
@@ -477,7 +476,7 @@ class SCData:
         fig, ax = get_fig(fig=fig, ax=ax)
         if isinstance(color, pd.Series):
             plt.scatter(self.tsne['x'], self.tsne['y'], s=size, 
-                        c=color.values, cmap=cmap, edgecolors='none')
+                        c=color.values, edgecolors='none')
         elif density == True:
             # Calculate the point density
             xy = np.vstack([self.tsne['x'], self.tsne['y']])
@@ -487,7 +486,7 @@ class SCData:
             idx = z.argsort()
             x, y, z = self.tsne['x'][idx], self.tsne['y'][idx], z[idx]
 
-            plt.scatter(x, y, s=size, c=z, cmap=cmap, edgecolors='none')
+            plt.scatter(x, y, s=size, c=z, edgecolors='none')
         else:
             plt.scatter(self.tsne['x'], self.tsne['y'], s=size, edgecolors='none',
                         color=qualitative_colors(2)[1] if color == None else color)
@@ -514,7 +513,7 @@ class SCData:
             sizes = self.library_sizes
         else:
             sizes = self.data.sum(axis=1)
-        plt.scatter(self.tsne['x'], self.tsne['y'], s=size, c=sizes, cmap=cmap, edgecolors='none')
+        plt.scatter(self.tsne['x'], self.tsne['y'], s=size, c=sizes, edgecolors='none')
         plt.colorbar()
         return fig, ax
  
@@ -717,7 +716,7 @@ class SCData:
             ax = plt.subplot(gs[i // n_cols, i % n_cols])
 
             plt.scatter(self.tsne['x'], self.tsne['y'], c=self.diffusion_eigenvectors[i],
-                        cmap=cmap, edgecolors='none', s=size)
+                        edgecolors='none', s=size)
 
             plt.title( 'Component %d' % i, fontsize=10 )
 
@@ -726,7 +725,7 @@ class SCData:
                 ax = plt.subplot(gs[(self.diffusion_eigenvectors.shape[1] + i) // n_cols, (self.diffusion_eigenvectors.shape[1] + i) % n_cols])
 
                 plt.scatter(other_data.tsne['x'], other_data.tsne['y'], c=other_data.diffusion_eigenvectors[i],
-                            cmap=cmap, edgecolors='none', s=size)
+                            edgecolors='none', s=size)
 
                 plt.title( 'Component %d' % i, fontsize=10 )
 
