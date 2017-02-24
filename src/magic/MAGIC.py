@@ -84,7 +84,7 @@ def impute_fast(data, L, t, rescale_percent=0, L_t=None, tprev=None):
         indices = np.where(M99_new == 0)[0]
         M99_new[indices] = M100_new[indices]
         max_ratio = np.divide(M99, M99_new)
-        data_new = np.multiply(data_new, np.matlib.repmat(max_ratio, len(data), 1))
+        data_new = np.multiply(data_new, np.tile(max_ratio, (len(data), 1)))
     
     return data_new, L_t
 
