@@ -1,5 +1,5 @@
-MAGIC: Markov Affinity-based Graph Imputation of Cells 
-------------------------------------------------------
+Markov Affinity-based Graph Imputation of Cells (MAGIC)
+-------------------------------------------------------
 
 
 #### Installation and dependencies
