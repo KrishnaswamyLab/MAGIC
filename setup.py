@@ -37,14 +37,6 @@ setup(name='magic',
 # get location of setup.py
 setup_dir = os.path.dirname(os.path.realpath(__file__))
 
-# GSEA, diffusion components
-tools_dir = os.path.expanduser('~/.magic/tools')
-if os.path.isdir(tools_dir):
-    shutil.rmtree(tools_dir)
-shutil.copytree(setup_dir + '/tools/', tools_dir)
-shutil.unpack_archive(tools_dir + '/DiffusionGeometry.zip', tools_dir +
-                      '/DiffusionGeometry/')
-
 # Copy test data
 data_dir = os.path.expanduser('~/.magic/data')
 if os.path.isdir(data_dir):
