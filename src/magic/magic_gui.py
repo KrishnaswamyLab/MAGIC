@@ -536,7 +536,7 @@ class magic_gui(tk.Tk):
     def _runDM(self):
         for key in self.data_list.selection():
             name = self.data_list.item(key)['text'].split(' (')[0]
-            self.data[name]['scdata'].run_diffusion_map(n_diffusion_components=self.ncompVar.get(), epsilon=self.epsilonVar.get(),
+            self.data[name]['scdata'].run_diffusion_map(n_diffusion_components=self.nCompVar.get(), epsilon=self.epsilonVar.get(),
                                                         knn=self.kNNVar.get(), knn_autotune=self.autotuneVar.get())
             self.data_list.insert(key, 'end', text=name + ' Diffusion components' +
                                   ' (' + str(self.data[name]['scdata'].diffusion_eigenvectors.shape[0]) + 
@@ -669,15 +669,15 @@ class magic_gui(tk.Tk):
                     self.ax.set_ylabel('tSNE2')
             gs.tight_layout(self.fig)
 
-            self.tabs.append(tk.Frame(self.notebook))
-            self.notebook.add(self.tabs[len(self.tabs)-1], text=self.plotNameVar.get())
+            self.tabs.append([tk.Frame(self.notebook), self.fig])
+            self.notebook.add(self.tabs[len(self.tabs)-1][0], text=self.plotNameVar.get())
 
-            self.canvas = FigureCanvasTkAgg(self.fig, self.tabs[len(self.tabs)-1])
+            self.canvas = FigureCanvasTkAgg(self.fig, self.tabs[len(self.tabs)-1][0])
             self.canvas.show()
             self.canvas.get_tk_widget().grid(column=1, row=1, rowspan=10, columnspan=4) 
 
-            tk.Button(self.tabs[len(self.tabs)-1], text="Save", command=self.savePlot).grid(row=0, column=5, sticky='NE')
-            tk.Button(self.tabs[len(self.tabs)-1], text="Close tab", command=self.closeCurrentTab).grid(row=1, column=5, sticky='NE')
+            tk.Button(self.tabs[len(self.tabs)-1][0], text="Save", command=self.savePlot).grid(row=0, column=5, sticky='NE')
+            tk.Button(self.tabs[len(self.tabs)-1][0], text="Close tab", command=self.closeCurrentTab).grid(row=1, column=5, sticky='NE')
             self.currentPlot = 'tsne'
 
     def plotDM(self):
@@ -698,15 +698,15 @@ class magic_gui(tk.Tk):
             for i in range(len(keys)):
                 plt.figtext(-0.05, 0.75 - (0.5*i), self.data_list.item(keys[i])['text'].split(' (')[0], rotation='vertical')
 
-            self.tabs.append(tk.Frame(self.notebook))
-            self.notebook.add(self.tabs[len(self.tabs)-1], text=self.plotNameVar.get())
+            self.tabs.append([tk.Frame(self.notebook), self.fig])
+            self.notebook.add(self.tabs[len(self.tabs)-1][0], text=self.plotNameVar.get())
 
-            self.canvas = FigureCanvasTkAgg(self.fig, self.tabs[len(self.tabs)-1])
+            self.canvas = FigureCanvasTkAgg(self.fig, self.tabs[len(self.tabs)-1][0])
             self.canvas.show()
             self.canvas.get_tk_widget().grid(column=1, row=1, rowspan=10, columnspan=4) 
 
-            tk.Button(self.tabs[len(self.tabs)-1], text="Save", command=self.savePlot).grid(row=0, column=5)
-            tk.Button(self.tabs[len(self.tabs)-1], text="Close tab", command=self.closeCurrentTab).grid(row=1, column=5)
+            tk.Button(self.tabs[len(self.tabs)-1][0], text="Save", command=self.savePlot).grid(row=0, column=5)
+            tk.Button(self.tabs[len(self.tabs)-1][0], text="Close tab", command=self.closeCurrentTab).grid(row=1, column=5)
 
             self.currentPlot = 'dm_components'
 
@@ -738,6 +738,7 @@ class magic_gui(tk.Tk):
                         magic = True
 
                     for j in range(len(xSelection)):
+
                         if len(zSelection[0]) > 0 and len(zSelection) == len(xSelection):
                             self.ax.append(self.fig.add_subplot(gs[i, j], projection='3d'))
                             genes = [xSelection[j], ySelection[j], zSelection[j]]
@@ -745,38 +746,23 @@ class magic_gui(tk.Tk):
                             self.ax.append(self.fig.add_subplot(gs[i, j]))
                             genes = [xSelection[j], ySelection[j]]
 
-                        if 'PC' in colorSelection[j]:
-                            color = int(colorSelection[j].split('PC')[1])
+                        if colorSelection[j] in self.data[name]['scdata'].extended_data.columns:
                             if magic:
                                 self.data[name]['scdata'].magic.scatter_gene_expression(genes, fig=self.fig, ax=self.ax[len(self.ax)-1],
-                                                                                        color=self.data[name]['scdata'].pca[color])
+                                                                                                            color=self.data[name]['scdata'].magic.extended_data[colorSelection[j]])
                             else:
                                 self.data[name]['scdata'].scatter_gene_expression(genes, fig=self.fig, ax=self.ax[len(self.ax)-1],
-                                                                                        color=self.data[name]['scdata'].pca[color])
-
-                        elif 'DC' in colorSelection[j]:
-                            color = int(colorSelection[j].split('DC')[1])
-                            if magic:
-                                self.data[name]['scdata'].magic.scatter_gene_expression(genes, fig=self.fig, ax=self.ax[len(self.ax)-1],
-                                                                                        color=self.data[name]['scdata'].diffusion_eigenvectors[color])
-                            else:
-                                self.data[name]['scdata'].scatter_gene_expression(genes, fig=self.fig, ax=self.ax[len(self.ax)-1],
-                                                                                  color=self.data[name]['scdata'].diffusion_eigenvectors[color])
-                        elif 'magic' in colorSelection[j]:
-                            color = self.colorSelection[j].split(' magic')[0]
-                            if magic:
-                                self.data[name]['scdata'].magic.scatter_gene_expression(genes, fig=self.fig, ax=self.ax[len(self.ax)-1],
-                                                                                                            color=self.data[name]['scdata'].magic.data[color])
-                            else:
-                                self.data[name]['scdata'].scatter_gene_expression(genes, fig=self.fig, ax=self.ax[len(self.ax)-1],
-                                                                                                            color=self.data[name]['scdata'].magic.data[color])
-                        elif colorSelection[j] in self.data[name]['scdata'].data.columns:
-                            if magic:
-                                self.data[name]['scdata'].magic.scatter_gene_expression(genes, fig=self.fig, ax=self.ax[len(self.ax)-1],
-                                                                                                            color=self.data[name]['scdata'].magic.data[colorSelection[j]])
-                            else:
-                                self.data[name]['scdata'].scatter_gene_expression(genes, fig=self.fig, ax=self.ax[len(self.ax)-1],
-                                                                                                            color=self.data[name]['scdata'].data[colorSelection[j]])
+                                                                                                            color=self.data[name]['scdata'].extended_data[colorSelection[j]])
+                        elif 'MAGIC' in colorSelection[j]:
+                            color = self.colorSelection[j].split('MAGIC.')[0]
+                            if color in self.data[name]['scdata'].magic.extended_data.columns:
+                                if magic:
+                                    self.data[name]['scdata'].magic.scatter_gene_expression(genes, fig=self.fig, ax=self.ax[len(self.ax)-1],
+                                                                                            color=self.data[name]['scdata'].magic.extended_data[color])
+                                else:
+                                    self.data[name]['scdata'].scatter_gene_expression(genes, fig=self.fig, ax=self.ax[len(self.ax)-1],
+                                                                                      color=self.data[name]['scdata'].magic.extended_data[color])
+                            
                         elif colorSelection[j] == 'density':
                             if magic:
                                 self.data[name]['scdata'].magic.scatter_gene_expression(genes, fig=self.fig, ax=self.ax[len(self.ax)-1],
@@ -802,15 +788,15 @@ class magic_gui(tk.Tk):
                 
                 gs.tight_layout(self.fig, pad=1.2, w_pad=0.1)
                 
-                self.tabs.append(tk.Frame(self.notebook))
-                self.notebook.add(self.tabs[len(self.tabs)-1], text=self.plotNameVar.get())
+                self.tabs.append([tk.Frame(self.notebook), self.fig])
+                self.notebook.add(self.tabs[len(self.tabs)-1][0], text=self.plotNameVar.get())
 
-                self.canvas = FigureCanvasTkAgg(self.fig, self.tabs[len(self.tabs)-1])
+                self.canvas = FigureCanvasTkAgg(self.fig, self.tabs[len(self.tabs)-1][0])
                 self.canvas.show()
                 self.canvas.get_tk_widget().grid(column=1, row=1, rowspan=10, columnspan=4) 
 
-                tk.Button(self.tabs[len(self.tabs)-1], text="Save", command=self.savePlot).grid(row=0, column=5)
-                tk.Button(self.tabs[len(self.tabs)-1], text="Close tab", command=self.closeCurrentTab).grid(row=1, column=5)
+                tk.Button(self.tabs[len(self.tabs)-1][0], text="Save", command=self.savePlot).grid(row=0, column=5)
+                tk.Button(self.tabs[len(self.tabs)-1][0], text="Close tab", command=self.closeCurrentTab).grid(row=1, column=5)
 
                 if len(zSelection[0]) > 0 and len(zSelection) == len(xSelection):
                         for ax in self.ax:
@@ -867,10 +853,13 @@ class magic_gui(tk.Tk):
         self.scatterSelection.destroy()
 
     def savePlot(self):
-        # self.plotFileName = filedialog.asksaveasfilename(title='Save Plot', defaultextension='.png', initialfile=self.fileNameEntryVar.get()+"_"+self.currentPlot)
-        # if self.plotFileName != None:
-        #     self.fig.savefig(self.plotFileName)
         tab = self.notebook.index(self.notebook.select())
+        default_name = self.notebook.tab(self.notebook.select(), "text")
+
+        self.plotFileName = filedialog.asksaveasfilename(title='Save Plot', defaultextension='.png', 
+                                                         initialfile=default_name)
+        if self.plotFileName != None:
+            self.tabs[tab][1].savefig(self.plotFileName)
 
     def closeCurrentTab(self):
         tab = self.notebook.index(self.notebook.select())
