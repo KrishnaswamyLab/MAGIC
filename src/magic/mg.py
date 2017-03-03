@@ -416,6 +416,7 @@ class SCData:
                 n, bins, patches = ax.hist(colsum, bins='auto') 
                 plt.xlabel('Molecules per gene (log10 scale)')
             plt.ylabel('Frequency')
+            plt.tight_layout()
             ax.tick_params(axis='x', labelsize=8)
 
         return fig, ax
@@ -509,6 +510,7 @@ class SCData:
         else:
             plt.scatter(self.tsne['x'], self.tsne['y'], s=size, edgecolors='none',
                         color=qualitative_colors(2)[1] if color == None else color)
+        plt.tight_layout()
         ax.set_title(title)
         return fig, ax
 
@@ -534,6 +536,7 @@ class SCData:
             sizes = self.data.sum(axis=1)
         plt.scatter(self.tsne['x'], self.tsne['y'], s=size, c=sizes, edgecolors='none')
         plt.colorbar()
+        plt.tight_layout()
         return fig, ax
  
     def run_phenograph(self, n_pca_components=15, **kwargs):
@@ -929,8 +932,8 @@ class SCData:
                 ax.set_title(g)
                 ax.set_xlabel('tsne_x')
                 ax.set_ylabel('tsne_y')
-        # gs.tight_layout(fig)
-
+        
+        plt.tight_layout()
         return fig, axes
 
 
@@ -1003,7 +1006,8 @@ class SCData:
             ax.set_ylabel(genes[1])
             ax.set_zlabel(genes[2])
             ax.view_init(25,-135)
-
+        
+        plt.tight_layout()
         return fig, ax
 
 
