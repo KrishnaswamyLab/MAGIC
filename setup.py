@@ -36,10 +36,3 @@ setup(name='magic',
 
 # get location of setup.py
 setup_dir = os.path.dirname(os.path.realpath(__file__))
-
-# Copy test data
-data_dir = os.path.expanduser('~/.magic/data')
-if os.path.isdir(data_dir):
-    shutil.rmtree(data_dir)
-shutil.copytree(setup_dir + '/data/', data_dir)
-
