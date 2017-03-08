@@ -1,16 +1,11 @@
 import os
 import sys
 import shutil
-from subprocess import call
 from setuptools import setup
 from warnings import warn
 
 if sys.version_info.major != 3:
     raise RuntimeError('Magic requires Python 3')
-
-
-# install phenograph
-call(['pip3', 'install', 'git+https://github.com/jacoblevine/phenograph.git'])
 
 
 setup(name='magic',
@@ -29,7 +24,11 @@ setup(name='magic',
           'sklearn',
           'networkx',
           'fcsparser',
-          'statsmodels'],
+          'statsmodels',
+      ],
+      dependency_links = [
+          'git+https://github.com/jacoblevine/phenograph.git',
+      ],
       scripts=['src/magic/magic_gui.py'],
       )
 
