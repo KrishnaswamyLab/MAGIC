@@ -634,7 +634,7 @@ class SCData:
 
 
     def run_diffusion_map(self, knn=10, epsilon=1, distance_metric='euclidean',
-        n_diffusion_components=10, n_pca_components=15, markers=None, knn_autotune=0):
+        n_diffusion_components=10, n_pca_components=15, markers=None, knn_autotune=0, random_pca=True):
         """ Run diffusion maps on the data. Run on the principal component projections
         for single cell RNA-seq data and on the expression matrix for mass cytometry data
         :param knn: Number of neighbors for graph construction to determine distances between cells
@@ -645,7 +645,11 @@ class SCData:
         :return: None
         """
 
-        data = deepcopy(self.data)
+        if n_pca_components != None:
+            data = run_pca(self.data, n_components=n_pca_components, random=random_pca)
+        else:
+            data = self.data
+
         N = data.shape[0]
 
         # Nearest neighbors
@@ -1054,10 +1058,10 @@ class SCData:
         return fig, axes
 
 
-    def run_magic(self, kernel='gaussian', n_pca_components=20, random_pca=True, t=6, knn=30, knn_autotune=10, epsilon=1, rescale_percent=99, k_knn=100, perplexity=30):
+    def run_magic(self, n_pca_components=20, random_pca=True, t=6, knn=30, knn_autotune=10, epsilon=1, rescale_percent=99):
 
-        new_data = magic.MAGIC.magic(self.data.values, kernel=kernel, n_pca_components=n_pca_components, random_pca=random_pca, t=t, knn=knn, 
-                                     knn_autotune=knn_autotune, epsilon=epsilon, rescale=rescale_percent, k_knn=k_knn, perplexity=perplexity)
+        new_data = magic.MAGIC.magic(self.data.values, n_pca_components=n_pca_components, random_pca=random_pca, t=t, 
+                                     knn=knn, knn_autotune=knn_autotune, epsilon=epsilon, rescale=rescale_percent)
 
         new_data = pd.DataFrame(new_data, index=self.data.index, columns=self.data.columns)
 
