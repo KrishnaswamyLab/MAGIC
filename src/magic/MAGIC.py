@@ -7,25 +7,17 @@ from sklearn.decomposition import PCA
 from scipy.spatial.distance import squareform
 from sklearn.neighbors import NearestNeighbors
 
-def magic(data, kernel='gaussian', n_pca_components=20, random_pca=True, 
-          t=6, knn=30, knn_autotune=10, epsilon=1, rescale=99, k_knn=100, perplexity=30):
+def magic(data, n_pca_components=20, random_pca=True, 
+          t=6, knn=30, knn_autotune=10, epsilon=1, rescale=99):
 
-    if kernel not in ['gaussian']:
-        raise RuntimeError('Invalid kernel type. Must be "gaussian".')
-
-    #library size normalization
-    #create data_norm
-
-    #always pass in data_norm
     if n_pca_components != None:
         pca_projected_data = run_pca(data, n_components=n_pca_components, random=random_pca)
     else:
         pca_projected_data = data
 
-    if kernel == 'gaussian':
-        #run diffusion maps to get markov matrix
-        L = compute_markov(pca_projected_data, knn=knn, epsilon=epsilon, 
-                                       distance_metric='euclidean', knn_autotune=knn_autotune)
+    #run diffusion maps to get markov matrix
+    L = compute_markov(pca_projected_data, knn=knn, epsilon=epsilon, 
+                       distance_metric='euclidean', knn_autotune=knn_autotune)
 
     #remove tsne kernel for now
     # else:
@@ -37,7 +29,6 @@ def magic(data, kernel='gaussian', n_pca_components=20, random_pca=True,
     #         P = _joint_probabilities(distances, perplexity, 1)
     #     P = squareform(P)
 
-    ## QUESTION -- should this happen for gaussian kernel too??
     #     #markov normalize P
     #     L = np.divide(P, np.sum(P, axis=1))
 

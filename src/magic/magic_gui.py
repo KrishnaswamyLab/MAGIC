@@ -58,7 +58,7 @@ class magic_gui(tk.Tk):
 
         #intro screen
         tk.Label(self, text=u"MAGIC", font=('Helvetica', 48), fg="black", bg="white", padx=100, pady=20).grid(row=0)
-        tk.Label(self, text=u"Markov Affinity-Based Graph Imputation of Cells", font=('Helvetica', 25), fg="black", bg="white", padx=100, pady=40).grid(row=1)
+        tk.Label(self, text=u"Markov Affinity-based Graph Imputation of Cells", font=('Helvetica', 25), fg="black", bg="white", padx=100, pady=40).grid(row=1)
         tk.Label(self, text=u"To get started, select a data file by clicking File > Load Data", fg="black", bg="white", padx=100, pady=25).grid(row=2)
 
         #update
@@ -136,7 +136,7 @@ class magic_gui(tk.Tk):
 
             self.pseudocount = tk.IntVar()
             self.pseudocount.set(0.1)
-            tk.Label(self.fileInfo, text=u"Pseudocount", fg="black",bg="white").grid(column=1, row=11)
+            tk.Label(self.fileInfo, text=u"Pseudocount (for log-transform)", fg="black",bg="white").grid(column=1, row=11)
             tk.Entry(self.fileInfo, textvariable=self.pseudocount).grid(column=2, row=11)
 
             tk.Button(self.fileInfo, text="Cancel", command=self.fileInfo.destroy).grid(column=1, row=12)
@@ -191,7 +191,7 @@ class magic_gui(tk.Tk):
 
             self.pseudocount = tk.IntVar()
             self.pseudocount.set(0.1)
-            tk.Label(self.fileInfo, text=u"Pseudocount", fg="black",bg="white").grid(column=0, row=9)
+            tk.Label(self.fileInfo, text=u"Pseudocount (for log-transform)", fg="black",bg="white").grid(column=0, row=9)
             tk.Entry(self.fileInfo, textvariable=self.pseudocount).grid(column=1, row=9)
 
             tk.Button(self.fileInfo, text="Cancel", command=self.fileInfo.destroy).grid(column=1, row=10)
@@ -436,7 +436,7 @@ class magic_gui(tk.Tk):
 
         self.randomVar = tk.BooleanVar()
         self.randomVar.set(True)
-        tk.Checkbutton(self.pcaOptions, text=u"Randomized PCA", variable=self.randomVar).grid(column=0, row=2, columnspan=2)
+        tk.Checkbutton(self.pcaOptions, text=u"Randomized PCA (faster)", variable=self.randomVar).grid(column=0, row=2, columnspan=2)
 
         tk.Button(self.pcaOptions, text="Run", command=self._runPCA).grid(column=1, row=4)
         tk.Button(self.pcaOptions, text="Cancel", command=self.pcaOptions.destroy).grid(column=0, row=4)
@@ -512,32 +512,41 @@ class magic_gui(tk.Tk):
             self.nCompVar.set(10)
             tk.Entry(self.DMOptions, textvariable=self.nCompVar).grid(column=1,row=0)
 
-            tk.Label(self.DMOptions,text=u"kNN:" ,fg="black",bg="white").grid(column=0, row=1)
+            tk.Label(self.DMOptions,text=u"Number of PCA components:" ,fg="black",bg="white").grid(column=0, row=1)
+            self.nCompVar = tk.IntVar()
+            self.nCompVar.set(20)
+            tk.Entry(self.DMOptions, textvariable=self.nPCAVar).grid(column=1,row=1)
+
+            self.randomPCAVar = tk.BooleanVar()
+            self.randomPCAVar.set(True)
+            tk.Checkbutton(self.DMOptions, text=u"Randomized PCA (faster)", variable=self.randomPCAVar).grid(column=0, row=2, columnspan=2)
+
+            tk.Label(self.DMOptions,text=u"kNN:" ,fg="black",bg="white").grid(column=0, row=3)
             self.kNNVar = tk.IntVar()
             self.kNNVar.set(30)
-            tk.Entry(self.DMOptions, textvariable=self.kNNVar).grid(column=1,row=1)
+            tk.Entry(self.DMOptions, textvariable=self.kNNVar).grid(column=1,row=3)
 
-            tk.Label(self.DMOptions,text=u"kNN-autotune:" ,fg="black",bg="white").grid(column=0, row=2)
+            tk.Label(self.DMOptions,text=u"kNN-autotune:" ,fg="black",bg="white").grid(column=0, row=4)
             self.autotuneVar = tk.IntVar()
             self.autotuneVar.set(10)
-            tk.Entry(self.DMOptions, textvariable=self.autotuneVar).grid(column=1,row=2)
+            tk.Entry(self.DMOptions, textvariable=self.autotuneVar).grid(column=1,row=4)
 
-            tk.Label(self.DMOptions,text=u"Epsilon:" ,fg="black",bg="white").grid(column=0, row=3)
+            tk.Label(self.DMOptions,text=u"Epsilon:" ,fg="black",bg="white").grid(column=0, row=5)
             self.epsilonVar = tk.IntVar()
             self.epsilonVar.set(1)
-            tk.Entry(self.DMOptions, textvariable=self.epsilonVar).grid(column=1,row=3)
+            tk.Entry(self.DMOptions, textvariable=self.epsilonVar).grid(column=1,row=5)
 
-            tk.Label(self.DMOptions, text=u"(Epsilon 0 is the uniform kernel)",fg="black",bg="white").grid(column=0,columnspan=2,row=4)
+            tk.Label(self.DMOptions, text=u"(Epsilon 0 is the uniform kernel)",fg="black",bg="white").grid(column=0,columnspan=2,row=6)
 
-            tk.Button(self.DMOptions, text="Run", command=self._runDM).grid(column=1, row=5)
-            tk.Button(self.DMOptions, text="Cancel", command=self.DMOptions.destroy).grid(column=0, row=5)
+            tk.Button(self.DMOptions, text="Run", command=self._runDM).grid(column=1, row=7)
+            tk.Button(self.DMOptions, text="Cancel", command=self.DMOptions.destroy).grid(column=0, row=7)
             self.wait_window(self.DMOptions)
 
     def _runDM(self):
         for key in self.data_list.selection():
             name = self.data_list.item(key)['text'].split(' (')[0]
-            self.data[name]['scdata'].run_diffusion_map(n_diffusion_components=self.nCompVar.get(), epsilon=self.epsilonVar.get(),
-                                                        knn=self.kNNVar.get(), knn_autotune=self.autotuneVar.get())
+            self.data[name]['scdata'].run_diffusion_map(n_diffusion_components=self.nCompVar.get(), epsilon=self.epsilonVar.get(), n_pca_components=self.nPCAVar.get(),
+                                                        knn=self.kNNVar.get(), knn_autotune=self.autotuneVar.get(), random_pca=self.randomPCAVar.get())
             self.data_list.insert(key, 'end', text=name + ' Diffusion components' +
                                   ' (' + str(self.data[name]['scdata'].diffusion_eigenvectors.shape[0]) + 
                                  ' x ' + str(self.data[name]['scdata'].diffusion_eigenvectors.shape[1]) + ')', open=True)
@@ -549,14 +558,6 @@ class magic_gui(tk.Tk):
             self.magicOptions = tk.Toplevel()
             self.magicOptions.title(self.data_list.item(key)['text'].split(' (')[0] + ": MAGIC options")
             self.curKey = key
-
-            #only allow gaussian kernel for now
-            # tk.Label(self.magicOptions, text=u"Kernel type:", fg="black",bg="white").grid(column=0, row=0)
-            # self.kernelType = tk.StringVar()
-            # self.kernelType.set('gaussian')
-            # kernel_types = ['gaussian', 'tsne']
-            # self.kernel_menu = tk.OptionMenu(self.magicOptions, self.kernelType, *kernel_types)
-            # self.kernel_menu.grid(row=0, column=1)
 
             tk.Label(self.magicOptions,text=u"# of PCA components:" ,fg="black",bg="white").grid(column=0, row=1)
             self.nCompVar = tk.IntVar()
@@ -571,9 +572,6 @@ class magic_gui(tk.Tk):
             self.tVar = tk.IntVar()
             self.tVar.set(6)
             tk.Entry(self.magicOptions, textvariable=self.tVar).grid(column=1,row=3)
-
-            #only allow gaussian kernel for now
-            # tk.Label(self.magicOptions, text=u"Gaussian kernel only:", fg="black", bg="white").grid(column=0, row=3, columnspan=2)
             
             tk.Label(self.magicOptions,text=u"kNN:" ,fg="black",bg="white").grid(column=0, row=4)
             self.kNNVar = tk.IntVar()
@@ -591,18 +589,6 @@ class magic_gui(tk.Tk):
             tk.Entry(self.magicOptions, textvariable=self.epsilonVar).grid(column=1,row=6)
 
             tk.Label(self.magicOptions, text=u"(Epsilon 0 is the uniform kernel)",fg="black",bg="white").grid(column=0,columnspan=2,row=7)
-            #only allow gaussian kernel for now
-            # tk.Label(self.magicOptions, text=u"tSNE kernel only:", fg='black', bg='white').grid(column=0, row=7, columnspan=2)
-
-            # tk.Label(self.magicOptions,text=u"Perplexity:" ,fg="black",bg="white").grid(column=0, row=8)
-            # self.perplexityVar = tk.IntVar()
-            # self.perplexityVar.set(30)
-            # tk.Entry(self.magicOptions, textvariable=self.perplexityVar).grid(column=1,row=8)
-
-            # tk.Label(self.magicOptions,text=u"k_kNN:" ,fg="black",bg="white").grid(column=0, row=9)
-            # self.k_kNNVar = tk.IntVar()
-            # self.k_kNNVar.set(100)
-            # tk.Entry(self.magicOptions, textvariable=self.k_kNNVar).grid(column=1,row=9)
 
             self.rescaleVar = tk.IntVar()
             self.rescaleVar.set(99)
@@ -619,8 +605,7 @@ class magic_gui(tk.Tk):
         self.data[name]['scdata'].run_magic(n_pca_components=self.nCompVar.get() if self.nCompVar.get() > 0 else None,
                                             t=self.tVar.get(), knn=self.kNNVar.get(), epsilon=self.epsilonVar.get(), 
                                             rescale_percent=self.rescaleVar.get(), knn_autotune=self.autotuneVar.get(),
-                                            # perplexity=self.perplexityVar.get(), k_knn=self.k_kNNVar.get(),
-                                            kernel='gaussian', random_pca=self.randomVar.get())
+                                            random_pca=self.randomVar.get())
         
         self.data[name + ' MAGIC'] = {'scdata' : self.data[name]['scdata'].magic, 'wb' : None, 'state' : tk.BooleanVar(),
                                       'genes' : self.data[name]['scdata'].magic.data.columns.values, 'gates' : {}}
@@ -810,42 +795,48 @@ class magic_gui(tk.Tk):
         self.scatterSelection = tk.Toplevel()
         self.scatterSelection.title("Scatter plot options")
 
+        tk.Label(self.scatterSelection, text="For plotting axes, specify a single gene, diffusion component(DC#),"+
+                                             " or PCA component(PC#) or a comma separated list (number of items in"+
+                                             " each list must be equal). The z-axis is optional").grid(row=0, column=0, rowspan=2, columnspan=2)
+        tk.Label(self.scatterSelection, text="A plot can be colored by a gene, diffusion component(DC#),"+ 
+                                             " PCA component(PC#), or \"density\" for kernel density. " +
+                                             "The color can also be a solid color(eg: \"blue\").").grid(row=2, column=0, rowspan=2, columnspan=2)
         #plot name
-        tk.Label(self.scatterSelection, text=u"Plot name:").grid(row=0, column=0)
+        tk.Label(self.scatterSelection, text=u"Plot name:").grid(row=4, column=0)
         self.plotNameVar = tk.StringVar()
         self.plotNameVar.set('Plot ' + str(len(self.tabs)))
-        tk.Entry(self.scatterSelection, textvariable=self.plotNameVar).grid(row=0, column=1)
+        tk.Entry(self.scatterSelection, textvariable=self.plotNameVar).grid(row=4, column=1)
 
         #x
         if plot_type == 'tsne':
-            tk.Label(self.scatterSelection, text=u"x: tSNE1", fg="black",bg="white").grid(row=1, column=0)
+            tk.Label(self.scatterSelection, text=u"x: tSNE1", fg="black",bg="white").grid(row=5, column=0)
         else:
-            tk.Label(self.scatterSelection, text=u"x:", fg="black",bg="white").grid(row=1, column=0)
+            tk.Label(self.scatterSelection, text=u"x:", fg="black",bg="white").grid(row=5, column=0)
             self.xVar = tk.StringVar()
-            tk.Entry(self.scatterSelection, textvariable=self.xVar).grid(column=1,row=1)
+            tk.Entry(self.scatterSelection, textvariable=self.xVar).grid(column=1,row=5)
 
         #y
         if plot_type == 'tsne':
-            tk.Label(self.scatterSelection, text=u"y: tSNE2", fg="black",bg="white").grid(row=2, column=0)
+            tk.Label(self.scatterSelection, text=u"y: tSNE2", fg="black",bg="white").grid(row=6, column=0)
         else:
-            tk.Label(self.scatterSelection, text=u"y:", fg="black",bg="white").grid(row=2, column=0)
+            tk.Label(self.scatterSelection, text=u"y:", fg="black",bg="white").grid(row=6, column=0)
             self.yVar = tk.StringVar()
-            tk.Entry(self.scatterSelection, textvariable=self.yVar).grid(column=1,row=2)
+            tk.Entry(self.scatterSelection, textvariable=self.yVar).grid(column=1,row=6)
 
         #z
         if plot_type != 'tsne':
-            tk.Label(self.scatterSelection, text=u"z:", fg="black",bg="white").grid(row=3, column=0)
+            tk.Label(self.scatterSelection, text=u"z:", fg="black",bg="white").grid(row=7, column=0)
             self.zVar = tk.StringVar()
-            tk.Entry(self.scatterSelection, textvariable=self.zVar).grid(column=1,row=3)
+            tk.Entry(self.scatterSelection, textvariable=self.zVar).grid(column=1,row=7)
 
         #color
-        tk.Label(self.scatterSelection, text=u"color (gene, diffusion component, or density):", fg="black",bg="white").grid(row=4, column=0)
+        tk.Label(self.scatterSelection, text=u"color:", fg="black",bg="white").grid(row=8, column=0)
         self.colorVar = tk.StringVar()
         self.colorVar.set('blue')
-        tk.Entry(self.scatterSelection, textvariable=self.colorVar).grid(column=1,row=4)
+        tk.Entry(self.scatterSelection, textvariable=self.colorVar).grid(column=1,row=8)
 
-        tk.Button(self.scatterSelection, text="Plot", command=self.scatterSelection.destroy).grid(column=1, row=5)
-        tk.Button(self.scatterSelection, text="Cancel", command=self._cancelScatter).grid(column=0, row=5)
+        tk.Button(self.scatterSelection, text="Plot", command=self.scatterSelection.destroy).grid(column=1, row=9)
+        tk.Button(self.scatterSelection, text="Cancel", command=self._cancelScatter).grid(column=0, row=9)
         self.wait_window(self.scatterSelection)
 
     def _cancelScatter(self):
