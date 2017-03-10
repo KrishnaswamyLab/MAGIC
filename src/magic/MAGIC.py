@@ -66,6 +66,11 @@ def impute_fast(data, L, t, rescale_percent=0, L_t=None, tprev=None):
 
     #rescale data
     if rescale_percent != 0:
+        if len(np.where(data_new < 0)[0]) > 0:
+            print('Rescaling should not be performed on log-transformed '
+                  '(or other negative) values. Imputed data return unscaled.')
+            return data_new, L_t
+            
         M99 = np.percentile(data, rescale_percent, axis=0)
         M100 = data.max(axis=0)
         indices = np.where(M99 == 0)[0]

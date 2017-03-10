@@ -88,18 +88,18 @@ class magic_gui(tk.Tk):
             self.delimiter.set(',')
             tk.Entry(self.fileInfo, textvariable=self.delimiter).grid(column=1, row=2)
 
-            tk.Label(self.fileInfo, text=u"Rows:", fg="black",bg="white").grid(column=0, row=3)
+            tk.Label(self.fileInfo, text=u"First row:", fg="black",bg="white").grid(column=0, row=3)
             self.rowVar = tk.IntVar()
             self.rowVar.set(0)
-            tk.Radiobutton(self.fileInfo, text="cells", variable=self.rowVar, value=0).grid(column=1, row=3)
-            tk.Radiobutton(self.fileInfo, text="genes", variable=self.rowVar, value=1).grid(column=2, row=3)
+            tk.Radiobutton(self.fileInfo, text="Gene names", variable=self.rowVar, value=0).grid(column=1, row=3)
+            tk.Radiobutton(self.fileInfo, text="Cell names", variable=self.rowVar, value=1).grid(column=2, row=3)
 
-            tk.Label(self.fileInfo, text=u"Number of rows to skip:").grid(column=0, row=4)
+            tk.Label(self.fileInfo, text=u"Number of rows to skip before reading gene/cell names:").grid(column=0, row=4)
             self.rowHeader = tk.IntVar()
             self.rowHeader.set(0)
             tk.Entry(self.fileInfo, textvariable=self.rowHeader).grid(column=1, row=4)
 
-            tk.Label(self.fileInfo, text=u"Number of columns to skip:").grid(column=0, row=5)
+            tk.Label(self.fileInfo, text=u"Number of columns to skip before reading gene/cell names:").grid(column=0, row=5)
             self.colHeader = tk.IntVar()
             self.colHeader.set(0)
             tk.Entry(self.fileInfo, textvariable=self.colHeader).grid(column=1, row=5)
@@ -717,10 +717,6 @@ class magic_gui(tk.Tk):
                 self.ax = []
                 for i in range(len(keys)):
                     name = self.data_list.item(keys[i])['text'].split(' (')[0]
-                    magic = False
-                    if 'MAGIC' in name:
-                        name = name.split(' MAGIC')[0]
-                        magic = True
 
                     for j in range(len(xSelection)):
 
@@ -731,41 +727,22 @@ class magic_gui(tk.Tk):
                             self.ax.append(self.fig.add_subplot(gs[i, j]))
                             genes = [xSelection[j], ySelection[j]]
 
-                        if colorSelection[j] in self.data[name]['scdata'].extended_data.columns:
-                            if magic:
-                                self.data[name]['scdata'].magic.scatter_gene_expression(genes, fig=self.fig, ax=self.ax[len(self.ax)-1],
-                                                                                                            color=self.data[name]['scdata'].magic.extended_data[colorSelection[j]])
-                            else:
-                                self.data[name]['scdata'].scatter_gene_expression(genes, fig=self.fig, ax=self.ax[len(self.ax)-1],
-                                                                                                            color=self.data[name]['scdata'].extended_data[colorSelection[j]])
+                        if colorSelection[j] in self.data[name]['scdata'].extended_data.columns.get_level_values(1):
+                            self.data[name]['scdata'].scatter_gene_expression(genes, fig=self.fig, ax=self.ax[len(self.ax)-1],
+                                                                                  color=colorSelection[j])
                         elif 'MAGIC' in colorSelection[j]:
-                            color = self.colorSelection[j].split('MAGIC.')[0]
-                            if color in self.data[name]['scdata'].magic.extended_data.columns:
-                                if magic:
-                                    self.data[name]['scdata'].magic.scatter_gene_expression(genes, fig=self.fig, ax=self.ax[len(self.ax)-1],
-                                                                                            color=self.data[name]['scdata'].magic.extended_data[color])
-                                else:
+                            color = self.colorSelection[j].split('MAGIC ')[0]
+                            if color in self.data[name]['scdata'].magic.data.columns:
                                     self.data[name]['scdata'].scatter_gene_expression(genes, fig=self.fig, ax=self.ax[len(self.ax)-1],
-                                                                                      color=self.data[name]['scdata'].magic.extended_data[color])
+                                                                                      color=self.data[name]['scdata'].magic.data[color])
                             
                         elif colorSelection[j] == 'density':
-                            if magic:
-                                self.data[name]['scdata'].magic.scatter_gene_expression(genes, fig=self.fig, ax=self.ax[len(self.ax)-1],
-                                                                                                            density=True)
-                            else:
-                                self.data[name]['scdata'].scatter_gene_expression(genes, fig=self.fig, ax=self.ax[len(self.ax)-1],
+                            self.data[name]['scdata'].scatter_gene_expression(genes, fig=self.fig, ax=self.ax[len(self.ax)-1],
                                                                                                             density=True)
                         else:
-                            if magic:
-                                self.data[name]['scdata'].magic.scatter_gene_expression(genes, fig=self.fig, ax=self.ax[len(self.ax)-1],
+                            self.data[name]['scdata'].scatter_gene_expression(genes, fig=self.fig, ax=self.ax[len(self.ax)-1],
                                                                                                             color=colorSelection[j])
-                            else:
-                                self.data[name]['scdata'].scatter_gene_expression(genes, fig=self.fig, ax=self.ax[len(self.ax)-1],
-                                                                                                            color=colorSelection[j])
-                        if magic:
-                            self.ax[len(self.ax)-1].set_title(name + ' MAGIC (color = ' + colorSelection[j] + ')')
-                        else:
-                            self.ax[len(self.ax)-1].set_title(name + ' (color = ' + colorSelection[j] + ')')
+                        self.ax[len(self.ax)-1].set_title(name + ' (color = ' + colorSelection[j] + ')')
                         self.ax[len(self.ax)-1].set_xlabel(genes[0])
                         self.ax[len(self.ax)-1].set_ylabel(genes[1])
                         if len(genes) == 3:
