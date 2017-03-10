@@ -1,10 +1,11 @@
 Markov Affinity-based Graph Imputation of Cells (MAGIC)
 -------------------------------------------------------
 
+MAGIC has been implemented in Python3 and Matlab.
 
-#### Installation and dependencies
-1. MAGIC has been implemented in Python3 and can be installed using
-2. 
+#### Installation and dependencies for the Python version
+1. The Python3 version of MAGIC can be installed using:
+
         $> git clone git://github.com/pkathail/magic.git
         $> cd magic
         $> sudo pip3 install .
@@ -23,3 +24,6 @@ A python GUI is now available for MAGIC. After following the installation steps 
 
         $> magic_gui.py
 
+#### Installation and dependencies for the Matlab version
+1. Matlab implementation of MAGIC uses Mauro Maggioni's Diffusion Geometry code. Download from here: http://www.math.jhu.edu/~mauro/Code/DiffusionGeometry_01.zip or use included DiffusionGeometry_01.zip
+2. test_magic.m shows how to run MAGIC. Also included is a function for loading 10x format data (load_10x.m)
