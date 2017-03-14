@@ -38,7 +38,7 @@ class magic_gui(tk.Tk):
         self.menubar.add_cascade(label="File", menu=self.fileMenu)
         self.fileMenu.add_command(label="Load csv file", command=self.loadCSV)
         self.fileMenu.add_command(label="Load sparse data file", command=self.loadMTX)
-        self.fileMenu.add_command(label="Load 10x file", state='disabled', command=self.load10x)
+        self.fileMenu.add_command(label="Load 10x file", command=self.load10x)
         self.fileMenu.add_command(label="Load saved session from pickle file", command=self.loadPickle)
         self.fileMenu.add_command(label="Save data", state='disabled', command=self.saveData)
         self.fileMenu.add_command(label="Exit", command=self.quitMAGIC)
@@ -53,6 +53,7 @@ class magic_gui(tk.Tk):
         self.visMenu = tk.Menu(self.menubar, tearoff=0)
         self.menubar.add_cascade(label="Visualization", menu=self.visMenu)
         self.visMenu.add_command(label="Scatter plot", state='disabled', command=self.scatterPlot)
+        self.visMenu.add_command(label="PCA plot", state='disabled', command=self.plotPCA)
         
         self.config(menu=self.menubar)
 
@@ -200,7 +201,63 @@ class magic_gui(tk.Tk):
             self.wait_window(self.fileInfo)
 
     def load10x(self):
-        print('todo')
+        self.dataDir = filedialog.askdirectory(title='Select data directory', initialdir='~/.magic/data')
+        if(self.dataDir != None):
+            #pop up data options menu
+            self.fileInfo = tk.Toplevel()
+            self.fileInfo.title("Data options")
+            tk.Label(self.fileInfo, text=u"Data directory: ").grid(column=0, row=0)
+            tk.Label(self.fileInfo, text=self.dataDir).grid(column=1, row=0)
+
+            tk.Label(self.fileInfo,text=u"Name:" ,fg="black",bg="white").grid(column=0, row=1)
+            self.fileNameEntryVar = tk.StringVar()
+            self.fileNameEntryVar.set('Data')
+            tk.Entry(self.fileInfo, textvariable=self.fileNameEntryVar).grid(column=1,row=1)
+
+            tk.Label(self.fileInfo, text=u"Gene names:").grid(column=0, row=2)
+            self.geneVar = tk.IntVar()
+            self.geneVar.set(1)
+            tk.Radiobutton(self.fileInfo, text='Use ensemble IDS', variable=self.geneVar, value=1).grid(column=1, row=2)
+            tk.Radiobutton(self.fileInfo, text='Use gene names', variable=self.geneVar, value=0).grid(column=2, row=2)
+
+            tk.Button(self.fileInfo, text="Compute data statistics", command=partial(self.showRawDataDistributions, file_type='10x')).grid(column=0, row=3)
+
+            #filter parameters
+            self.filterCellMinVar = tk.StringVar()
+            tk.Label(self.fileInfo,text=u"Filter by molecules per cell. Min:" ,fg="black",bg="white").grid(column=0, row=4)
+            tk.Entry(self.fileInfo, textvariable=self.filterCellMinVar).grid(column=1,row=4)
+            
+            self.filterCellMaxVar = tk.StringVar()
+            tk.Label(self.fileInfo, text=u" Max:" ,fg="black",bg="white").grid(column=2, row=4)
+            tk.Entry(self.fileInfo, textvariable=self.filterCellMaxVar).grid(column=3,row=4)
+            
+            self.filterGeneNonzeroVar = tk.StringVar()
+            tk.Label(self.fileInfo,text=u"Filter by nonzero cells per gene. Min:" ,fg="black",bg="white").grid(column=0, row=5)
+            tk.Entry(self.fileInfo, textvariable=self.filterGeneNonzeroVar).grid(column=1,row=5)
+            
+            self.filterGeneMolsVar = tk.StringVar()
+            tk.Label(self.fileInfo,text=u"Filter by molecules per gene. Min:" ,fg="black",bg="white").grid(column=0, row=6)
+            tk.Entry(self.fileInfo, textvariable=self.filterGeneMolsVar).grid(column=1,row=6)
+
+            #normalize
+            self.normalizeVar = tk.BooleanVar()
+            self.normalizeVar.set(True)
+            tk.Checkbutton(self.fileInfo, text=u"Normalize by library size", variable=self.normalizeVar).grid(column=0, row=7, columnspan=4)
+
+            #log transform
+            self.logTransform = tk.BooleanVar()
+            self.logTransform.set(False)
+            tk.Checkbutton(self.fileInfo, text=u"Log-transform data", variable=self.logTransform).grid(column=0, row=8, columnspan=2)
+
+            self.pseudocount = tk.IntVar()
+            self.pseudocount.set(0.1)
+            tk.Label(self.fileInfo, text=u"Pseudocount (for log-transform)", fg="black",bg="white").grid(column=0, row=9)
+            tk.Entry(self.fileInfo, textvariable=self.pseudocount).grid(column=1, row=9)
+
+            tk.Button(self.fileInfo, text="Cancel", command=self.fileInfo.destroy).grid(column=1, row=10)
+            tk.Button(self.fileInfo, text="Load", command=partial(self.processData, file_type='10x')).grid(column=2, row=10)
+
+            self.wait_window(self.fileInfo)
 
     def getGeneNameFile(self):
         self.geneNameFile = filedialog.askopenfilename(title='Select gene name file', initialdir='~/.magic/data')
@@ -260,6 +317,8 @@ class magic_gui(tk.Tk):
                                               normalize=False)
         elif file_type == 'mtx':   # sparse matrix
             scdata = magic.mg.SCData.from_mtx(os.path.expanduser(self.dataFileName), os.path.expanduser(self.geneNameFile))
+        elif file_type == '10x':
+            scdata = magic.mg.SCData.from_10x(self.dataDir, use_ensemble_id=self.geneVar.get())
             
         if len(self.filterCellMinVar.get()) > 0 or len(self.filterCellMaxVar.get()) > 0 or len(self.filterGeneNonzeroVar.get()) > 0 or len(self.filterGeneMolsVar.get()) > 0:
             scdata.filter_scseq_data(filter_cell_min=int(self.filterCellMinVar.get()) if len(self.filterCellMinVar.get()) > 0 else 0, 
@@ -288,6 +347,7 @@ class magic_gui(tk.Tk):
         self.analysisMenu.entryconfig(3, state='normal')
         self.fileMenu.entryconfig(4, state='normal')
         self.visMenu.entryconfig(0, state='normal')
+        self.visMenu.entryconfig(1, state='normal')
         self.concatButton = tk.Button(self, text=u"Concatenate selected datasets", state='disabled', wraplength=80, command=self.concatenateData)
         self.concatButton.grid(column=0, row=11)
         if len(self.data) > 1:
@@ -408,9 +468,11 @@ class magic_gui(tk.Tk):
         if file_type == 'csv':    # sc-seq data
             scdata = magic.mg.SCData.from_csv(os.path.expanduser(self.dataFileName), 
                                               data_type='sc-seq', normalize=False)
-        else:   # sparse matrix
+        elif file_type == 'mtx':   # sparse matrix
             scdata = magic.mg.SCData.from_mtx(os.path.expanduser(self.dataFileName), 
                                               os.path.expanduser(self.geneNameFile))
+        elif file_type == '10x':
+            scdata = magic.mg.SCData.from_10x(self.dataDir)
 
         self.dataDistributions = tk.Toplevel()
         self.dataDistributions.title(self.fileNameEntryVar.get() + ": raw data distributions")
@@ -616,13 +678,59 @@ class magic_gui(tk.Tk):
         
         self.magicOptions.destroy()
 
+    def plotPCA(self):
+        for key in self.data_list.selection():
+            #pop up for parameters
+            self.plotOptions = tk.Toplevel()
+            self.plotOptions.title(self.data_list.item(key)['text'].split(' (')[0] + ": PCA plot options")
+            self.curKey = key
+
+            tk.Label(self.plotOptions,text=u"# of PCA components:" ,fg="black",bg="white").grid(column=0, row=1)
+            self.nCompVar = tk.IntVar()
+            self.nCompVar.set(40)
+            tk.Entry(self.plotOptions, textvariable=self.nCompVar).grid(column=1,row=1)
+
+            self.randomVar = tk.BooleanVar()
+            self.randomVar.set(True)
+            tk.Checkbutton(self.plotOptions, text=u"Randomized PCA", variable=self.randomVar).grid(column=0, row=2, columnspan=2)
+
+            tk.Label(self.plotOptions, text=u"y-axis upper limit:").grid(column=0, row=3)
+            self.yAxisVar = tk.DoubleVar()
+            self.yAxisVar.set(0.5)
+            tk.Entry(self.plotOptions, textvariable=self.yAxisVar).grid(column=1, row=3)
+
+            tk.Button(self.plotOptions, text="Cancel", command=self.plotOptions.destroy).grid(column=0, row=4)
+            tk.Button(self.plotOptions, text="Run", command=self._plotPCA).grid(column=1, row=4)
+            self.wait_window(self.plotOptions)
+
+    def _plotPCA(self):
+        name = self.data_list.item(self.curKey)['text'].split(' (')[0]
+        self.fig = plt.figure(figsize=[6,6])
+        self.fig, self.ax = self.data[name]['scdata'].plot_pca_variance_explained(n_components=self.nCompVar.get(), fig=self.fig,
+                                                                                  ylim=(0, self.yAxisVar.get()), random=self.randomVar.get())
+
+        self.tabs.append([tk.Frame(self.notebook), self.fig])
+        self.notebook.add(self.tabs[len(self.tabs)-1][0], text='PCA plot')
+
+        self.canvas = FigureCanvasTkAgg(self.fig, self.tabs[len(self.tabs)-1][0])
+        self.canvas.show()
+        self.canvas.get_tk_widget().grid(column=1, row=1, rowspan=10, columnspan=4, sticky='NSEW') 
+
+        tk.Button(self.tabs[len(self.tabs)-1][0], text="Save", command=self.savePlot).grid(row=0, column=5, sticky='NE')
+        tk.Button(self.tabs[len(self.tabs)-1][0], text="Close tab", command=self.closeCurrentTab).grid(row=1, column=5, sticky='NE')
+        self.currentPlot = 'pca'
+        self.plotOptions.destroy()
+
     def plotTSNE(self):
         keys = self.data_list.selection()
         self.getScatterSelection(plot_type='tsne')
 
         self.colorSelection = self.colorVar.get().split(', ')
         if (len(self.colorSelection) == 1 and len(self.colorSelection[0]) > 0) or len(self.colorSelection) > 1:
-            self.fig = plt.figure(figsize=[4*len(self.colorSelection), 4 * len(keys)])
+            if len(self.colorSelection) == 1 and len(keys) == 1:
+                self.fig = plt.figure(figsize=[6*len(self.colorSelection), 6 * len(keys)])
+            else:
+                self.fig = plt.figure(figsize=[4*len(self.colorSelection), 4 * len(keys)])
             gs = gridspec.GridSpec(len(keys), len(self.colorSelection))
             for i in range(len(keys)):
                 name = self.data_list.item(keys[i])['text'].split(' (')[0]
@@ -632,7 +740,7 @@ class magic_gui(tk.Tk):
                     self.ax = self.fig.add_subplot(gs[i, j])
                     if 'PC' in self.colorSelection[j]:
                         color = int(self.colorSelection[j].split('PC')[1])
-                        self.fig, self.ax = self.data[name]['scdata'].plot_tsne(fig=self.fig, ax=self.ac,
+                        self.fig, self.ax = self.data[name]['scdata'].plot_tsne(fig=self.fig, ax=self.ax,
                                                                                 color=self.data[name]['scdata'].pca[color])
                     elif 'DC' in self.colorSelection[j]:
                         color = int(self.colorSelection[j].split('DC')[1])
@@ -659,7 +767,7 @@ class magic_gui(tk.Tk):
 
             self.canvas = FigureCanvasTkAgg(self.fig, self.tabs[len(self.tabs)-1][0])
             self.canvas.show()
-            self.canvas.get_tk_widget().grid(column=1, row=1, rowspan=10, columnspan=4) 
+            self.canvas.get_tk_widget().grid(column=1, row=1, rowspan=10, columnspan=4, sticky='NSEW') 
 
             tk.Button(self.tabs[len(self.tabs)-1][0], text="Save", command=self.savePlot).grid(row=0, column=5, sticky='NE')
             tk.Button(self.tabs[len(self.tabs)-1][0], text="Close tab", command=self.closeCurrentTab).grid(row=1, column=5, sticky='NE')
@@ -688,10 +796,10 @@ class magic_gui(tk.Tk):
 
             self.canvas = FigureCanvasTkAgg(self.fig, self.tabs[len(self.tabs)-1][0])
             self.canvas.show()
-            self.canvas.get_tk_widget().grid(column=1, row=1, rowspan=10, columnspan=4) 
+            self.canvas.get_tk_widget().grid(column=1, row=1, rowspan=10, columnspan=4, sticky='NSEW') 
 
-            tk.Button(self.tabs[len(self.tabs)-1][0], text="Save", command=self.savePlot).grid(row=0, column=5)
-            tk.Button(self.tabs[len(self.tabs)-1][0], text="Close tab", command=self.closeCurrentTab).grid(row=1, column=5)
+            tk.Button(self.tabs[len(self.tabs)-1][0], text="Save", command=self.savePlot).grid(row=0, column=5, sticky='NE')
+            tk.Button(self.tabs[len(self.tabs)-1][0], text="Close tab", command=self.closeCurrentTab).grid(row=1, column=5, sticky='NE')
 
             self.currentPlot = 'dm_components'
 
@@ -699,8 +807,6 @@ class magic_gui(tk.Tk):
         keys = self.data_list.selection()
         if 'tSNE' in self.data_list.item(keys[0])['text']:
             self.plotTSNE()
-        # elif 'PCA' in self.data_list.item(keys[0])['text']:
-        #     self.plotPCA()
         else:
             self.getScatterSelection()
             xSelection = self.xVar.get().split(', ')
@@ -712,7 +818,10 @@ class magic_gui(tk.Tk):
                     colorSelection = np.repeat(colorSelection, len(xSelection))
 
                 keys = self.data_list.selection()
-                self.fig = plt.figure(figsize=[4*len(xSelection), 4 * len(keys)])
+                if len(xSelection) == 1 and len(keys) == 1:
+                    self.fig = plt.figure(figsize=[6*len(xSelection), 6 * len(keys)])
+                else:
+                    self.fig = plt.figure(figsize=[4*len(xSelection), 4*len(keys)])
                 gs = gridspec.GridSpec(len(keys), len(xSelection))
                 self.ax = []
                 for i in range(len(keys)):
@@ -743,10 +852,10 @@ class magic_gui(tk.Tk):
                             self.data[name]['scdata'].scatter_gene_expression(genes, fig=self.fig, ax=self.ax[len(self.ax)-1],
                                                                                                             color=colorSelection[j])
                         self.ax[len(self.ax)-1].set_title(name + ' (color = ' + colorSelection[j] + ')')
-                        self.ax[len(self.ax)-1].set_xlabel(genes[0])
-                        self.ax[len(self.ax)-1].set_ylabel(genes[1])
+                        self.ax[len(self.ax)-1].set_xlabel(' '.join(genes[0]))
+                        self.ax[len(self.ax)-1].set_ylabel(' '.join(genes[1]))
                         if len(genes) == 3:
-                            self.ax[len(self.ax)-1].set_zlabel(genes[2])
+                            self.ax[len(self.ax)-1].set_zlabel(' '.join(genes[2]))
                 
                 gs.tight_layout(self.fig, pad=1.2, w_pad=0.1)
                 
@@ -755,10 +864,10 @@ class magic_gui(tk.Tk):
 
                 self.canvas = FigureCanvasTkAgg(self.fig, self.tabs[len(self.tabs)-1][0])
                 self.canvas.show()
-                self.canvas.get_tk_widget().grid(column=1, row=1, rowspan=10, columnspan=4) 
+                self.canvas.get_tk_widget().grid(column=1, row=1, rowspan=10, columnspan=4, sticky='NSEW') 
 
-                tk.Button(self.tabs[len(self.tabs)-1][0], text="Save", command=self.savePlot).grid(row=0, column=5)
-                tk.Button(self.tabs[len(self.tabs)-1][0], text="Close tab", command=self.closeCurrentTab).grid(row=1, column=5)
+                tk.Button(self.tabs[len(self.tabs)-1][0], text="Save", command=self.savePlot).grid(row=0, column=5, sticky='NE')
+                tk.Button(self.tabs[len(self.tabs)-1][0], text="Close tab", command=self.closeCurrentTab).grid(row=1, column=5, sticky='NE')
 
                 if len(zSelection[0]) > 0 and len(zSelection) == len(xSelection):
                         for ax in self.ax:
@@ -774,10 +883,10 @@ class magic_gui(tk.Tk):
 
         tk.Label(self.scatterSelection, text="For plotting axes, specify a single gene, diffusion component(DC#),"+
                                              " or PCA component(PC#) or a comma separated list (number of items in"+
-                                             " each list must be equal). The z-axis is optional").grid(row=0, column=0, rowspan=2, columnspan=2)
+                                             " each list must be equal). The z-axis is optional", wraplength=500).grid(row=0, column=0, rowspan=2, columnspan=2)
         tk.Label(self.scatterSelection, text="A plot can be colored by a gene, diffusion component(DC#),"+ 
                                              " PCA component(PC#), or \"density\" for kernel density. " +
-                                             "The color can also be a solid color(eg: \"blue\").").grid(row=2, column=0, rowspan=2, columnspan=2)
+                                             "The color can also be a solid color(eg: \"blue\").", wraplength=500).grid(row=2, column=0, rowspan=2, columnspan=2)
         #plot name
         tk.Label(self.scatterSelection, text=u"Plot name:").grid(row=4, column=0)
         self.plotNameVar = tk.StringVar()
