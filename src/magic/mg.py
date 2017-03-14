@@ -59,7 +59,7 @@ def qualitative_colors(n):
     return sns.color_palette('Set1', n)
 
 
-def get_fig(fig=None, ax=None, figsize=[9, 9]):
+def get_fig(fig=None, ax=None, figsize=[6.5, 6.5]):
     """fills in any missing axis or figure with the currently active one
     :param ax: matplotlib Axis object
     :param fig: matplotlib Figure object
@@ -367,67 +367,59 @@ class SCData:
 
         return scdata
 
-#     def from_10x(cls, data_file):
-# #         function [data, gene_names, gene_ids, cells] = load_10x(data_dir, varargin)
-# # % [data, gene_names, gene_ids, cells] = load_10x(data_dir, varargin)
-# # %   loads 10x sparse format data
-# # %   data_dir is dir that contains matrix.mtx, genes.tsv and barcodes.tsv
-# # %   varargin
-# # %       'sparse', true -- returns data matrix in sparse format (default 'false')
+    @classmethod
+    def from_10x(cls, data_dir, use_ensemble_id=True):
+        #loads 10x sparse format data
+        #data_dir is dir that contains matrix.mtx, genes.tsv and barcodes.tsv
+        #return_sparse=True -- returns data matrix in sparse format (default = False)
 
-# # return_sparse = false;
+        if data_dir==None or len(data_dir)==0:
+            data_dir = './'
+        elif data_dir[len(data_dir)-1] != '/':
+            data_dir = data_dir + '/'
 
-#         if isempty(data_dir)
-#             data_dir = './'
-#         elif data_dir(end) ~= '/'
-#             data_dir = [data_dir '/'];
-# end
-
-# for i=1:length(varargin)-1
-#     if (strcmp(varargin{i}, 'sparse'))
-#         return_sparse = varargin{i+1};
-#     end
-# end
-
-# filename_dataMatrix = [data_dir 'matrix.mtx'];
-# filename_genes = [data_dir 'genes.tsv'];
-# filename_cells = [data_dir 'barcodes.tsv'];
+        filename_dataMatrix = os.path.expanduser(data_dir + 'matrix.mtx')
+        filename_genes = os.path.expanduser(data_dir + 'genes.tsv')
+        filename_cells = os.path.expanduser(data_dir + 'barcodes.tsv')
 
 
-# % Read in gene expression matrix (sparse matrix)
-# % Rows = genes, columns = cells
-# fprintf('LOADING\n')
-# dataMatrix = mmread(filename_dataMatrix);
-# fprintf('  Data matrix (%i cells x %i genes): %s\n', ...
-#         size(dataMatrix'), ['''' filename_dataMatrix '''' ])
+        #Read in gene expression matrix (sparse matrix)
+        #Rows = genes, columns = cells
+        print('LOADING')
+        dataMatrix = mmread(filename_dataMatrix);
 
-# % Read in row names (gene names / IDs)
-# dataMatrix_genes = table2cell( ...
-#                    readtable(filename_genes, ...
-#                              'FileType','text','ReadVariableNames',0));
-# dataMatrix_cells = table2cell( ...
-#                    readtable(filename_cells, ...
-#                              'FileType','text','ReadVariableNames',0));
+        #Read in row names (gene names / IDs)
+        gene_names = np.loadtxt(filename_genes, delimiter='\t', dtype=bytes).astype(str)
+        if use_ensemble_id==True:
+            gene_names = [gene[0] for gene in gene_names]
+        else:
+            gene_names = [gene[1] for gene in gene_names]
+        cell_names = np.loadtxt(filename_cells, delimiter='\t', dtype=bytes).astype(str)
    
-# % Remove empty cells
-# col_keep = any(dataMatrix,1);
-# dataMatrix = dataMatrix(:,col_keep);
-# dataMatrix_cells = dataMatrix_cells(col_keep,:);
-# fprintf('  Removed %i empty cells\n', full(sum(~col_keep)))
+        dataMatrix = pd.DataFrame(dataMatrix.todense(), columns=cell_names, index=gene_names)
 
-# % Remove empty genes
-# genes_keep = any(dataMatrix,2);
-# dataMatrix = dataMatrix(genes_keep,:);
-# dataMatrix_genes = dataMatrix_genes(genes_keep,:);
-# fprintf('  Removed %i empty genes\n', full(sum(~genes_keep)))
+        #combine duplicate genes
+        if use_ensemble_id == False:
+            dataMatrix = dataMatrix.groupby(dataMatrix.index).sum()
 
-# data = dataMatrix';
-# if ~return_sparse
-#     data = full(data);
-# end
-# gene_names = dataMatrix_genes(:,2);
-# gene_ids = dataMatrix_genes(:,1);
-# cells = dataMatrix_cells;
+        dataMatrix = dataMatrix.transpose()
+
+        #Remove empty cells
+        print('Removing empty cells')
+        cell_sums = dataMatrix.sum(axis=1)
+        to_keep = np.where(cell_sums > 0)[0]
+        dataMatrix = dataMatrix.ix[dataMatrix.index[to_keep], :].astype(np.float32)
+
+        #Remove empty genes
+        print('Removing empty genes')
+        gene_sums = dataMatrix.sum(axis=0)
+        to_keep = np.where(gene_sums > 0)[0]
+        dataMatrix = dataMatrix.ix[:, to_keep].astype(np.float32)
+
+        # Construct class object
+        scdata = cls( dataMatrix, data_type='sc-seq' )
+
+        return scdata
 
     def filter_scseq_data(self, filter_cell_min=0, filter_cell_max=0, filter_gene_nonzero=None, filter_gene_mols=None):
 
@@ -520,26 +512,30 @@ class SCData:
                                 columns=['PC' + str(i) for i in range(1, n_components+1)])
 
 
-    # def plot_pca_variance_explained(self, n_components=30,
-    #         fig=None, ax=None, ylim=(0, 0.1)):
-    #     """ Plot the variance explained by different principal components
-    #     :param n_components: Number of components to show the variance
-    #     :param ylim: y-axis limits
-    #     :param fig: matplotlib Figure object
-    #     :param ax: matplotlib Axis object
-    #     :return: fig, ax
-    #     """
-    #     if self.pca is None:
-    #         raise RuntimeError('Please run run_pca() before plotting')
+    def plot_pca_variance_explained(self, n_components=30,
+            fig=None, ax=None, ylim=(0, 0.5), random=True):
+        """ Plot the variance explained by different principal components
+        :param n_components: Number of components to show the variance
+        :param ylim: y-axis limits
+        :param fig: matplotlib Figure object
+        :param ax: matplotlib Axis object
+        :return: fig, ax
+        """
 
-    #     fig, ax = get_fig(fig=fig, ax=ax)
-    #     ax.plot(np.ravel(self.pca['eigenvalues'].values))
-    #     plt.ylim(ylim)
-    #     plt.xlim((0, n_components))
-    #     plt.xlabel('Components')
-    #     plt.ylabel('Variance explained')
-    #     plt.title('Principal components')
-    #     return fig, ax
+        solver = 'randomized'
+        if random != True:
+            solver = 'full'
+        pca = PCA(n_components=n_components, svd_solver=solver)
+        pca_fit = pca.fit(self.data.values)
+
+        fig, ax = get_fig(fig=fig, ax=ax)
+        plt.plot(pca_fit.explained_variance_ratio_)
+        plt.ylim(ylim)
+        plt.xlim((0, n_components))
+        plt.xlabel('Components')
+        plt.ylabel('Variance explained')
+        plt.title('Principal components')
+        return fig, ax
 
 
     def run_tsne(self, n_components=50, perplexity=30, n_iter=1000, theta=0.5):
@@ -551,11 +547,12 @@ class SCData:
         """
 
         # Work on PCA projections if data is single cell RNA-seq
-        data = deepcopy(self.data)
         if self.data_type == 'sc-seq':
             if self.pca is None:
                 self.run_pca()
             data = self.pca
+        else:
+            data = self.data
 
         # Reduce perplexity if necessary
         perplexity_limit = 15
@@ -591,8 +588,11 @@ class SCData:
         else:
             plt.scatter(self.tsne['tSNE1'], self.tsne['tSNE2'], s=size, edgecolors='none',
                         color=qualitative_colors(2)[1] if color == None else color)
-        plt.tight_layout()
+        
         ax.set_title(title)
+        if color != None:
+            plot.colorbar()
+        plt.tight_layout()
         return fig, ax
 
 
@@ -1000,8 +1000,9 @@ class SCData:
                 ax.set_title(g[1])
             ax.xaxis.set_major_locator(plt.NullLocator())
             ax.yaxis.set_major_locator(plt.NullLocator())
-            ax.set_xlabel('tsne_x')
-            ax.set_ylabel('tsne_y')
+            ax.set_xlabel('tSNE1')
+            ax.set_ylabel('tSNE2')
+            plt.colorbar()
 
         if other_data:
             for i, g in enumerate(genes):
@@ -1030,8 +1031,9 @@ class SCData:
                     ax.set_title(g[1])
                 ax.xaxis.set_major_locator(plt.NullLocator())
                 ax.yaxis.set_major_locator(plt.NullLocator())
-                ax.set_xlabel('tsne_x')
-                ax.set_ylabel('tsne_y')
+                ax.set_xlabel('tSNE1')
+                ax.set_ylabel('tSNE2')
+                plt.colorbar()
         
         plt.tight_layout()
         return fig, axes
@@ -1074,13 +1076,19 @@ class SCData:
                 x, y, z = self.extended_data[genes[0]][idx], self.extended_data[genes[1]][idx], z[idx]
 
                 plt.scatter(x, y, s=size, c=z, edgecolors='none')
+                ax.set_title('Color = density')
+                plt.colorbar()
             elif isinstance(color, pd.Series):
                 plt.scatter(self.extended_data[genes[0]], self.extended_data[genes[1]],
                             s=size, c=color, edgecolors='none')
+                ax.set_title('Color = ' + color.name)
+                plt.colorbar()
             elif color in self.extended_data.columns.get_level_values(1):
                 color = self.extended_data.columns.values[np.where([color in col for col in self.extended_data.columns.values])[0]][0]
                 plt.scatter(self.extended_data[genes[0]], self.extended_data[genes[1]],
                             s=size, c=self.extended_data[color], edgecolors='none')
+                ax.set_title('Color = ' + color[1])
+                plt.colorbar()
             else:
                 plt.scatter(self.extended_data[genes[0]], self.extended_data[genes[1]], edgecolors='none',
                             s=size, color=qualitative_colors(2)[1] if color == None else color)
@@ -1097,22 +1105,28 @@ class SCData:
                 kde = gaussian_kde(xyz)
                 density = kde(xyz)
 
-                ax.scatter(self.extended_data[genes[0]], self.extended_data[genes[1]], self.extended_data[genes[2]],
+                p = ax.scatter(self.extended_data[genes[0]], self.extended_data[genes[1]], self.extended_data[genes[2]],
                            s=size, c=density, edgecolors='none')
+                ax.set_title('Color = density')
+                fig.colorbar(p)
             elif isinstance(color, pd.Series):
-                ax.scatter(self.extended_data[genes[0]], self.extended_data[genes[1]],
+                p = ax.scatter(self.extended_data[genes[0]], self.extended_data[genes[1]],
                            self.extended_data[genes[2]], s=size, c=color, edgecolors='none')
+                ax.set_title('Color = ' + color.name)
+                fig.colorbar(p)
             elif color in self.extended_data.columns.get_level_values(1):
                 color = self.extended_data.columns.values[np.where([color in col for col in self.extended_data.columns.values])[0]][0]
-                ax.scatter(self.extended_data[genes[0]], self.extended_data[genes[1]],
+                p = ax.scatter(self.extended_data[genes[0]], self.extended_data[genes[1]],
                            self.extended_data[genes[2]], s=size, c=self.extended_data[color], edgecolors='none')
+                ax.set_title('Color = ' + color[1])
+                fig.colorbar(p)
             else:
-                ax.scatter(self.extended_data[genes[0]], self.extended_data[genes[1]], self.extended_data[genes[2]], 
+                p = ax.scatter(self.extended_data[genes[0]], self.extended_data[genes[1]], self.extended_data[genes[2]], 
                            edgecolors='none', s=size, color=qualitative_colors(2)[1] if color == None else color)
             ax.set_xlabel(genes[0][1])
             ax.set_ylabel(genes[1][1])
             ax.set_zlabel(genes[2][1])
-            ax.view_init(25,-135)
+            ax.view_init(15,55)
         
         plt.tight_layout()
         return fig, ax
@@ -1152,11 +1166,14 @@ class SCData:
                 x, y, z = self.extended_data[g][idx], other_data.extended_data[g][idx], z[idx]
 
                 plt.scatter(x, y, s=size, c=z, edgecolors='none')
+                plt.colorbar()
             elif isinstance(color, pd.Series):
                 plt.scatter(self.extended_data[g], other_data.extended_data[g], s=size, c=color, edgecolors='none') 
+                plt.colorbar()
             elif color in self.extended_data.columns.get_level_values(1):
                 color = self.extended_data.columns.values[np.where([color in col for col in self.extended_data.columns.values])[0]][0]
                 plt.scatter(self.extended_data[g], other_data.extended_data[g], s=size, c=self.extended_data[color], edgecolors='none')
+                plt.colorbar()
             else:
                 plt.scatter(self.extended_data[g], other_data.extended_data[g], s=size, edgecolors='none',
                             color=qualitative_colors(2)[1] if color == None else color)             

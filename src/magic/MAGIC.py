@@ -11,6 +11,7 @@ def magic(data, n_pca_components=20, random_pca=True,
           t=6, knn=30, knn_autotune=10, epsilon=1, rescale=99):
 
     if n_pca_components != None:
+        print('doing PCA')
         pca_projected_data = run_pca(data, n_components=n_pca_components, random=random_pca)
     else:
         pca_projected_data = data
@@ -90,6 +91,7 @@ def compute_markov(data, knn=10, epsilon=1, distance_metric='euclidean', knn_aut
     N = data.shape[0]
 
     # Nearest neighbors
+    print('Computing distances')
     nbrs = NearestNeighbors(n_neighbors=knn, metric=distance_metric).fit(data)
     distances, indices = nbrs.kneighbors(data)
 
@@ -104,6 +106,7 @@ def compute_markov(data, knn=10, epsilon=1, distance_metric='euclidean', knn_aut
                 distances[j] = np.divide(distances[j], temp[lMaxTempIdxs])
 
     # Adjacency matrix
+    print('Computing kernel')
     rows = np.zeros(N * knn, dtype=np.int32)
     cols = np.zeros(N * knn, dtype=np.int32)
     dists = np.zeros(N * knn)
