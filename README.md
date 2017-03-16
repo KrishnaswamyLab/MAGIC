@@ -8,7 +8,7 @@ MAGIC has been implemented in Python3 and Matlab.
 
         $> git clone git://github.com/pkathail/magic.git
         $> cd magic
-        $> sudo pip3 install .
+        $> sudo -H pip3 install .
 
 2. MAGIC depends on a number of `python3` packages available on pypi and these dependencies are listed in `setup.py`
 All the dependencies will be automatically installed using the above commands
