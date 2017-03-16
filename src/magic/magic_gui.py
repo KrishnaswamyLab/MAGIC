@@ -136,7 +136,7 @@ class magic_gui(tk.Tk):
             self.logTransform.set(False)
             tk.Checkbutton(self.fileInfo, text=u"Log-transform data", variable=self.logTransform).grid(column=0, row=11)
 
-            self.pseudocount = tk.IntVar()
+            self.pseudocount = tk.DoubleVar()
             self.pseudocount.set(0.1)
             tk.Label(self.fileInfo, text=u"Pseudocount (for log-transform)", fg="black",bg="white").grid(column=1, row=11)
             tk.Entry(self.fileInfo, textvariable=self.pseudocount).grid(column=2, row=11)
@@ -191,7 +191,7 @@ class magic_gui(tk.Tk):
             self.logTransform.set(False)
             tk.Checkbutton(self.fileInfo, text=u"Log-transform data", variable=self.logTransform).grid(column=0, row=8, columnspan=2)
 
-            self.pseudocount = tk.IntVar()
+            self.pseudocount = tk.DoubleVar()
             self.pseudocount.set(0.1)
             tk.Label(self.fileInfo, text=u"Pseudocount (for log-transform)", fg="black",bg="white").grid(column=0, row=9)
             tk.Entry(self.fileInfo, textvariable=self.pseudocount).grid(column=1, row=9)
@@ -217,7 +217,7 @@ class magic_gui(tk.Tk):
 
             tk.Label(self.fileInfo, text=u"Gene names:").grid(column=0, row=2)
             self.geneVar = tk.IntVar()
-            self.geneVar.set(1)
+            self.geneVar.set(0)
             tk.Radiobutton(self.fileInfo, text='Use ensemble IDS', variable=self.geneVar, value=1).grid(column=1, row=2)
             tk.Radiobutton(self.fileInfo, text='Use gene names', variable=self.geneVar, value=0).grid(column=2, row=2)
 
@@ -250,7 +250,7 @@ class magic_gui(tk.Tk):
             self.logTransform.set(False)
             tk.Checkbutton(self.fileInfo, text=u"Log-transform data", variable=self.logTransform).grid(column=0, row=8, columnspan=2)
 
-            self.pseudocount = tk.IntVar()
+            self.pseudocount = tk.DoubleVar()
             self.pseudocount.set(0.1)
             tk.Label(self.fileInfo, text=u"Pseudocount (for log-transform)", fg="black",bg="white").grid(column=0, row=9)
             tk.Entry(self.fileInfo, textvariable=self.pseudocount).grid(column=1, row=9)
@@ -950,9 +950,8 @@ class magic_gui(tk.Tk):
 
 def launch():
     app = magic_gui(None)
-    print(platform.system())
     if platform.system() == 'Darwin':
-        os.system('''/usr/bin/osascript -e 'tell app "Finder" to set frontmost of process "python" to true' ''')
+        app.focus_force()
     elif platform.system() == 'Windows':
         app.lift()
         app.call('wm', 'attributes', '.', '-topmost', True)
@@ -961,7 +960,6 @@ def launch():
         app.focus_force()
 
     app.title('MAGIC')
-    # app.mainloop()
     try:
         app.mainloop()
     except UnicodeDecodeError:

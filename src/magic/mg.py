@@ -465,7 +465,7 @@ class SCData:
 
 
     def log_transform_scseq_data(self, pseudocount=0.1):
-        scdata.data = np.add(np.log(scdata.data), pseudocount)
+        self.data = np.add(np.log(self.data), pseudocount)
         
     def plot_molecules_per_cell_and_gene(self, fig=None, ax=None):
 
