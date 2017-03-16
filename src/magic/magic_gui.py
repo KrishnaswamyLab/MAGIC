@@ -39,6 +39,7 @@ class magic_gui(tk.Tk):
         self.fileMenu.add_command(label="Load csv file", command=self.loadCSV)
         self.fileMenu.add_command(label="Load sparse data file", command=self.loadMTX)
         self.fileMenu.add_command(label="Load 10x file", command=self.load10x)
+        print('test_10x')
         self.fileMenu.add_command(label="Load saved session from pickle file", command=self.loadPickle)
         self.fileMenu.add_command(label="Save data", state='disabled', command=self.saveData)
         self.fileMenu.add_command(label="Exit", command=self.quitMAGIC)
