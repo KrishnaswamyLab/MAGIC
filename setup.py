@@ -26,9 +26,6 @@ setup(name='magic',
           'fcsparser',
           'statsmodels',
       ],
-      dependency_links = [
-          'git+https://github.com/jacoblevine/phenograph.git',
-      ],
       scripts=['src/magic/magic_gui.py'],
       )
 
