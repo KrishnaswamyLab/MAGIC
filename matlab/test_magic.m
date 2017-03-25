@@ -12,12 +12,15 @@ sample_dir = 'path_to_data/';
 libsize  = sum(data,2);
 data = bsxfun(@rdivide, data, libsize) * median(libsize);
 
+%% log transform -- some data requires log transform
+%data = log(data + 0.1); % 0.1 is pseudocount
+
 %% MAGIC
-npca = 20;
-ka = 10;
-k = 30;
-t = 6;
-rescale_to = 99;
+npca = 20; % ususally between 10 and 200
+ka = 10; % can be smaller, eg 3
+k = 30; % can be smaller, eg 9
+t = 6; % usually between 6 and 12, smaller ka/k requitres bigger t
+rescale_to = 99; % 0 (no rescale) if data is log scaled
 data_imputed = run_magic(data, t, 'npca', npca, 'ka', ka, 'k', k, 'rescale_to', rescale_to);
 
 %% plot
