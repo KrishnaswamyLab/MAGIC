@@ -39,7 +39,6 @@ from scipy.io import mmread
 from numpy.core.umath_tests import inner1d
 
 import fcsparser
-import phenograph
 
 import magic
 
@@ -110,8 +109,6 @@ class SCData:
         self._diffusion_map_correlations = None
         self._magic = None
         self._normalized = False
-        self._cluster_assignments = None
-
 
         # Library size
         self._library_sizes = None
@@ -279,29 +276,20 @@ class SCData:
         if not (isinstance(item, pd.Series) or item is None):
             raise TypeError('self.library_sizes must be a pd.Series object')
 
-    @property
-    def cluster_assignments(self):
-        return self._cluster_assignments
-
-    @cluster_assignments.setter
-    def cluster_assignments(self, item):
-        if not (isinstance(item, pd.Series) or item is None):
-            raise TypeError('self.cluster_assignments must be a pd.Series '
-                            'object')
-        self._cluster_assignments = item
-
 
     @classmethod
-    def from_csv(cls, counts_csv_file, data_type, cell_axis=0, 
-        delimiter=',', row_header=0, col_header=0, normalize=True):
+    def from_csv(cls, counts_csv_file, data_type, cell_axis=0, delimiter=',', 
+                 rows_after_header_to_skip=0, cols_after_header_to_skip=0, normalize=True):
 
         if not data_type in ['sc-seq', 'masscyt']:
             raise RuntimeError('data_type must be either sc-seq or masscyt')
 
         # Read in csv file
-        df = pd.DataFrame.from_csv( counts_csv_file, sep=delimiter, 
-                                    header=row_header, index_col=col_header)
+        df = pd.DataFrame.from_csv( counts_csv_file, sep=delimiter)
 
+        df.drop(df.index[1:rows_after_header_to_skip+1], axis=0, inplace=True)
+        df.drop(df.columns[1:cols_after_header_to_skip+1],axis=1, inplace=True)
+        
         if cell_axis != 0:
             df = df.transpose()
             
@@ -465,7 +453,7 @@ class SCData:
 
 
     def log_transform_scseq_data(self, pseudocount=0.1):
-        self.data = np.add(np.log(self.data), pseudocount)
+        self.data = np.log(np.add(self.data, pseudocount))
         
     def plot_molecules_per_cell_and_gene(self, fig=None, ax=None):
 
@@ -513,7 +501,7 @@ class SCData:
 
 
     def plot_pca_variance_explained(self, n_components=30,
-            fig=None, ax=None, ylim=(0, 0.5), random=True):
+            fig=None, ax=None, ylim=(0, 100), random=True):
         """ Plot the variance explained by different principal components
         :param n_components: Number of components to show the variance
         :param ylim: y-axis limits
@@ -529,7 +517,7 @@ class SCData:
         pca_fit = pca.fit(self.data.values)
 
         fig, ax = get_fig(fig=fig, ax=ax)
-        plt.plot(pca_fit.explained_variance_ratio_)
+        plt.plot(np.multiply(np.cumsum(pca_fit.explained_variance_ratio_), 100))
         plt.ylim(ylim)
         plt.xlim((0, n_components))
         plt.xlabel('Components')
@@ -575,6 +563,7 @@ class SCData:
         if isinstance(color, pd.Series):
             plt.scatter(self.tsne['tSNE1'], self.tsne['tSNE2'], s=size, 
                         c=color.values, edgecolors='none')
+            plt.colorbar()
         elif density == True:
             # Calculate the point density
             xy = np.vstack([self.tsne['tSNE1'], self.tsne['tSNE2']])
@@ -585,13 +574,12 @@ class SCData:
             x, y, z = self.tsne['tSNE1'][idx], self.tsne['tSNE2'][idx], z[idx]
 
             plt.scatter(x, y, s=size, c=z, edgecolors='none')
+            plt.colorbar()
         else:
             plt.scatter(self.tsne['tSNE1'], self.tsne['tSNE2'], s=size, edgecolors='none',
                         color=qualitative_colors(2)[1] if color == None else color)
         
         ax.set_title(title)
-        if color != None:
-            plot.colorbar()
         plt.tight_layout()
         return fig, ax
 
@@ -619,99 +607,6 @@ class SCData:
         plt.colorbar()
         plt.tight_layout()
         return fig, ax
- 
-    def run_phenograph(self, n_pca_components=15, **kwargs):
-        """ Identify clusters in the data using phenograph. Phenograph is run on the principal component projections
-        for single cell RNA-seq data and on the expression matrix for mass cytometry data
-        :param n_pca_components: Number of components to use for running tSNE for single cell 
-        RNA-seq data. Ignored for mass cytometry
-        :param kwargs: Optional arguments to phenograph
-        :return: None
-        """
-
-        data = deepcopy(self.data)
-        if self.data_type == 'sc-seq':
-            data = self.pca
-
-        communities, graph, Q = phenograph.cluster(data, **kwargs)
-        self.cluster_assignments = pd.Series(communities, index=data.index)
-
-
-    def plot_phenograph_clusters(self, fig=None, ax=None, labels=None):
-        """Plot phenograph clustes on the tSNE map
-        :param fig: matplotlib Figure object
-        :param ax: matplotlib Axis object
-        :param vmin: Minimum molecule count for plotting 
-        :param vmax: Maximum molecule count for plotting 
-        :param labels: Dictionary of labels for each cluster
-        :return fig, ax
-        """
-
-        if self.tsne is None:
-            raise RuntimeError('Please run tSNE before plotting phenograph clusters.')
-
-        fig, ax = get_fig(fig=fig, ax=ax)
-        clusters = sorted(set(self.cluster_assignments))
-        colors = qualitative_colors(len(clusters))
-        for i in range(len(clusters)):
-            if labels:
-                label=labels[i]
-            else:
-                label = clusters[i]
-            data = self.tsne.ix[self.cluster_assignments == clusters[i], :]
-            ax.plot(data['x'], data['y'], c=colors[i], linewidth=0, marker='o',
-                    markersize=np.sqrt(size), label=label)
-        ax.legend(loc='center left', bbox_to_anchor=(1, 0.5), markerscale=3)
-        return fig, ax
-
-
-    def summarize_phenograph_clusters(self, fig=None, ax=None):
-        """Average expression of genes in phenograph clusters
-        :param fig: matplotlib Figure object
-        :param ax: matplotlib Axis object
-        :return fig, ax
-        """
-        if self.cluster_assignments is None:
-            raise RuntimeError('Please run phenograph before deriving summary of gene expression.')
-
-
-        # Calculate the means
-        means = self.data.groupby(self.cluster_assignments).apply(lambda x: np.mean(x))
-
-        # Calculate percentages
-        counter = Counter(self.cluster_assignments)
-        means.index = ['%d (%.2f%%)' % (i, counter[i]/self.data.shape[0] * 100) \
-            for i in means.index]
-
-        # Plot 
-        fig, ax = get_fig(fig, ax, [8, 5] )
-        sns.heatmap(means)
-        plt.ylabel('Phenograph Clusters')
-        plt.xlabel('Markers')
-
-        return fig, ax
-
-
-    def select_clusters(self, clusters):
-        """Subselect cells from specific phenograph clusters
-        :param clusters: List of phenograph clusters to select
-        :return scdata
-        """
-        if self.cluster_assignments is None:
-            raise RuntimeError('Please run phenograph before subselecting cells.')
-        if len(set(clusters).difference(self.cluster_assignments)) > 0 :
-            raise RuntimeError('Some of the clusters specified are not present. Please select a subset of phenograph clusters')
-
-        # Subset of cells to use
-        cells = self.data.index[self.cluster_assignments.isin( clusters )]
-
-        # Create new SCData object
-        data = self.data.ix[cells]
-        if self.metadata is not None:
-            meta = self.metadata.ix[cells]
-        scdata = SCData( data, self.data_type, meta )
-        return scdata
-
 
 
     def run_diffusion_map(self, knn=10, epsilon=1, distance_metric='euclidean',
@@ -727,7 +622,10 @@ class SCData:
         """
 
         if n_pca_components != None:
-            data = run_pca(self.data, n_components=n_pca_components, random=random_pca)
+            if isinstance(self.pca, pd.DataFrame) and n_pca_components == len(self.pca.columns.values):
+                data = self.pca
+            else:
+                data = magic.MAGIC.run_pca(self.data, n_components=n_pca_components, random=random_pca)
         else:
             data = self.data
 
@@ -788,7 +686,7 @@ class SCData:
         inds = np.argsort(D)[::-1]
         D = D[inds]
         V = V[:, inds]
-        V = P.dot(V)
+        V = T.dot(V)
 
         # Normalize
         for i in range(V.shape[1]):
@@ -797,7 +695,7 @@ class SCData:
 
         # Update object
         self.diffusion_eigenvectors = pd.DataFrame(V, index=self.data.index,
-                                                   columns=['DC'+str(i) for i in range()])
+                                                   columns=['DC'+str(i) for i in range(n_diffusion_components)])
         self.diffusion_eigenvalues = pd.DataFrame(D)
 
 
@@ -962,10 +860,10 @@ class SCData:
                           'wrong symbols were used.')
                 return
 
-        height = int(2 * np.ceil(len(genes) / 5))
+        height = int(5 * np.ceil(len(genes) / 2))
         width = 10
-        n_rows = int(height / 2)
-        n_cols = int(width / 2)
+        n_rows = int(height / 5)
+        n_cols = 2
         if other_data:
             fig = plt.figure(figsize=[width, 2*(height+0.25)])
             gs = plt.GridSpec(2*n_rows, n_cols)
@@ -979,21 +877,12 @@ class SCData:
                 g = self.extended_data.columns.values[np.where([g in col for col in self.extended_data.columns.values])[0]][0]
             ax = plt.subplot(gs[i // n_cols, i % n_cols])
             axes.append(ax)
-            if self.data_type == 'sc-seq':
-                if isinstance(genes, dict):
-                    color = np.arcsinh(genes[g])
-                else:
-                    color = np.arcsinh(self.extended_data[g])
-                plt.scatter(self.tsne['tSNE1'], self.tsne['tSNE2'], c=color,
-                            edgecolors='none', s=size)
+            if isinstance(genes, dict):
+                color = genes[g]
             else:
-                if isinstance(genes, dict):
-                    color = genes[g]
-                else:
-                    color = self.extended_data[g]
-                plt.scatter(self.tsne['tSNE1'], self.tsne['tSNE2'], c=color,
-                            edgecolors='none', s=size) 
-
+                color = self.extended_data[g]
+            plt.scatter(self.tsne['tSNE1'], self.tsne['tSNE2'], c=color,
+                        edgecolors='none', s=size)
             if isinstance(genes, dict):
                 ax.set_title(g)
             else:           
@@ -1011,20 +900,13 @@ class SCData:
                 
                 ax = plt.subplot(gs[(n_rows*n_cols +i) // n_cols, (n_rows*n_cols +i) % n_cols])
                 axes.append(ax)
-                if other_data.data_type == 'sc-seq':
-                    if isinstance(genes, dict):
-                        color = np.arcsinh(genes[g])
-                    else:
-                        color = np.arcsinh(other_data.extended_data[g])
-                    plt.scatter(other_data.tsne['tSNE1'], other_data.tsne['tSNE2'], c=color,
-                                edgecolors='none', s=size)
+                if isinstance(genes, dict):
+                    color = genes[g]
                 else:
-                    if isinstance(genes, dict):
-                        color = genes[g]
-                    else:
-                        color = other_data.extended_data[g]
-                    plt.scatter(other_data.tsne['tSNE1'], other_data.tsne['tSNE2'], c=color,
-                                edgecolors='none', s=size)
+                    color = other_data.extended_data[g]
+                plt.scatter(other_data.tsne['tSNE1'], other_data.tsne['tSNE2'], c=color,
+                            edgecolors='none', s=size)
+  
                 if isinstance(genes, dict):
                     ax.set_title(g)
                 else:             
