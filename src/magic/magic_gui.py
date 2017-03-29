@@ -493,7 +493,7 @@ class magic_gui(tk.Tk):
         self.pcaOptions = tk.Toplevel()
         self.pcaOptions.title("PCA options")
 
-        tk.Label(self.pcaOptions, text=u"Number of componenets:", fg="black",bg="white").grid(column=0, row=0)
+        tk.Label(self.pcaOptions, text=u"Number of components:", fg="black",bg="white").grid(column=0, row=0)
         self.nComponents = tk.IntVar()
         self.nComponents.set(20)
         tk.Entry(self.pcaOptions, textvariable=self.nComponents).grid(column=1, row=0)
@@ -817,13 +817,11 @@ class magic_gui(tk.Tk):
                 for j in range(len(self.colorSelection)):
                     self.ax = self.fig.add_subplot(gs[i, j])
                     if 'PC' in self.colorSelection[j]:
-                        color = int(self.colorSelection[j].split('PC')[1])
                         self.fig, self.ax = self.data[name]['scdata'].plot_tsne(fig=self.fig, ax=self.ax,
-                                                                                color=self.data[name]['scdata'].pca[color])
+                                                                                color=self.data[name]['scdata'].pca[self.colorSelection[j]])
                     elif 'DC' in self.colorSelection[j]:
-                        color = int(self.colorSelection[j].split('DC')[1])
                         self.fig, self.ax = self.data[name]['scdata'].plot_tsne(fig=self.fig, ax=self.ax, 
-                                                                                color=self.data[name]['scdata'].diffusion_eigenvectors[color])
+                                                                                color=self.data[name]['scdata'].diffusion_eigenvectors[self.colorSelection[j]])
                     elif 'MAGIC' in self.colorSelection[j]:
                         color = self.colorSelection[j].split('MAGIC ')[1]
                         self.fig, self.ax = self.data[name]['scdata'].plot_tsne(fig=self.fig, ax=self.ax, 
@@ -890,7 +888,7 @@ class magic_gui(tk.Tk):
                             self.data[name]['scdata'].scatter_gene_expression(genes, fig=self.fig, ax=self.ax[len(self.ax)-1],
                                                                                   color=colorSelection[j])
                         elif 'MAGIC' in colorSelection[j]:
-                            color = self.colorSelection[j].split('MAGIC ')[0]
+                            color = colorSelection[j].split('MAGIC ')[0]
                             if color in self.data[name]['scdata'].magic.data.columns:
                                     self.data[name]['scdata'].scatter_gene_expression(genes, fig=self.fig, ax=self.ax[len(self.ax)-1],
                                                                                       color=self.data[name]['scdata'].magic.data[color])
