@@ -514,14 +514,14 @@ class SCData:
         if random != True:
             solver = 'full'
         pca = PCA(n_components=n_components, svd_solver=solver)
-        pca_fit = pca.fit(self.data.values)
+        pca.fit(self.data.values)
 
         fig, ax = get_fig(fig=fig, ax=ax)
-        plt.plot(np.multiply(np.cumsum(pca_fit.explained_variance_ratio_), 100))
+        plt.plot(np.multiply(np.cumsum(pca.explained_variance_ratio_), 100))
         plt.ylim(ylim)
         plt.xlim((0, n_components))
         plt.xlabel('Components')
-        plt.ylabel('Variance explained')
+        plt.ylabel('Percent Variance explained')
         plt.title('Principal components')
         return fig, ax
 
@@ -537,8 +537,13 @@ class SCData:
         # Work on PCA projections if data is single cell RNA-seq
         if self.data_type == 'sc-seq':
             if self.pca is None:
-                self.run_pca()
-            data = self.pca
+                self.run_pca(n_components=n_components)
+                data = self.pca
+            elif n_components <= self.pca.shape[1]:
+                data = self.pca.iloc[:, :n_components]
+            else:
+                pca = PCA(n_components=n_components, svd_solver='randomized')
+                data = pca.fit_transform(self.data.values)
         else:
             data = self.data
 
@@ -580,6 +585,7 @@ class SCData:
                         color=qualitative_colors(2)[1] if color == None else color)
         
         ax.set_title(title)
+        plt.axis('tight')
         plt.tight_layout()
         return fig, ax
 
@@ -605,6 +611,7 @@ class SCData:
             sizes = self.data.sum(axis=1)
         plt.scatter(self.tsne['tSNE1'], self.tsne['tSNE2'], s=size, c=sizes, edgecolors='none')
         plt.colorbar()
+        plt.axis('tight')
         plt.tight_layout()
         return fig, ax
 
@@ -917,6 +924,7 @@ class SCData:
                 ax.set_ylabel('tSNE2')
                 plt.colorbar()
         
+        plt.axis('tight')
         plt.tight_layout()
         return fig, axes
 
@@ -1010,6 +1018,7 @@ class SCData:
             ax.set_zlabel(genes[2][1])
             ax.view_init(15,55)
         
+        plt.axis('tight')
         plt.tight_layout()
         return fig, ax
 
@@ -1060,6 +1069,7 @@ class SCData:
                 plt.scatter(self.extended_data[g], other_data.extended_data[g], s=size, edgecolors='none',
                             color=qualitative_colors(2)[1] if color == None else color)             
         gs.tight_layout(fig, pad=3, h_pad=3, w_pad=3)
+        plt.axis('tight')
 
         return fig, axes
 
