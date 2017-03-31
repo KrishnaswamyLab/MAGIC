@@ -616,11 +616,11 @@ class SCData:
         return fig, ax
 
 
-    def run_diffusion_map(self, knn=10, epsilon=1, distance_metric='euclidean',
-        n_diffusion_components=10, n_pca_components=15, markers=None, knn_autotune=0, random_pca=True):
+    def run_diffusion_map(self, k=10, epsilon=1, distance_metric='euclidean',
+        n_diffusion_components=10, n_pca_components=15, markers=None, ka=0, random_pca=True):
         """ Run diffusion maps on the data. Run on the principal component projections
         for single cell RNA-seq data and on the expression matrix for mass cytometry data
-        :param knn: Number of neighbors for graph construction to determine distances between cells
+        :param k: Number of neighbors for graph construction to determine distances between cells
         :param epsilon: Gaussian standard deviation for converting distances to affinities
         :param n_diffusion_components: Number of diffusion components to Generalte
         :param n_pca_components: Number of components to use for running tSNE for single cell 
@@ -639,30 +639,30 @@ class SCData:
         N = data.shape[0]
 
         # Nearest neighbors
-        nbrs = NearestNeighbors(n_neighbors=knn, metric=distance_metric).fit(data)
+        nbrs = NearestNeighbors(n_neighbors=k, metric=distance_metric).fit(data)
         distances, indices = nbrs.kneighbors(data)
 
-        if knn_autotune > 0:
+        if ka > 0:
             print('Autotuning distances')
             for j in reversed(range(N)):
                 temp = sorted(distances[j])
-                lMaxTempIdxs = min(knn_autotune, len(temp))
+                lMaxTempIdxs = min(ka, len(temp))
                 if lMaxTempIdxs == 0 or temp[lMaxTempIdxs] == 0:
                     distances[j] = 0
                 else:
                     distances[j] = np.divide(distances[j], temp[lMaxTempIdxs])
 
         # Adjacency matrix
-        rows = np.zeros(N * knn, dtype=np.int32)
-        cols = np.zeros(N * knn, dtype=np.int32)
-        dists = np.zeros(N * knn)
+        rows = np.zeros(N * k, dtype=np.int32)
+        cols = np.zeros(N * k, dtype=np.int32)
+        dists = np.zeros(N * k)
         location = 0
         for i in range(N):
-            inds = range(location, location + knn)
+            inds = range(location, location + k)
             rows[inds] = indices[i, :]
             cols[inds] = i
             dists[inds] = distances[i, :]
-            location += knn
+            location += k
         if epsilon > 0:
             W = csr_matrix( (dists, (rows, cols)), shape=[N, N] )
         else:
@@ -899,6 +899,7 @@ class SCData:
             ax.set_xlabel('tSNE1')
             ax.set_ylabel('tSNE2')
             plt.colorbar()
+            plt.axis('tight')
 
         if other_data:
             for i, g in enumerate(genes):
@@ -923,8 +924,8 @@ class SCData:
                 ax.set_xlabel('tSNE1')
                 ax.set_ylabel('tSNE2')
                 plt.colorbar()
+                plt.axis('tight')
         
-        plt.axis('tight')
         plt.tight_layout()
         return fig, axes
 
@@ -1067,17 +1068,18 @@ class SCData:
                 plt.colorbar()
             else:
                 plt.scatter(self.extended_data[g], other_data.extended_data[g], s=size, edgecolors='none',
-                            color=qualitative_colors(2)[1] if color == None else color)             
+                            color=qualitative_colors(2)[1] if color == None else color)  
+            plt.axis('tight')
+                       
         gs.tight_layout(fig, pad=3, h_pad=3, w_pad=3)
-        plt.axis('tight')
 
         return fig, axes
 
 
-    def run_magic(self, n_pca_components=20, random_pca=True, t=6, knn=30, knn_autotune=10, epsilon=1, rescale_percent=99):
+    def run_magic(self, n_pca_components=20, random_pca=True, t=6, k=30, ka=10, epsilon=1, rescale_percent=99):
 
         new_data = magic.MAGIC.magic(self.data.values, n_pca_components=n_pca_components, random_pca=random_pca, t=t, 
-                                     knn=knn, knn_autotune=knn_autotune, epsilon=epsilon, rescale=rescale_percent)
+                                     k=k, ka=ka, epsilon=epsilon, rescale=rescale_percent)
 
         new_data = pd.DataFrame(new_data, index=self.data.index, columns=self.data.columns)
 

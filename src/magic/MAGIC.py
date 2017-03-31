@@ -8,7 +8,7 @@ from scipy.spatial.distance import squareform
 from sklearn.neighbors import NearestNeighbors
 
 def magic(data, n_pca_components=20, random_pca=True, 
-          t=6, knn=30, knn_autotune=10, epsilon=1, rescale=99):
+          t=6, k=30, ka=10, epsilon=1, rescale=99):
 
     if n_pca_components != None:
         print('doing PCA')
@@ -17,8 +17,8 @@ def magic(data, n_pca_components=20, random_pca=True,
         pca_projected_data = data
 
     #run diffusion maps to get markov matrix
-    L = compute_markov(pca_projected_data, knn=knn, epsilon=epsilon, 
-                       distance_metric='euclidean', knn_autotune=knn_autotune)
+    L = compute_markov(pca_projected_data, k=k, epsilon=epsilon, 
+                       distance_metric='euclidean', ka=ka)
 
     #remove tsne kernel for now
     # else:
@@ -86,20 +86,20 @@ def impute_fast(data, L, t, rescale_percent=0, L_t=None, tprev=None):
     return data_new, L_t
 
 
-def compute_markov(data, knn=10, epsilon=1, distance_metric='euclidean', knn_autotune=0):
+def compute_markov(data, k=10, epsilon=1, distance_metric='euclidean', ka=0):
 
     N = data.shape[0]
 
     # Nearest neighbors
     print('Computing distances')
-    nbrs = NearestNeighbors(n_neighbors=knn, metric=distance_metric).fit(data)
+    nbrs = NearestNeighbors(n_neighbors=k, metric=distance_metric).fit(data)
     distances, indices = nbrs.kneighbors(data)
 
-    if knn_autotune > 0:
+    if ka > 0:
         print('Autotuning distances')
         for j in reversed(range(N)):
             temp = sorted(distances[j])
-            lMaxTempIdxs = min(knn_autotune, len(temp))
+            lMaxTempIdxs = min(ka, len(temp))
             if lMaxTempIdxs == 0 or temp[lMaxTempIdxs] == 0:
                 distances[j] = 0
             else:
@@ -107,16 +107,16 @@ def compute_markov(data, knn=10, epsilon=1, distance_metric='euclidean', knn_aut
 
     # Adjacency matrix
     print('Computing kernel')
-    rows = np.zeros(N * knn, dtype=np.int32)
-    cols = np.zeros(N * knn, dtype=np.int32)
-    dists = np.zeros(N * knn)
+    rows = np.zeros(N * k, dtype=np.int32)
+    cols = np.zeros(N * k, dtype=np.int32)
+    dists = np.zeros(N * k)
     location = 0
     for i in range(N):
-        inds = range(location, location + knn)
+        inds = range(location, location + k)
         rows[inds] = indices[i, :]
         cols[inds] = i
         dists[inds] = distances[i, :]
-        location += knn
+        location += k
     if epsilon > 0:
         W = csr_matrix( (dists, (rows, cols)), shape=[N, N] )
     else:
