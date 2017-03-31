@@ -7,25 +7,18 @@ from sklearn.decomposition import PCA
 from scipy.spatial.distance import squareform
 from sklearn.neighbors import NearestNeighbors
 
-def magic(data, kernel='gaussian', n_pca_components=20, random_pca=True, 
-          t=6, knn=30, knn_autotune=10, epsilon=1, rescale=99, k_knn=100, perplexity=30):
+def magic(data, n_pca_components=20, random_pca=True, 
+          t=6, knn=30, knn_autotune=10, epsilon=1, rescale=99):
 
-    if kernel not in ['gaussian']:
-        raise RuntimeError('Invalid kernel type. Must be "gaussian".')
-
-    #library size normalization
-    #create data_norm
-
-    #always pass in data_norm
     if n_pca_components != None:
+        print('doing PCA')
         pca_projected_data = run_pca(data, n_components=n_pca_components, random=random_pca)
     else:
         pca_projected_data = data
 
-    if kernel == 'gaussian':
-        #run diffusion maps to get markov matrix
-        L = compute_markov(pca_projected_data, knn=knn, epsilon=epsilon, 
-                                       distance_metric='euclidean', knn_autotune=knn_autotune)
+    #run diffusion maps to get markov matrix
+    L = compute_markov(pca_projected_data, knn=knn, epsilon=epsilon, 
+                       distance_metric='euclidean', knn_autotune=knn_autotune)
 
     #remove tsne kernel for now
     # else:
@@ -37,7 +30,6 @@ def magic(data, kernel='gaussian', n_pca_components=20, random_pca=True,
     #         P = _joint_probabilities(distances, perplexity, 1)
     #     P = squareform(P)
 
-    ## QUESTION -- should this happen for gaussian kernel too??
     #     #markov normalize P
     #     L = np.divide(P, np.sum(P, axis=1))
 
@@ -75,6 +67,11 @@ def impute_fast(data, L, t, rescale_percent=0, L_t=None, tprev=None):
 
     #rescale data
     if rescale_percent != 0:
+        if len(np.where(data_new < 0)[0]) > 0:
+            print('Rescaling should not be performed on log-transformed '
+                  '(or other negative) values. Imputed data returned unscaled.')
+            return data_new, L_t
+            
         M99 = np.percentile(data, rescale_percent, axis=0)
         M100 = data.max(axis=0)
         indices = np.where(M99 == 0)[0]
@@ -94,6 +91,7 @@ def compute_markov(data, knn=10, epsilon=1, distance_metric='euclidean', knn_aut
     N = data.shape[0]
 
     # Nearest neighbors
+    print('Computing distances')
     nbrs = NearestNeighbors(n_neighbors=knn, metric=distance_metric).fit(data)
     distances, indices = nbrs.kneighbors(data)
 
@@ -108,6 +106,7 @@ def compute_markov(data, knn=10, epsilon=1, distance_metric='euclidean', knn_aut
                 distances[j] = np.divide(distances[j], temp[lMaxTempIdxs])
 
     # Adjacency matrix
+    print('Computing kernel')
     rows = np.zeros(N * knn, dtype=np.int32)
     cols = np.zeros(N * knn, dtype=np.int32)
     dists = np.zeros(N * knn)
