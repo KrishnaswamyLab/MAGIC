@@ -1,16 +1,11 @@
 import os
 import sys
 import shutil
-from subprocess import call
 from setuptools import setup
 from warnings import warn
 
 if sys.version_info.major != 3:
     raise RuntimeError('Magic requires Python 3')
-
-
-# install phenograph
-call(['pip3', 'install', 'git+https://github.com/jacoblevine/phenograph.git'])
 
 
 setup(name='magic',
@@ -29,17 +24,11 @@ setup(name='magic',
           'sklearn',
           'networkx',
           'fcsparser',
-          'statsmodels'],
+          'statsmodels',
+      ],
       scripts=['src/magic/magic_gui.py'],
       )
 
 
 # get location of setup.py
 setup_dir = os.path.dirname(os.path.realpath(__file__))
-
-# Copy test data
-data_dir = os.path.expanduser('~/.magic/data')
-if os.path.isdir(data_dir):
-    shutil.rmtree(data_dir)
-shutil.copytree(setup_dir + '/data/', data_dir)
-
