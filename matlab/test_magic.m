@@ -43,7 +43,7 @@ colormap(parula);
 axis tight
 xlabel(plot_genes{2});
 ylabel(plot_genes{1});
-%h = colorbar;
+h = colorbar;
 %ylabel(h,plot_genes{4});
 title 'Before MAGIC'
 
@@ -54,7 +54,7 @@ axis tight
 xlabel(plot_genes{1});
 ylabel(plot_genes{2});
 zlabel(plot_genes{3});
-h = colorbar;
+%h = colorbar;
 ylabel(h,plot_genes{4});
 view(v);
 title 'Before MAGIC'
@@ -70,7 +70,7 @@ colormap(parula);
 axis tight
 xlabel(plot_genes{2});
 ylabel(plot_genes{1});
-%h = colorbar;
+h = colorbar;
 %ylabel(h,plot_genes{4});
 title 'After MAGIC'
 
@@ -81,7 +81,7 @@ axis tight
 xlabel(plot_genes{1});
 ylabel(plot_genes{2});
 zlabel(plot_genes{3});
-h = colorbar;
+%h = colorbar;
 ylabel(h,plot_genes{4});
 view(v);
 title 'After MAGIC'
