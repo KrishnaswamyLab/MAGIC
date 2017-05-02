@@ -45,9 +45,10 @@ if ~isempty(varargin)
 end
 
 disp 'PCA'
-[U,~,~] = randPCA(data', npca); % fast random svd
+data_centr = bsxfun(@minus, data, mean(data,1));
+[U,~,~] = randPCA(data_centr', npca); % fast random svd
 %[U,~,~] = svds(data', npca);
-data_pc = data * U; % PCA project
+data_pc = data_centr * U; % PCA project
 
 disp 'Computing kernel'
 D = squareform(pdist(data_pc)); % compute distances
