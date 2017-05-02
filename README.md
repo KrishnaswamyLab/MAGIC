@@ -25,5 +25,6 @@ A python GUI is now available for MAGIC. After following the installation steps 
         $> magic_gui.py
 
 #### Installation and dependencies for the Matlab version
-1. Matlab implementation of MAGIC uses Mauro Maggioni's Diffusion Geometry code. Download from here: http://www.math.jhu.edu/~mauro/Code/DiffusionGeometry_01.zip or use included DiffusionGeometry_01.zip
-2. test_magic.m shows how to run MAGIC. Also included is a function for loading 10x format data (load_10x.m)
+1. run_magic.m uses Mauro Maggioni's Diffusion Geometry code. Download from here: http://www.math.jhu.edu/~mauro/Code/DiffusionGeometry_01.zip or use included DiffusionGeometry_01.zip
+2. run_magic2.m is an implementation that does not use the Diffusion Geometry code.
+3. test_magic.m shows how to run MAGIC. Also included is a function for loading 10x format data (load_10x.m)
