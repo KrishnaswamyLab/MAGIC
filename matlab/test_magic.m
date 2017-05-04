@@ -1,6 +1,7 @@
 %% init
 % Matlab implementation of MAGIC uses Mauro Maggioni's Diffusion Geometry code
 % download from: http://www.math.jhu.edu/~mauro/Code/DiffusionGeometry_01.zip
+% run_magic2.m does not use this code
 addpath(genpath('DiffusionGeometry/'));
 
 %% load data (e.g. 10x data)
@@ -23,6 +24,9 @@ t = 6; % usually between 6 and 12, smaller ka/k requitres bigger t
 rescale_to = 99; % 0 (no rescale) if data is log scaled
 data_imputed = run_magic(data, t, 'npca', npca, 'ka', ka, 'k', k, 'rescale_to', rescale_to);
 
+%% MAGIC implementation without external diffusion map package
+%data_imputed = run_magic2(data, t, 'npca', npca, 'ka', ka, 'k', k, 'rescale_to', rescale_to);
+
 %% plot
 plot_genes = {'Cdh1', 'Vim', 'Fn1', 'Zeb1'};
 ms = 20;
@@ -39,7 +43,7 @@ colormap(parula);
 axis tight
 xlabel(plot_genes{2});
 ylabel(plot_genes{1});
-%h = colorbar;
+h = colorbar;
 %ylabel(h,plot_genes{4});
 title 'Before MAGIC'
 
@@ -50,7 +54,7 @@ axis tight
 xlabel(plot_genes{1});
 ylabel(plot_genes{2});
 zlabel(plot_genes{3});
-h = colorbar;
+%h = colorbar;
 ylabel(h,plot_genes{4});
 view(v);
 title 'Before MAGIC'
@@ -66,7 +70,7 @@ colormap(parula);
 axis tight
 xlabel(plot_genes{2});
 ylabel(plot_genes{1});
-%h = colorbar;
+h = colorbar;
 %ylabel(h,plot_genes{4});
 title 'After MAGIC'
 
@@ -77,7 +81,7 @@ axis tight
 xlabel(plot_genes{1});
 ylabel(plot_genes{2});
 zlabel(plot_genes{3});
-h = colorbar;
+%h = colorbar;
 ylabel(h,plot_genes{4});
 view(v);
 title 'After MAGIC'
