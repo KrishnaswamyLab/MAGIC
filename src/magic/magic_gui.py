@@ -585,12 +585,12 @@ class magic_gui(tk.Tk):
             self.randomPCAVar.set(True)
             tk.Checkbutton(self.DMOptions, text=u"Randomized PCA (faster)", variable=self.randomPCAVar).grid(column=0, row=2, columnspan=2)
 
-            tk.Label(self.DMOptions,text=u"kNN:" ,fg="black",bg="white").grid(column=0, row=3)
-            self.kNNVar = tk.IntVar()
-            self.kNNVar.set(30)
-            tk.Entry(self.DMOptions, textvariable=self.kNNVar).grid(column=1,row=3)
+            tk.Label(self.DMOptions,text=u"k:" ,fg="black",bg="white").grid(column=0, row=3)
+            self.kVar = tk.IntVar()
+            self.kVar.set(30)
+            tk.Entry(self.DMOptions, textvariable=self.kVar).grid(column=1,row=3)
 
-            tk.Label(self.DMOptions,text=u"kNN-autotune:" ,fg="black",bg="white").grid(column=0, row=4)
+            tk.Label(self.DMOptions,text=u"ka:" ,fg="black",bg="white").grid(column=0, row=4)
             self.autotuneVar = tk.IntVar()
             self.autotuneVar.set(10)
             tk.Entry(self.DMOptions, textvariable=self.autotuneVar).grid(column=1,row=4)
@@ -610,7 +610,7 @@ class magic_gui(tk.Tk):
         for key in self.data_list.selection():
             name = self.data_list.item(key)['text'].split(' (')[0]
             self.data[name]['scdata'].run_diffusion_map(n_diffusion_components=self.nCompVar.get(), epsilon=self.epsilonVar.get(), n_pca_components=self.nPCAVar.get(),
-                                                        knn=self.kNNVar.get(), knn_autotune=self.autotuneVar.get(), random_pca=self.randomPCAVar.get())
+                                                        k=self.kVar.get(), ka=self.autotuneVar.get(), random_pca=self.randomPCAVar.get())
             self.data_list.insert(key, 'end', text=name + ' Diffusion components' +
                                   ' (' + str(self.data[name]['scdata'].diffusion_eigenvectors.shape[0]) + 
                                  ' x ' + str(self.data[name]['scdata'].diffusion_eigenvectors.shape[1]) + ')', open=True)
@@ -637,12 +637,12 @@ class magic_gui(tk.Tk):
             self.tVar.set(6)
             tk.Entry(self.magicOptions, textvariable=self.tVar).grid(column=1,row=3)
             
-            tk.Label(self.magicOptions,text=u"kNN:" ,fg="black",bg="white").grid(column=0, row=4)
-            self.kNNVar = tk.IntVar()
-            self.kNNVar.set(30)
-            tk.Entry(self.magicOptions, textvariable=self.kNNVar).grid(column=1,row=4)
+            tk.Label(self.magicOptions,text=u"k:" ,fg="black",bg="white").grid(column=0, row=4)
+            self.kVar = tk.IntVar()
+            self.kVar.set(30)
+            tk.Entry(self.magicOptions, textvariable=self.kVar).grid(column=1,row=4)
 
-            tk.Label(self.magicOptions,text=u"kNN-autotune:" ,fg="black",bg="white").grid(column=0, row=5)
+            tk.Label(self.magicOptions,text=u"ka:" ,fg="black",bg="white").grid(column=0, row=5)
             self.autotuneVar = tk.IntVar()
             self.autotuneVar.set(10)
             tk.Entry(self.magicOptions, textvariable=self.autotuneVar).grid(column=1,row=5)
@@ -674,8 +674,8 @@ class magic_gui(tk.Tk):
         tk.Label(self.magicProgress, text="Running MAGIC - refer to console for progress updates.").grid(column=0, row=0)
         
         self.data[name]['scdata'].run_magic(n_pca_components=self.nCompVar.get() if self.nCompVar.get() > 0 else None,
-                                            t=self.tVar.get(), knn=self.kNNVar.get(), epsilon=self.epsilonVar.get(), 
-                                            rescale_percent=self.rescaleVar.get(), knn_autotune=self.autotuneVar.get(),
+                                            t=self.tVar.get(), k=self.kVar.get(), epsilon=self.epsilonVar.get(), 
+                                            rescale_percent=self.rescaleVar.get(), ka=self.autotuneVar.get(),
                                             random_pca=self.randomVar.get())
         
         self.data[name + ' MAGIC'] = {'scdata' : self.data[name]['scdata'].magic, 'wb' : None, 'state' : tk.BooleanVar(),
