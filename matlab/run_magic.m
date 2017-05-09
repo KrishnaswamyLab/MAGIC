@@ -65,7 +65,7 @@ disp 'Computing distances'
 disp 'Adapting sigma'
 dist = bsxfun(@rdivide, dist, dist(:,ka));
 
-i = repmat((1:size(idx,1))',1,size(idx,2));
+i = repmat((1:N)',1,size(idx,2));
 i = i(:);
 j = idx(:);
 s = dist(:);
@@ -110,7 +110,7 @@ if rescale_to > 0
         M_new = max(data_imputed);
         MR_new(MR_new == 0) = M_new(MR_new == 0);
         max_ratio = MR ./ MR_new;
-        data_imputed = data_imputed .* repmat(max_ratio, size(data,1), 1);
+        data_imputed = data_imputed .* repmat(max_ratio, N, 1);
     else
         disp('Negative values detected (log scaled data?) so no rescale is done.')
     end
