@@ -25,8 +25,7 @@ npca = 20;
 rescale_to = 0;
 epsilon = 1;
 lib_size_norm = true;
-log_transform = false;
-pseudo_count = 0.1;
+log_transform = nan;
 
 % get the input parameters
 if ~isempty(varargin)
@@ -55,28 +54,19 @@ if ~isempty(varargin)
         if strcmp(varargin{j}, 'lib_size_norm')
             lib_size_norm = varargin{j+1};
         end
-        % log transform
-        if strcmp(varargin{j}, 'log_transform')
-            log_transform = varargin{j+1};
-        end
-        % pseudo count for log transform
-        if strcmp(varargin{j}, 'pseudo_count')
-            pseudo_count = varargin{j+1};
-        end
     end
 end
 
 % library size normalization
 if lib_size_norm
-    disp 'Library size normalization'
+    disp 'doing library size normalization'
     libsize  = sum(data,2);
     data = bsxfun(@rdivide, data, libsize) * median(libsize);
 end
 
 % log transform
-if log_transform
-	disp(['Log transform, with pseudo count ' num2str(pseudo_count)]);
-    data = log(data + pseudo_count);
+if ~isnan(pc)
+    data = log(data + pc);
 end
 
 N = size(data, 1); % number of cells

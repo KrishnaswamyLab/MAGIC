@@ -265,6 +265,7 @@ class magic_gui(tk.Tk):
         tk.Label(self.fileInfo,text=self.geneNameFile.split('/')[-1] ,fg="black",bg="white").grid(column=1, row=2)
 
     def loadPickle(self):
+        self.dataFileName = filedialog.askopenfilename(title='Load saved session', initialdir='~/.magic/data')
         if(self.dataFileName != ""):
             #pop up data options menu
             self.fileInfo = tk.Toplevel()
@@ -277,8 +278,8 @@ class magic_gui(tk.Tk):
             self.fileNameEntryVar.set('Data ' + str(len(self.data)))
             tk.Entry(self.fileInfo, textvariable=self.fileNameEntryVar).grid(column=1,row=1)
 
-            tk.Button(self.fileInfo, text="Cancel", command=self.fileInfo.destroy).grid(column=0, row=2)
-            tk.Button(self.fileInfo, text="Load", command=partial(self.processData, file_type='pickle')).grid(column=0, row=2)
+            tk.Button(self.fileInfo, text="Cancel", command=self.fileInfo.destroy).grid(column=1, row=2)
+            tk.Button(self.fileInfo, text="Load", command=partial(self.processData, file_type='pickle')).grid(column=2, row=2)
 
             self.wait_window(self.fileInfo)
 
@@ -318,24 +319,28 @@ class magic_gui(tk.Tk):
                                               cols_after_header_to_skip=self.colHeader.get(),
                                               normalize=False)
         elif file_type == 'mtx':   # sparse matrix
-            scdata = magic.mg.SCData.from_mtx(os.path.expanduser(self.dataFileName), os.path.expanduser(self.geneNameFile))
+            scdata = magic.mg.SCData.from_mtx(os.path.expanduser(self.dataFileName), 
+                                              os.path.expanduser(self.geneNameFile),
+                                              normalize=False)
         elif file_type == '10x':
-            scdata = magic.mg.SCData.from_10x(self.dataDir, use_ensemble_id=self.geneVar.get())
+            scdata = magic.mg.SCData.from_10x(self.dataDir, use_ensemble_id=self.geneVar.get(),
+                                              normalize=False)
             
-        if len(self.filterCellMinVar.get()) > 0 or len(self.filterCellMaxVar.get()) > 0 or len(self.filterGeneNonzeroVar.get()) > 0 or len(self.filterGeneMolsVar.get()) > 0:
-            scdata.filter_scseq_data(filter_cell_min=int(self.filterCellMinVar.get()) if len(self.filterCellMinVar.get()) > 0 else 0, 
-                                     filter_cell_max=int(self.filterCellMaxVar.get()) if len(self.filterCellMaxVar.get()) > 0 else 0, 
-                                     filter_gene_nonzero=int(self.filterGeneNonzeroVar.get()) if len(self.filterGeneNonzeroVar.get()) > 0 else 0, 
-                                     filter_gene_mols=int(self.filterGeneMolsVar.get()) if len(self.filterGeneMolsVar.get()) > 0 else 0)
+        if file_type != 'pickle':
+            if len(self.filterCellMinVar.get()) > 0 or len(self.filterCellMaxVar.get()) > 0 or len(self.filterGeneNonzeroVar.get()) > 0 or len(self.filterGeneMolsVar.get()) > 0:
+                scdata.filter_scseq_data(filter_cell_min=int(self.filterCellMinVar.get()) if len(self.filterCellMinVar.get()) > 0 else 0, 
+                                         filter_cell_max=int(self.filterCellMaxVar.get()) if len(self.filterCellMaxVar.get()) > 0 else 0, 
+                                         filter_gene_nonzero=int(self.filterGeneNonzeroVar.get()) if len(self.filterGeneNonzeroVar.get()) > 0 else 0, 
+                                         filter_gene_mols=int(self.filterGeneMolsVar.get()) if len(self.filterGeneMolsVar.get()) > 0 else 0)
 
-        if self.normalizeVar.get() == True:
-            scdata = scdata.normalize_scseq_data() 
+            if self.normalizeVar.get() == True:
+                scdata = scdata.normalize_scseq_data() 
 
-        if self.logTransform.get() == True:
-            scdata.log_transform_scseq_data(pseudocount=self.pseudocount.get())
+            if self.logTransform.get() == True:
+                scdata.log_transform_scseq_data(pseudocount=self.pseudocount.get())
 
-        if file_type == 'pickle':   # pickled Wishbone object
-            scdata = magic.mg.SCData.load(self.dataFileName)
+        else:   # pickled Wishbone object
+            scdata = magic.mg.SCData.load(os.path.expanduser(self.dataFileName))
 
         self.data[self.fileNameEntryVar.get()] = {'scdata' : scdata, 'state' : tk.BooleanVar(),
                                                   'genes' : scdata.data.columns.values, 'gates' : {}}
