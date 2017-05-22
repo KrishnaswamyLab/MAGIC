@@ -278,7 +278,7 @@ class SCData:
 
 
     @classmethod
-    def from_csv(cls, counts_csv_file, data_type, cell_axis=0, delimiter=',', 
+    def from_csv(cls, counts_csv_file, data_type='sc-seq', cell_axis=0, delimiter=',', 
                  rows_after_header_to_skip=0, cols_after_header_to_skip=0, normalize=True):
 
         if not data_type in ['sc-seq', 'masscyt']:
@@ -339,7 +339,7 @@ class SCData:
 
 
     @classmethod
-    def from_mtx(cls, mtx_file, gene_name_file):
+    def from_mtx(cls, mtx_file, gene_name_file, normalize=True):
 
         #Read in mtx file
         count_matrix = mmread(mtx_file)
@@ -353,10 +353,14 @@ class SCData:
         # Construct class object
         scdata = cls( df, data_type='sc-seq' )
 
+        # Normalize if specified
+        if normalize==True:
+            scdata = scdata.normalize_scseq_data( )
+
         return scdata
 
     @classmethod
-    def from_10x(cls, data_dir, use_ensemble_id=True):
+    def from_10x(cls, data_dir, use_ensemble_id=True, normalize=True):
         #loads 10x sparse format data
         #data_dir is dir that contains matrix.mtx, genes.tsv and barcodes.tsv
         #return_sparse=True -- returns data matrix in sparse format (default = False)
@@ -406,6 +410,10 @@ class SCData:
 
         # Construct class object
         scdata = cls( dataMatrix, data_type='sc-seq' )
+
+        # Normalize if specified
+        if normalize==True:
+            scdata = scdata.normalize_scseq_data( )
 
         return scdata
 
