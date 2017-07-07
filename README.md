@@ -13,6 +13,11 @@ MAGIC has been implemented in Python3 and Matlab.
 2. MAGIC depends on a number of `python3` packages available on pypi and these dependencies are listed in `setup.py`
 All the dependencies will be automatically installed using the above commands
 
+3. After pulling updates to MAGIC from github, the package must be uninstalled and reinstalled:
+		
+		$> sudo -H pip3 uninstall magic
+		$> sudo -H pip3 install .
+		
 #### Usage
 
 ##### Command line
