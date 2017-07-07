@@ -527,9 +527,8 @@ class SCData:
         plt.plot(np.multiply(np.cumsum(pca.explained_variance_ratio_), 100))
         plt.ylim(ylim)
         plt.xlim((0, n_components))
-        plt.xlabel('Components')
-        plt.ylabel('Percent Variance explained')
-        plt.title('Principal components')
+        plt.xlabel('Number of principal components')
+        plt.ylabel('% explained variance')
         return fig, ax
 
 

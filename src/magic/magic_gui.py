@@ -53,7 +53,7 @@ class magic_gui(tk.Tk):
         self.visMenu = tk.Menu(self.menubar, tearoff=0)
         self.menubar.add_cascade(label="Visualization", menu=self.visMenu)
         self.visMenu.add_command(label="Scatter plot", state='disabled', command=self.scatterPlot)
-        self.visMenu.add_command(label="PCA-variance plot", state='disabled', command=self.plotPCAVariance)
+        self.visMenu.add_command(label="plot % explained PCA", state='disabled', command=self.plotPCAVariance)
         
         self.config(menu=self.menubar)
 
@@ -695,7 +695,7 @@ class magic_gui(tk.Tk):
         for key in self.data_list.selection():
             #pop up for parameters
             self.plotOptions = tk.Toplevel()
-            self.plotOptions.title(self.data_list.item(key)['text'].split(' (')[0] + ": PCA plot options")
+            self.plotOptions.title(self.data_list.item(key)['text'].split(' (')[0] + ": % explained PCA plot options")
             self.curKey = key
 
             tk.Label(self.plotOptions,text=u"# of PCA components:" ,fg="black",bg="white").grid(column=0, row=1)
@@ -718,7 +718,7 @@ class magic_gui(tk.Tk):
                                                                                   random=self.randomVar.get())
 
         self.tabs.append([tk.Frame(self.notebook), self.fig])
-        self.notebook.add(self.tabs[len(self.tabs)-1][0], text='PCA plot')
+        self.notebook.add(self.tabs[len(self.tabs)-1][0], text='% explained PCA plot')
 
         self.canvas = FigureCanvasTkAgg(self.fig, self.tabs[len(self.tabs)-1][0])
         self.canvas.show()
