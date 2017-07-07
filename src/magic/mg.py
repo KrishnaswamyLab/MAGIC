@@ -84,7 +84,7 @@ def density_2d(x, y):
         
 class SCData:
 
-    def __init__(self, data, data_type='sc-seq', metadata=None):
+    def __init__(self, data, data_type='sc-seq', metadata=None, data_prefix=''):
         """
         Container class for single cell data
         :param data:  DataFrame of cells X genes representing expression
@@ -109,6 +109,7 @@ class SCData:
         self._diffusion_map_correlations = None
         self._magic = None
         self._normalized = False
+        self._data_prefix = data_prefix
 
         # Library size
         self._library_sizes = None
@@ -504,7 +505,7 @@ class SCData:
 
         pca = PCA(n_components=n_components, svd_solver=solver)
         self.pca = pd.DataFrame(data=pca.fit_transform(self.data.values), index=self.data.index,
-                                columns=['PC' + str(i) for i in range(1, n_components+1)])
+                                columns=[self._data_prefix + 'PC' + str(i) for i in range(1, n_components+1)])
 
 
     def plot_pca_variance_explained(self, n_components=30,
@@ -559,7 +560,7 @@ class SCData:
             print('Reducing perplexity to %d since there are <100 cells in the dataset. ' % perplexity_limit)
         tsne = TSNE(n_components=2, perplexity=perplexity, init='random', random_state=sum(data.shape), n_iter=n_iter, angle=theta) 
         self.tsne = pd.DataFrame(tsne.fit_transform(data),                       
-								 index=self.data.index, columns=['tSNE1', 'tSNE2'])
+								 index=self.data.index, columns=[self._data_prefix + 'tSNE' + i for i in range(1, 3)])
 
 
     def plot_tsne(self, fig=None, ax=None, density=False, color=None, title='tSNE projection'):
@@ -708,7 +709,7 @@ class SCData:
 
         # Update object
         self.diffusion_eigenvectors = pd.DataFrame(V, index=self.data.index,
-                                                   columns=['DC'+str(i) for i in range(n_diffusion_components)])
+                                                   columns=[sef._data_prefix + 'DC'+str(i) for i in range(n_diffusion_components)])
         self.diffusion_eigenvalues = pd.DataFrame(D)
 
 
@@ -978,7 +979,8 @@ class SCData:
             elif isinstance(color, pd.Series):
                 plt.scatter(self.extended_data[genes[0]], self.extended_data[genes[1]],
                             s=size, c=color, edgecolors='none')
-                ax.set_title('Color = ' + color.name)
+                if isinstance(color, str):
+                    ax.set_title('Color = ' + color.name)
                 plt.colorbar()
             elif color in self.extended_data.columns.get_level_values(1):
                 color = self.extended_data.columns.values[np.where([color in col for col in self.extended_data.columns.values])[0]][0]
@@ -1087,10 +1089,10 @@ class SCData:
         new_data = magic.MAGIC.magic(self.data.values, n_pca_components=n_pca_components, random_pca=random_pca, t=t, 
                                      k=k, ka=ka, epsilon=epsilon, rescale=rescale_percent)
 
-        new_data = pd.DataFrame(new_data, index=self.data.index, columns=self.data.columns)
+        new_data = pd.DataFrame(new_data, index=self.data.index, columns=['MAGIC ' + gene for gene in self.data.columns.values])
 
         # Construct class object
-        scdata = magic.mg.SCData(new_data, data_type=self.data_type)
+        scdata = magic.mg.SCData(new_data, data_type=self.data_type, data_prefix='MAGIC ')
         self.magic = scdata
 
     def concatenate_data(self, other_data_sets, join='outer', axis=0, names=[]):
