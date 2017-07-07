@@ -417,13 +417,12 @@ class SCData:
 
         return scdata
 
-    def filter_scseq_data(self, filter_cell_min=0, filter_cell_max=0, filter_gene_nonzero=None, filter_gene_mols=None):
+    def filter_scseq_data(self, filter_cell_min=0, filter_cell_max=np.inf, filter_gene_nonzero=None, filter_gene_mols=None):
 
-        if filter_cell_min != filter_cell_max:
-            sums = self.data.sum(axis=1)
-            to_keep = np.intersect1d(np.where(sums >= filter_cell_min)[0], 
-                                     np.where(sums <= filter_cell_max)[0])
-            self.data = self.data.ix[self.data.index[to_keep], :].astype(np.float32)
+        sums = self.data.sum(axis=1)
+        to_keep = np.intersect1d(np.where(sums >= filter_cell_min)[0], 
+                                 np.where(sums <= filter_cell_max)[0])
+        self.data = self.data.ix[self.data.index[to_keep], :].astype(np.float32)
 
         if filter_gene_nonzero != None:
             nonzero = self.data.astype(bool).sum(axis=0)
