@@ -53,7 +53,7 @@ class magic_gui(tk.Tk):
         self.visMenu = tk.Menu(self.menubar, tearoff=0)
         self.menubar.add_cascade(label="Visualization", menu=self.visMenu)
         self.visMenu.add_command(label="Scatter plot", state='disabled', command=self.scatterPlot)
-        self.visMenu.add_command(label="plot % explained PCA", state='disabled', command=self.plotPCAVariance)
+        self.visMenu.add_command(label="plot % explained pca", state='disabled', command=self.plotPCAVariance)
         
         self.config(menu=self.menubar)
 
@@ -436,40 +436,24 @@ class magic_gui(tk.Tk):
         for key in self.data_list.selection():
             name = self.data_list.item(key)['text'].split(' (')[0]
 
-            magic = False
-            if 'MAGIC' in name:
-                magic = True
-
             if 'PCA' in name:
                 data_set = name.split(' PCA')[0]
-                for i in range(self.data[data_set]['scdata'].pca.shape[1]):
-                    if magic:
-                        self.data_detail.insert('', 'end', text='MAGIC PC'+str(i+1), open=True)
-                    else:
-                        self.data_detail.insert('', 'end', text='PC'+str(i+1), open=True)
+                for col in self.data[data_set]['scdata'].pca.columns.values:
+                    self.data_detail.insert('', 'end', text=col, open=True)
 
             elif 'tSNE' in name:
                 data_set = name.split(' tSNE')[0]
-                for i in range(self.data[data_set]['scdata'].tsne.shape[1]):
-                    if magic:
-                        self.data_detail.insert('', 'end', text='MAGIC tSNE'+str(i+1), open=True)
-                    else:
-                        self.data_detail.insert('', 'end', text='tSNE'+str(i+1), open=True)
+                for col in self.data[data_set]['scdata'].tsne.columns.values:
+                    self.data_detail.insert('', 'end', text=col, open=True)
 
             elif 'Diffusion components' in name:
                 data_set = name.split(' Diffusion components')[0]
-                for i in range(len(self.data[data_set]['scdata'].diffusion_eigenvectors)):
-                    if magic:
-                        self.data_detail.insert('', 'end', text='MAGIC DC'+str(i+1), open=True)
-                    else:
-                        self.data_detail.insert('', 'end', text='DC'+str(i+1), open=True)
+                for col in self.data[data_set]['scdata'].diffusion_eigenvectors.columns.values:
+                    self.data_detail.insert('', 'end', text=col, open=True)
 
             else:
                 for gene in self.data[name]['scdata'].data:
-                    if magic:
-                        self.data_detail.insert('', 'end', text='MAGIC ' + gene, open=True)
-                    else:
-                        self.data_detail.insert('', 'end', text=gene, open=True)
+                    self.data_detail.insert('', 'end', text=gene, open=True)
 
     def showRawDataDistributions(self, file_type='csv'):
         if file_type == 'csv':    # sc-seq data
@@ -874,7 +858,7 @@ class magic_gui(tk.Tk):
                 if len(xSelection) == 1 and len(keys) == 1:
                     self.fig = plt.figure(figsize=[6*len(xSelection), 6 * len(keys)])
                 else:
-                    self.fig = plt.figure(figsize=[4*len(xSelection), 4*len(keys)])
+                    self.fig = plt.figure(figsize=[4*len(xSelection), 40*len(keys)])
                 gs = gridspec.GridSpec(len(keys), len(xSelection))
                 self.ax = []
                 for i in range(len(keys)):
@@ -888,15 +872,26 @@ class magic_gui(tk.Tk):
                         else:
                             self.ax.append(self.fig.add_subplot(gs[i, j]))
                             genes = [xSelection[j], ySelection[j]]
+                        if 'MAGIC' in name:
+                            for i, gene in enumerate(genes):
+                                if 'MAGIC' not in gene:
+                                    genes[i] = 'MAGIC ' + gene
 
                         if colorSelection[j] in self.data[name]['scdata'].extended_data.columns.get_level_values(1):
                             self.data[name]['scdata'].scatter_gene_expression(genes, fig=self.fig, ax=self.ax[len(self.ax)-1],
                                                                                   color=colorSelection[j])
+
+                        elif 'MAGIC ' + colorSelection[j] in self.data[name]['scdata'].extended_data.columns.get_level_values(1):
+                            colorSelection[j] = 'MAGIC ' + colorSelection[j]
+                            self.data[name]['scdata'].scatter_gene_expression(genes, fig=self.fig, ax=self.ax[len(self.ax)-1],
+                                                                                  color=colorSelection[j])
+
                         elif 'MAGIC' in colorSelection[j]:
-                            color = colorSelection[j].split('MAGIC ')[0]
-                            if color in self.data[name]['scdata'].magic.data.columns:
-                                    self.data[name]['scdata'].scatter_gene_expression(genes, fig=self.fig, ax=self.ax[len(self.ax)-1],
-                                                                                      color=self.data[name]['scdata'].magic.data[color])
+                            if colorSelection[j] in self.data[name]['scdata'].magic.extended_data.columns.get_level_values(1):
+                                color_ind = np.where([colorSelection[j] in col for col in self.data[name]['scdata'].magic.extended_data.columns.values])[0][0]
+                                color = self.data[name]['scdata'].magic.extended_data.columns.values[color_ind]
+                                self.data[name]['scdata'].scatter_gene_expression(genes, fig=self.fig, ax=self.ax[len(self.ax)-1],
+                                                                                  color=self.data[name]['scdata'].magic.extended_data[color])
                             
                         elif colorSelection[j] == 'density':
                             self.data[name]['scdata'].scatter_gene_expression(genes, fig=self.fig, ax=self.ax[len(self.ax)-1],
