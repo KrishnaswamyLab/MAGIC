@@ -33,11 +33,14 @@ A python GUI is now available for MAGIC. After following the installation steps 
 MAGIC can be run using the command line script `MAGIC.py` with the following parameters:
 
 		$> MAGIC.py -h
+		usage: MAGIC.py [-h] -d D -o O [-g G] [--gene-name-file GN]
+        		        [--use-ensemble-ids] [--cell-axis CA] [--skip-rows SKIP_ROWS]
+                		[--skip-columns SKIP_COLUMNS] [-n] [-l L]
+                		[--mols-per-cell-min MOLS_PER_CELL_MIN]
+                		[--mols-per-cell-max MOLS_PER_CELL_MAX] [-p P]
+                		[--pca-non-random] [-t T] [-k K] [-ka KA] [-e E] [-r R]
+                		{csv,10x,10x_HDF5,mtx}
 		
-		usage: MAGIC.py [-h] -d I -o O [-n] [-l L] [-g G] [-p N] [--pca-non-random]
-                		[-t T] [-k K] [-ka KA] [-e E] [-r R]
-                		{csv,10x,mtx}
-
 		run MAGIC
 
 		positional arguments:
@@ -46,21 +49,34 @@ MAGIC can be run using the command line script `MAGIC.py` with the following par
 		optional arguments:
 		  -h, --help            show this help message and exit
 
-		required arguments:
+		data loading parameters:
 		  -d D, --data-file D   File path of input data file.
 		  -o O, --output-file O
 		                        File path of where to save the MAGIC imputed data (in
 		                        csv format).
-
-		normalization parameters:
+		  -g G, --genome G      Genome must be specified when loading 10x_HDF5 data.
+		  --gene-name-file GN   Gene name file must be specified when loading mtx
+		                        data.
+		  --use-ensemble-ids    Use ensemble IDs instead of gene names.
+		  --cell-axis CA        When loading a csv, specify whether cells are on rows
+		                        or columns (Default = 'rows').
+		  --skip-rows SKIP_ROWS
+		                        When loading a csv, number of rows to skip after the
+		                        header row (Default = 0).
+		  --skip-columns SKIP_COLUMNS
+		                        When loading a csv, number of columns to skip after
+		                        the header columns (Default = 0).
+		
+		normalization/filtering parameters:
 		  -n, --no-normalize    Do not perform library size normalization on the data
 		  -l L, --log-transform L
 		                        Log-transform data with the specified pseudocount.
+		  --mols-per-cell-min MOLS_PER_CELL_MIN
+		                        Minimum molecules/cell to use in filtering.
+		  --mols-per-cell-max MOLS_PER_CELL_MAX
+		                        Maximum molecules/cell to use in filtering.
 
 		MAGIC parameters:
-		  -g G, --gene-name-file G
-		                        Gene name file must be specified when loading mtx
-		                        data.
 		  -p P, --pca-components P
 		                        Number of pca components to use when running MAGIC
 		                        (Default = 20).
