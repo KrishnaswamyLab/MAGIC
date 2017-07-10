@@ -123,6 +123,11 @@ class SCData:
         with open(fout, 'wb') as f:
             pickle.dump(vars(self), f)
 
+    def save_magic_to_csv(self, fout: str):
+        if not isinstance(self.magic, magic.mg.SCData):
+            raise RuntimeError('Must call run_magic() on data before saving output to csv.')
+        self.magic.data.to_csv(fout)
+            
     @classmethod
     def load(cls, fin):
         """
@@ -639,7 +644,7 @@ class SCData:
             if isinstance(self.pca, pd.DataFrame) and n_pca_components == len(self.pca.columns.values):
                 data = self.pca
             else:
-                data = magic.MAGIC.run_pca(self.data, n_components=n_pca_components, random=random_pca)
+                data = magic.MAGIC_core.run_pca(self.data, n_components=n_pca_components, random=random_pca)
         else:
             data = self.data
 
@@ -1086,7 +1091,7 @@ class SCData:
 
     def run_magic(self, n_pca_components=20, random_pca=True, t=6, k=30, ka=10, epsilon=1, rescale_percent=99):
 
-        new_data = magic.MAGIC.magic(self.data.values, n_pca_components=n_pca_components, random_pca=random_pca, t=t, 
+        new_data = magic.MAGIC_core.magic(self.data.values, n_pca_components=n_pca_components, random_pca=random_pca, t=t, 
                                      k=k, ka=ka, epsilon=epsilon, rescale=rescale_percent)
 
         new_data = pd.DataFrame(new_data, index=self.data.index, columns=['MAGIC ' + gene for gene in self.data.columns.values])

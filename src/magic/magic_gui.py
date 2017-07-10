@@ -40,7 +40,7 @@ class magic_gui(tk.Tk):
         self.fileMenu.add_command(label="Load sparse data file", command=self.loadMTX)
         self.fileMenu.add_command(label="Load 10x file", command=self.load10x)
         self.fileMenu.add_command(label="Load saved session from pickle file", command=self.loadPickle)
-        self.fileMenu.add_command(label="Save data", state='disabled', command=self.saveData)
+        self.fileMenu.add_command(label="Save session to pickle file", state='disabled', command=self.saveData)
         self.fileMenu.add_command(label="Exit", command=self.quitMAGIC)
 
         self.analysisMenu = tk.Menu(self.menubar, tearoff=0)
