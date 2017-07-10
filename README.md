@@ -47,7 +47,7 @@ MAGIC can be run using the command line script `MAGIC.py` with the following par
 		  -h, --help            show this help message and exit
 
 		required arguments:
-		  -d I, --data-file I   File path of input data file.
+		  -d D, --data-file D   File path of input data file.
 		  -o O, --output-file O
 		                        File path of where to save the MAGIC imputed data (in
 		                        csv format).
@@ -61,17 +61,17 @@ MAGIC can be run using the command line script `MAGIC.py` with the following par
 		  -g G, --gene-name-file G
 		                        Gene name file must be specified when loading mtx
 		                        data.
-		  -p N, --pca-components N
+		  -p P, --pca-components P
 		                        Number of pca components to use when running MAGIC
 		                        (Default = 20).
 		  --pca-non-random      Do not used randomized solver in PCA computation.
-		  -t T					t parameter for running MAGIC (Default = 6).
-		  -k K					Number of nearest neighbors to use when running MAGIC
+		  -t T			t parameter for running MAGIC (Default = 6).
+		  -k K			Number of nearest neighbors to use when running MAGIC
                         		(Default = 30).
-		  -ka KA				knn-autotune parameter for running MAGIC (Default =
+		  -ka KA		knn-autotune parameter for running MAGIC (Default =
                         		10).
-		  -e E, --epsilon E		Epsilon parameter for running MAGIC (Default = 1).
-		  -r R, --rescale R		Percentile to rescale data to after running MAGIC
+		  -e E, --epsilon E	Epsilon parameter for running MAGIC (Default = 1).
+		  -r R, --rescale R	Percentile to rescale data to after running MAGIC
                         		(Default = 99).
 
 #### Instructions for the Matlab version
