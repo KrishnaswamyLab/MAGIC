@@ -953,6 +953,7 @@ class magic_gui(tk.Tk):
             tk.Label(self.scatterSelection, text=u"x:", fg="black",bg="white").grid(row=5, column=0)
             self.xVar = tk.StringVar()
             tk.Entry(self.scatterSelection, textvariable=self.xVar).grid(column=1,row=5)
+            tk.Button(self.scatterSelection, text="Choose from feature list", command=self.getXSelection).grid(column=2, row=5)
 
         #y
         if plot_type == 'tsne':
@@ -966,6 +967,7 @@ class magic_gui(tk.Tk):
             tk.Label(self.scatterSelection, text=u"y:", fg="black",bg="white").grid(row=6, column=0)
             self.yVar = tk.StringVar()
             tk.Entry(self.scatterSelection, textvariable=self.yVar).grid(column=1,row=6)
+            tk.Button(self.scatterSelection, text="Choose from feature list", command=self.getYSelection).grid(column=2, row=6)
 
         #z
         if plot_type != 'tsne':
@@ -977,16 +979,42 @@ class magic_gui(tk.Tk):
             else:
                 tk.Label(self.scatterSelection, text=u"z:", fg="black",bg="white").grid(row=7, column=0)
                 tk.Entry(self.scatterSelection, textvariable=self.zVar).grid(column=1,row=7)
+                tk.Button(self.scatterSelection, text="Choose from feature list", command=self.getZSelection).grid(column=2, row=7)
 
         #color
         tk.Label(self.scatterSelection, text=u"color:", fg="black",bg="white").grid(row=8, column=0)
         self.colorVar = tk.StringVar()
         self.colorVar.set('blue')
         tk.Entry(self.scatterSelection, textvariable=self.colorVar).grid(column=1,row=8)
+        tk.Button(self.scatterSelection, text="Choose from feature list", command=self.getColorSelection).grid(column=2, row=8)
 
         tk.Button(self.scatterSelection, text="Plot", command=self.scatterSelection.destroy).grid(column=1, row=9)
         tk.Button(self.scatterSelection, text="Cancel", command=self._cancelScatter).grid(column=0, row=9)
         self.wait_window(self.scatterSelection)
+
+    def getXSelection(self):
+        self.data_detail.bind('<<TreeviewSelect>>', self._getXSelection)
+
+    def _getXSelection(self, event):
+        self.xVar.set(self.data_detail.item(self.data_detail.selection()[0])['text'])
+
+    def getYSelection(self):
+        self.data_detail.bind('<<TreeviewSelect>>', self._getYSelection)
+
+    def _getYSelection(self, event):
+        self.yVar.set(self.data_detail.item(self.data_detail.selection()[0])['text'])
+
+    def getZSelection(self):
+        self.data_detail.bind('<<TreeviewSelect>>', self._getZSelection)
+
+    def _getZSelection(self, event):
+        self.zVar.set(self.data_detail.item(self.data_detail.selection()[0])['text'])
+
+    def getColorSelection(self):
+        self.data_detail.bind('<<TreeviewSelect>>', self._getColorSelection)
+
+    def _getColorSelection(self, event):
+        self.colorVar.set(self.data_detail.item(self.data_detail.selection()[0])['text'])
 
     def _cancelScatter(self):
         self.colorVar.set('')
