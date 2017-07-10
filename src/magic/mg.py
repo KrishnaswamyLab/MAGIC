@@ -714,7 +714,7 @@ class SCData:
 
         # Update object
         self.diffusion_eigenvectors = pd.DataFrame(V, index=self.data.index,
-                                                   columns=[sef._data_prefix + 'DC'+str(i) for i in range(n_diffusion_components)])
+                                                   columns=[self._data_prefix + 'DC'+str(i) for i in range(n_diffusion_components)])
         self.diffusion_eigenvalues = pd.DataFrame(D)
 
 
