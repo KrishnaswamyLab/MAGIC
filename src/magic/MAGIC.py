@@ -1,155 +1,112 @@
-import numpy as np
-import pandas as pd
-from scipy.sparse import issparse, csr_matrix, find
-from sklearn.metrics.pairwise import pairwise_distances
-from sklearn.manifold.t_sne import _joint_probabilities, _joint_probabilities_nn
-from sklearn.decomposition import PCA
-from scipy.spatial.distance import squareform
-from sklearn.neighbors import NearestNeighbors
+#!/usr/local/bin/python3
 
-def magic(data, n_pca_components=20, random_pca=True, 
-          t=6, k=30, ka=10, epsilon=1, rescale=99):
+import os
+import sys
+import argparse
+import numpy as np 
 
-    if n_pca_components != None:
-        print('doing PCA')
-        pca_projected_data = run_pca(data, n_components=n_pca_components, random=random_pca)
-    else:
-        pca_projected_data = data
+import magic
 
-    #run diffusion maps to get markov matrix
-    L = compute_markov(pca_projected_data, k=k, epsilon=epsilon, 
-                       distance_metric='euclidean', ka=ka)
+class ArgumentParserError(Exception):
+	pass
 
-    #remove tsne kernel for now
-    # else:
-    #     distances = pairwise_distances(pca_projected_data, squared=True)
-    #     if k_knn > 0:
-    #         neighbors_nn = np.argsort(distances, axis=0)[:, :k_knn]
-    #         P = _joint_probabilities_nn(distances, neighbors_nn, perplexity, 1)
-    #     else:
-    #         P = _joint_probabilities(distances, perplexity, 1)
-    #     P = squareform(P)
+class NewArgumentParser(argparse.ArgumentParser):
+	def error(self, message):
+		print(message)
+		sys.exit(0)
 
-    #     #markov normalize P
-    #     L = np.divide(P, np.sum(P, axis=1))
+def parse_args(args):
+	p = NewArgumentParser(description='run MAGIC')
+	p.add_argument('filetype',
+                   choices=['csv', '10x', '10x_HDF5', 'mtx'],
+                   help='what is the file type of your original data?')
 
-    #get imputed data matrix -- by default use data_norm but give user option to pick
-    new_data, L_t = impute_fast(data, L, t, rescale_percent=rescale)
+	a = p.add_argument_group('data loading parameters')
+	a.add_argument('-d', '--data-file', metavar='D', required=True,
+                   help='File path of input data file.')
+	a.add_argument('-o', '--output-file', metavar='O', required=True,
+				   help='File path of where to save the MAGIC imputed data (in csv format).')
+	a.add_argument('-g', '--genome', metavar='G',
+					help='Genome must be specified when loading 10x_HDF5 data.')
+	a.add_argument('--gene-name-file', metavar='GN', 
+					help='Gene name file must be specified when loading mtx data.')
+	a.add_argument('--use-ensemble-ids', default=False, action='store_true',
+					help='Use ensemble IDs instead of gene names.')
+	a.add_argument('--cell-axis', metavar='CA', default='rows',
+					choices=['rows', 'columns'], 
+					help='When loading a csv, specify whether cells are on rows or columns (Default = \'rows\').')
+	a.add_argument('--skip-rows', default=0,
+					help='When loading a csv, number of rows to skip after the header row (Default = 0).')
+	a.add_argument('--skip-columns', default=0,
+					help='When loading a csv, number of columns to skip after the header columns (Default = 0).')
 
-    return new_data
+	n = p.add_argument_group('normalization/filtering parameters')
+	n.add_argument('-n', '--no-normalize', default=True, action='store_false',
+					help='Do not perform library size normalization on the data')
+	n.add_argument('-l', '--log-transform', metavar='L', default=None,
+					help='Log-transform data with the specified pseudocount.')
+	n.add_argument('--mols-per-cell-min', default=0,
+					help='Minimum molecules/cell to use in filtering.')
+	n.add_argument('--mols-per-cell-max', default=np.inf,
+					help='Maximum molecules/cell to use in filtering.')
 
+	m = p.add_argument_group('MAGIC parameters')
+	m.add_argument('-p', '--pca-components', metavar='P', default=20,
+				   help='Number of pca components to use when running MAGIC (Default = 20).')
+	m.add_argument('--pca-non-random', default=True, action='store_false',
+				    help='Do not used randomized solver in PCA computation.')
+	m.add_argument('-t', metavar='T', default=6, 
+					help='t parameter for running MAGIC (Default = 6).')
+	m.add_argument('-k', metavar='K', default=30, 
+					help='Number of nearest neighbors to use when running MAGIC (Default = 30).')
+	m.add_argument('-ka', metavar='KA', default=10, 
+					help='knn-autotune parameter for running MAGIC (Default = 10).')
+	m.add_argument('-e', '--epsilon', metavar='E', default=1, 
+					help='Epsilon parameter for running MAGIC (Default = 1).')
+	m.add_argument('-r', '--rescale', metavar='R', default=99, 
+					help='Percentile to rescale data to after running MAGIC (Default = 99).')
 
-def run_pca(data, n_components=100, random=True):
-
-    solver = 'randomized'
-    if random != True:
-        solver = 'full'
-
-    pca = PCA(n_components=n_components, svd_solver=solver)
-    return pca.fit_transform(data)
-
-
-def impute_fast(data, L, t, rescale_percent=0, L_t=None, tprev=None):
-
-    #convert L to full matrix
-    if issparse(L):
-        L = L.todense()
-
-    #L^t
-    print('MAGIC: L_t = L^t')
-    if L_t == None:
-        L_t = np.linalg.matrix_power(L, t)
-    else:
-        L_t = np.dot(L_t, np.linalg.matrix_power(L, t-tprev))
-
-    print('MAGIC: data_new = L_t * data')
-    data_new = np.array(np.dot(L_t, data))
-
-    #rescale data
-    if rescale_percent != 0:
-        if len(np.where(data_new < 0)[0]) > 0:
-            print('Rescaling should not be performed on log-transformed '
-                  '(or other negative) values. Imputed data returned unscaled.')
-            return data_new, L_t
-            
-        M99 = np.percentile(data, rescale_percent, axis=0)
-        M100 = data.max(axis=0)
-        indices = np.where(M99 == 0)[0]
-        M99[indices] = M100[indices]
-        M99_new = np.percentile(data_new, rescale_percent, axis=0)
-        M100_new = data_new.max(axis=0)
-        indices = np.where(M99_new == 0)[0]
-        M99_new[indices] = M100_new[indices]
-        max_ratio = np.divide(M99, M99_new)
-        data_new = np.multiply(data_new, np.tile(max_ratio, (len(data), 1)))
-    
-    return data_new, L_t
+	try:
+		return p.parse_args(args)
+	except ArgumentParserError:
+		raise
 
 
-def compute_markov(data, k=10, epsilon=1, distance_metric='euclidean', ka=0):
+def main(args: list = None):
+	args = parse_args(args)
+	try:
+		if args.filetype == 'csv':
+			scdata = magic.mg.SCData.from_csv(os.path.expanduser(args.data_file), 
+											  data_type='sc-seq', normalize=False, 
+											  cell_axis=0 if args.cell_axis=='rows' else 1,
+											  rows_after_header_to_skip=args.skip_rows,
+											  cols_after_header_to_skip=args.skip_columns)
+		elif args.filetype == 'mtx':
+			scdata = magic.mg.SCData.from_mtx(os.path.expanduser(args.data_file),
+											  os.path.expanduser(args.gene_name_file), normalize=False)
+		elif args.filetype == '10x':
+			scdata = magic.mg.SCData.from_10x(args.data_file, normalize=False, 
+											  use_ensemble_id=args.use_ensemble_ids)
 
-    N = data.shape[0]
+		elif args.filetype == '10x_HDF5':
+			scdata = magic.mg.SCData.from_10x_HDF5(args.data_file, args.genome, normalize=False,
+												   use_ensemble_id=args.use_ensemble_ids)
 
-    # Nearest neighbors
-    print('Computing distances')
-    nbrs = NearestNeighbors(n_neighbors=k, metric=distance_metric).fit(data)
-    distances, indices = nbrs.kneighbors(data)
+		scdata.filter_scseq_data(filter_cell_min=args.mols_per_cell_min, filter_cell_max=args.mols_per_cell_max)
 
-    if ka > 0:
-        print('Autotuning distances')
-        for j in reversed(range(N)):
-            temp = sorted(distances[j])
-            lMaxTempIdxs = min(ka, len(temp))
-            if lMaxTempIdxs == 0 or temp[lMaxTempIdxs] == 0:
-                distances[j] = 0
-            else:
-                distances[j] = np.divide(distances[j], temp[lMaxTempIdxs])
+		if args.no_normalize:
+			scdata = scdata.normalize_scseq_data()
 
-    # Adjacency matrix
-    print('Computing kernel')
-    rows = np.zeros(N * k, dtype=np.int32)
-    cols = np.zeros(N * k, dtype=np.int32)
-    dists = np.zeros(N * k)
-    location = 0
-    for i in range(N):
-        inds = range(location, location + k)
-        rows[inds] = indices[i, :]
-        cols[inds] = i
-        dists[inds] = distances[i, :]
-        location += k
-    if epsilon > 0:
-        W = csr_matrix( (dists, (rows, cols)), shape=[N, N] )
-    else:
-        W = csr_matrix( (np.ones(dists.shape), (rows, cols)), shape=[N, N] )
+		if args.log_transform != None:
+			scdata.log_transform_scseq_data(pseudocount=args.log_transform)
 
-    # Symmetrize W
-    W = W + W.T
+		scdata.run_magic(n_pca_components=args.pca_components, random_pca=args.pca_non_random, t=args.t,
+						 k=args.k, ka=args.ka, epsilon=args.epsilon, rescale_percent=args.rescale)
 
-    if epsilon > 0:
-        # Convert to affinity (with selfloops)
-        rows, cols, dists = find(W)
-        rows = np.append(rows, range(N))
-        cols = np.append(cols, range(N))
-        dists = np.append(dists/(epsilon ** 2), np.zeros(N))
-        W = csr_matrix( (np.exp(-dists), (rows, cols)), shape=[N, N] )
+		scdata.magic.to_csv(os.path.expanduser(args.output_file))
 
-    # Create D
-    D = np.ravel(W.sum(axis = 1))
-    D[D!=0] = 1/D[D!=0]
+	except:
+		raise
 
-    #markov normalization
-    T = csr_matrix((D, (range(N), range(N))), shape=[N, N]).dot(W)
-
-    return T
-
-
-def optimal_t(data, th=0.001):
-    S = np.linalg.svd(data)
-    S = np.power(S, 2)
-    nse = np.zeros(32)
-
-    for t in range(32):
-        S_t = np.power(S, t)
-        P = np.divide(S_t, np.sum(S_t, axis=0))
-        nse[t] = np.sum(P[np.where(P > th)[0]])
-
+if __name__ == '__main__':
+	main(sys.argv[1:])

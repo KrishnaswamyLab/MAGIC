@@ -9,7 +9,7 @@ from copy import deepcopy
 from collections import defaultdict, Counter
 from subprocess import call, Popen, PIPE
 import glob
-
+import tables
 import numpy as np
 import pandas as pd
 
@@ -31,7 +31,7 @@ from sklearn.manifold.t_sne import _joint_probabilities, _joint_probabilities_nn
 from sklearn.neighbors import NearestNeighbors
 from sklearn.decomposition import PCA
 from scipy.spatial.distance import squareform
-from scipy.sparse import csr_matrix, find, vstack, hstack, issparse
+from scipy.sparse import csr_matrix, find, vstack, hstack, issparse, csc_matrix
 from scipy.sparse.linalg import eigs
 from numpy.linalg import norm
 from scipy.stats import gaussian_kde
@@ -52,7 +52,7 @@ size = 8
 
 
 def qualitative_colors(n):
-    """ Generalte list of colors
+    """ Generate list of colors
     :param n: Number of colors
     """
     return sns.color_palette('Set1', n)
@@ -84,7 +84,7 @@ def density_2d(x, y):
         
 class SCData:
 
-    def __init__(self, data, data_type='sc-seq', metadata=None):
+    def __init__(self, data, data_type='sc-seq', metadata=None, data_prefix=''):
         """
         Container class for single cell data
         :param data:  DataFrame of cells X genes representing expression
@@ -109,6 +109,7 @@ class SCData:
         self._diffusion_map_correlations = None
         self._magic = None
         self._normalized = False
+        self._data_prefix = data_prefix
 
         # Library size
         self._library_sizes = None
@@ -122,6 +123,11 @@ class SCData:
         with open(fout, 'wb') as f:
             pickle.dump(vars(self), f)
 
+    def to_csv(self, fout: str):
+        temp = self.data
+        temp.columns = [col.split(self._data_prefix)[1] for col in temp.columns]
+        temp.to_csv(fout)
+            
     @classmethod
     def load(cls, fin):
         """
@@ -417,13 +423,57 @@ class SCData:
 
         return scdata
 
-    def filter_scseq_data(self, filter_cell_min=0, filter_cell_max=0, filter_gene_nonzero=None, filter_gene_mols=None):
+    @classmethod
+    def from_10x_HDF5(cls, filename, genome, use_ensemble_id=True, normalize=True):
 
-        if filter_cell_min != filter_cell_max:
-            sums = self.data.sum(axis=1)
-            to_keep = np.intersect1d(np.where(sums >= filter_cell_min)[0], 
-                                     np.where(sums <= filter_cell_max)[0])
-            self.data = self.data.ix[self.data.index[to_keep], :].astype(np.float32)
+        with tables.open_file(filename, 'r') as f:
+            try:
+                group = f.get_node(f.root, genome)
+            except tables.NoSuchNodeError:
+                print("That genome does not exist in this file.")
+                return None
+            if use_ensemble_id:
+                gene_names = getattr(group, 'genes').read()
+            else:
+                gene_names = getattr(group, 'gene_names').read()
+            barcodes = getattr(group, 'barcodes').read()
+            data = getattr(group, 'data').read()
+            indices = getattr(group, 'indices').read()
+            indptr = getattr(group, 'indptr').read()
+            shape = getattr(group, 'shape').read()
+            matrix = csc_matrix((data, indices, indptr), shape=shape)
+
+            dataMatrix = pd.DataFrame(matrix.todense(), columns=np.array([b.decode() for b in barcodes]), 
+                                      index=np.array([g.decode() for g in gene_names]))
+            dataMatrix = dataMatrix.transpose()
+
+            #Remove empty cells
+            print('Removing empty cells')
+            cell_sums = dataMatrix.sum(axis=1)
+            to_keep = np.where(cell_sums > 0)[0]
+            dataMatrix = dataMatrix.ix[dataMatrix.index[to_keep], :].astype(np.float32)
+
+            #Remove empty genes
+            print('Removing empty genes')
+            gene_sums = dataMatrix.sum(axis=0)
+            to_keep = np.where(gene_sums > 0)[0]
+            dataMatrix = dataMatrix.ix[:, to_keep].astype(np.float32)
+
+            # Construct class object
+            scdata = cls( dataMatrix, data_type='sc-seq' )
+
+            # Normalize if specified
+            if normalize==True:
+                scdata = scdata.normalize_scseq_data( )
+
+            return scdata
+
+    def filter_scseq_data(self, filter_cell_min=0, filter_cell_max=np.inf, filter_gene_nonzero=None, filter_gene_mols=None):
+
+        sums = self.data.sum(axis=1)
+        to_keep = np.intersect1d(np.where(sums >= filter_cell_min)[0], 
+                                 np.where(sums <= filter_cell_max)[0])
+        self.data = self.data.ix[self.data.index[to_keep], :].astype(np.float32)
 
         if filter_gene_nonzero != None:
             nonzero = self.data.astype(bool).sum(axis=0)
@@ -505,7 +555,7 @@ class SCData:
 
         pca = PCA(n_components=n_components, svd_solver=solver)
         self.pca = pd.DataFrame(data=pca.fit_transform(self.data.values), index=self.data.index,
-                                columns=['PC' + str(i) for i in range(1, n_components+1)])
+                                columns=[self._data_prefix + 'PC' + str(i) for i in range(1, n_components+1)])
 
 
     def plot_pca_variance_explained(self, n_components=30,
@@ -528,9 +578,8 @@ class SCData:
         plt.plot(np.multiply(np.cumsum(pca.explained_variance_ratio_), 100))
         plt.ylim(ylim)
         plt.xlim((0, n_components))
-        plt.xlabel('Components')
-        plt.ylabel('Percent Variance explained')
-        plt.title('Principal components')
+        plt.xlabel('Number of principal components')
+        plt.ylabel('% explained variance')
         return fig, ax
 
 
@@ -561,7 +610,7 @@ class SCData:
             print('Reducing perplexity to %d since there are <100 cells in the dataset. ' % perplexity_limit)
         tsne = TSNE(n_components=2, perplexity=perplexity, init='random', random_state=sum(data.shape), n_iter=n_iter, angle=theta) 
         self.tsne = pd.DataFrame(tsne.fit_transform(data),                       
-								 index=self.data.index, columns=['tSNE1', 'tSNE2'])
+								 index=self.data.index, columns=[self._data_prefix + 'tSNE' + i for i in range(1, 3)])
 
 
     def plot_tsne(self, fig=None, ax=None, density=False, color=None, title='tSNE projection'):
@@ -640,7 +689,7 @@ class SCData:
             if isinstance(self.pca, pd.DataFrame) and n_pca_components == len(self.pca.columns.values):
                 data = self.pca
             else:
-                data = magic.MAGIC.run_pca(self.data, n_components=n_pca_components, random=random_pca)
+                data = magic.MAGIC_core.run_pca(self.data, n_components=n_pca_components, random=random_pca)
         else:
             data = self.data
 
@@ -710,7 +759,7 @@ class SCData:
 
         # Update object
         self.diffusion_eigenvectors = pd.DataFrame(V, index=self.data.index,
-                                                   columns=['DC'+str(i) for i in range(n_diffusion_components)])
+                                                   columns=[self._data_prefix + 'DC'+str(i) for i in range(n_diffusion_components)])
         self.diffusion_eigenvalues = pd.DataFrame(D)
 
 
@@ -980,7 +1029,8 @@ class SCData:
             elif isinstance(color, pd.Series):
                 plt.scatter(self.extended_data[genes[0]], self.extended_data[genes[1]],
                             s=size, c=color, edgecolors='none')
-                ax.set_title('Color = ' + color.name)
+                if isinstance(color, str):
+                    ax.set_title('Color = ' + color.name)
                 plt.colorbar()
             elif color in self.extended_data.columns.get_level_values(1):
                 color = self.extended_data.columns.values[np.where([color in col for col in self.extended_data.columns.values])[0]][0]
@@ -1086,13 +1136,13 @@ class SCData:
 
     def run_magic(self, n_pca_components=20, random_pca=True, t=6, k=30, ka=10, epsilon=1, rescale_percent=99):
 
-        new_data = magic.MAGIC.magic(self.data.values, n_pca_components=n_pca_components, random_pca=random_pca, t=t, 
+        new_data = magic.MAGIC_core.magic(self.data.values, n_pca_components=n_pca_components, random_pca=random_pca, t=t, 
                                      k=k, ka=ka, epsilon=epsilon, rescale=rescale_percent)
 
-        new_data = pd.DataFrame(new_data, index=self.data.index, columns=self.data.columns)
+        new_data = pd.DataFrame(new_data, index=self.data.index, columns=['MAGIC ' + gene for gene in self.data.columns.values])
 
         # Construct class object
-        scdata = magic.mg.SCData(new_data, data_type=self.data_type)
+        scdata = magic.mg.SCData(new_data, data_type=self.data_type, data_prefix='MAGIC ')
         self.magic = scdata
 
     def concatenate_data(self, other_data_sets, join='outer', axis=0, names=[]):
