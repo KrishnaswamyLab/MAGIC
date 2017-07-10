@@ -26,7 +26,8 @@ setup(name='magic',
           'fcsparser',
           'statsmodels',
       ],
-      scripts=['src/magic/magic_gui.py'],
+      scripts=['src/magic/magic_gui.py',
+               'src/magic/MAGIC.py'],
       )
 
 
