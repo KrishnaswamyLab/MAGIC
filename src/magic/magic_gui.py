@@ -1,5 +1,6 @@
 #!/usr/local/bin/python3
-
+import warnings
+warnings.simplefilter("ignore", UserWarning)
 import matplotlib
 matplotlib.use("TkAgg")
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2TkAgg
@@ -39,8 +40,10 @@ class magic_gui(tk.Tk):
         self.fileMenu.add_command(label="Load csv file", command=self.loadCSV)
         self.fileMenu.add_command(label="Load sparse data file", command=self.loadMTX)
         self.fileMenu.add_command(label="Load 10x file", command=self.load10x)
+        self.fileMenu.add_command(label="Load 10x HDF5 file", command=self.load10xHDF5)
         self.fileMenu.add_command(label="Load saved session from pickle file", command=self.loadPickle)
-        self.fileMenu.add_command(label="Save data", state='disabled', command=self.saveData)
+        self.fileMenu.add_command(label="Save selected data to csv", state='disabled', command=self.saveDataToCSV)
+        self.fileMenu.add_command(label="Save session to pickle file", state='disabled', command=self.saveData)
         self.fileMenu.add_command(label="Exit", command=self.quitMAGIC)
 
         self.analysisMenu = tk.Menu(self.menubar, tearoff=0)
@@ -53,7 +56,7 @@ class magic_gui(tk.Tk):
         self.visMenu = tk.Menu(self.menubar, tearoff=0)
         self.menubar.add_cascade(label="Visualization", menu=self.visMenu)
         self.visMenu.add_command(label="Scatter plot", state='disabled', command=self.scatterPlot)
-        self.visMenu.add_command(label="PCA-variance plot", state='disabled', command=self.plotPCAVariance)
+        self.visMenu.add_command(label="plot % explained pca", state='disabled', command=self.plotPCAVariance)
         
         self.config(menu=self.menubar)
 
@@ -260,6 +263,69 @@ class magic_gui(tk.Tk):
 
             self.wait_window(self.fileInfo)
 
+    def load10xHDF5(self):
+        self.dataFileName = filedialog.askopenfilename(title='Load data file', initialdir='~/.magic/data')
+        if(self.dataFileName != None):
+            #pop up data options menu
+            self.fileInfo = tk.Toplevel()
+            self.fileInfo.title("Data options")
+            tk.Label(self.fileInfo, text=u"File name: ").grid(column=0, row=0)
+            tk.Label(self.fileInfo, text=self.dataFileName).grid(column=1, row=0)
+
+            tk.Label(self.fileInfo,text=u"Name:" ,fg="black",bg="white").grid(column=0, row=1)
+            self.fileNameEntryVar = tk.StringVar()
+            self.fileNameEntryVar.set('Data ' + str(len(self.data)))
+            tk.Entry(self.fileInfo, textvariable=self.fileNameEntryVar).grid(column=1,row=1)
+
+            tk.Label(self.fileInfo, text=u"Genome:", fg="black",bg="white").grid(column=0, row=2)
+            self.genomeVar = tk.StringVar()
+            tk.Entry(self.fileInfo, textvariable=self.genomeVar).grid(column=1, row=2)
+
+            tk.Label(self.fileInfo, text=u"Gene names:").grid(column=0, row=3)
+            self.geneVar = tk.IntVar()
+            self.geneVar.set(0)
+            tk.Radiobutton(self.fileInfo, text='Use ensemble IDs', variable=self.geneVar, value=1).grid(column=1, row=3)
+            tk.Radiobutton(self.fileInfo, text='Use gene names', variable=self.geneVar, value=0).grid(column=2, row=3)
+
+            tk.Button(self.fileInfo, text="Compute data statistics", command=partial(self.showRawDataDistributions, file_type='10x')).grid(column=0, row=4)
+
+            #filter parameters
+            self.filterCellMinVar = tk.StringVar()
+            tk.Label(self.fileInfo,text=u"Filter by molecules per cell. Min:" ,fg="black",bg="white").grid(column=0, row=5)
+            tk.Entry(self.fileInfo, textvariable=self.filterCellMinVar).grid(column=1,row=5)
+            
+            self.filterCellMaxVar = tk.StringVar()
+            tk.Label(self.fileInfo, text=u" Max:" ,fg="black",bg="white").grid(column=2, row=5)
+            tk.Entry(self.fileInfo, textvariable=self.filterCellMaxVar).grid(column=3,row=5)
+            
+            self.filterGeneNonzeroVar = tk.StringVar()
+            tk.Label(self.fileInfo,text=u"Filter by nonzero cells per gene. Min:" ,fg="black",bg="white").grid(column=0, row=6)
+            tk.Entry(self.fileInfo, textvariable=self.filterGeneNonzeroVar).grid(column=1,row=6)
+            
+            self.filterGeneMolsVar = tk.StringVar()
+            tk.Label(self.fileInfo,text=u"Filter by molecules per gene. Min:" ,fg="black",bg="white").grid(column=0, row=7)
+            tk.Entry(self.fileInfo, textvariable=self.filterGeneMolsVar).grid(column=1,row=7)
+
+            #normalize
+            self.normalizeVar = tk.BooleanVar()
+            self.normalizeVar.set(True)
+            tk.Checkbutton(self.fileInfo, text=u"Normalize by library size", variable=self.normalizeVar).grid(column=0, row=8, columnspan=4)
+
+            #log transform
+            self.logTransform = tk.BooleanVar()
+            self.logTransform.set(False)
+            tk.Checkbutton(self.fileInfo, text=u"Log-transform data", variable=self.logTransform).grid(column=0, row=9)
+
+            self.pseudocount = tk.DoubleVar()
+            self.pseudocount.set(0.1)
+            tk.Label(self.fileInfo, text=u"Pseudocount (for log-transform)", fg="black",bg="white").grid(column=1, row=9)
+            tk.Entry(self.fileInfo, textvariable=self.pseudocount).grid(column=2, row=9)
+
+            tk.Button(self.fileInfo, text="Cancel", command=self.fileInfo.destroy).grid(column=1, row=11)
+            tk.Button(self.fileInfo, text="Load", command=partial(self.processData, file_type='10x_HDF5')).grid(column=2, row=11)
+
+            self.wait_window(self.fileInfo)
+
     def getGeneNameFile(self):
         self.geneNameFile = filedialog.askopenfilename(title='Select gene name file', initialdir='~/.magic/data')
         tk.Label(self.fileInfo,text=self.geneNameFile.split('/')[-1] ,fg="black",bg="white").grid(column=1, row=2)
@@ -325,11 +391,14 @@ class magic_gui(tk.Tk):
         elif file_type == '10x':
             scdata = magic.mg.SCData.from_10x(self.dataDir, use_ensemble_id=self.geneVar.get(),
                                               normalize=False)
+        elif file_type == '10x_HDF5':
+            scdata = magic.mg.SCData.from_10x_HDF5(os.path.expanduser(self.dataFileName), self.genomeVar.get(),
+                                                   use_ensemble_id=self.geneVar.get(), normalize=False)
             
         if file_type != 'pickle':
             if len(self.filterCellMinVar.get()) > 0 or len(self.filterCellMaxVar.get()) > 0 or len(self.filterGeneNonzeroVar.get()) > 0 or len(self.filterGeneMolsVar.get()) > 0:
                 scdata.filter_scseq_data(filter_cell_min=int(self.filterCellMinVar.get()) if len(self.filterCellMinVar.get()) > 0 else 0, 
-                                         filter_cell_max=int(self.filterCellMaxVar.get()) if len(self.filterCellMaxVar.get()) > 0 else 0, 
+                                         filter_cell_max=int(self.filterCellMaxVar.get()) if len(self.filterCellMaxVar.get()) > 0 else np.inf, 
                                          filter_gene_nonzero=int(self.filterGeneNonzeroVar.get()) if len(self.filterGeneNonzeroVar.get()) > 0 else 0, 
                                          filter_gene_mols=int(self.filterGeneMolsVar.get()) if len(self.filterGeneMolsVar.get()) > 0 else 0)
 
@@ -352,7 +421,8 @@ class magic_gui(tk.Tk):
         self.analysisMenu.entryconfig(1, state='normal')
         self.analysisMenu.entryconfig(2, state='normal')
         self.analysisMenu.entryconfig(3, state='normal')
-        self.fileMenu.entryconfig(4, state='normal')
+        self.fileMenu.entryconfig(5, state='normal')
+        self.fileMenu.entryconfig(6, state='normal')
         self.visMenu.entryconfig(0, state='normal')
         self.visMenu.entryconfig(1, state='normal')
         self.concatButton = tk.Button(self, text=u"Concatenate selected datasets", state='disabled', wraplength=80, command=self.concatenateData)
@@ -367,10 +437,20 @@ class magic_gui(tk.Tk):
     def saveData(self):
         for key in self.data_list.selection():
             name = self.data_list.item(key)['text'].split(' (')[0]
-            pickleFileName = filedialog.asksaveasfilename(title=name + ': save data', defaultextension='.p', initialfile=key)
+            pickleFileName = filedialog.asksaveasfilename(title=name + ': save data', defaultextension='.p', initialfile=name)
             if pickleFileName != None:
                 self.data[name]['scdata'].save(pickleFileName)
 
+    def saveDataToCSV(self):
+        for key in self.data_list.selection():
+            name = self.data_list.item(key)['text'].split(' (')[0]
+            if name in self.data.keys():
+                CSVFileName = filedialog.asksaveasfilename(title=name + ': save data', defaultextension='.csv', initialfile=name)
+                if CSVFileName != None:
+                    self.data[name]['scdata'].to_csv(CSVFileName)          
+            else:
+                print('Must select an original or MAGIC imputed data set to save.')
+            
     def concatenateData(self):
         self.concatOptions = tk.Toplevel()
         self.concatOptions.title("Concatenate data sets")
@@ -436,40 +516,24 @@ class magic_gui(tk.Tk):
         for key in self.data_list.selection():
             name = self.data_list.item(key)['text'].split(' (')[0]
 
-            magic = False
-            if 'MAGIC' in name:
-                magic = True
-
             if 'PCA' in name:
                 data_set = name.split(' PCA')[0]
-                for i in range(self.data[data_set]['scdata'].pca.shape[1]):
-                    if magic:
-                        self.data_detail.insert('', 'end', text='MAGIC PC'+str(i+1), open=True)
-                    else:
-                        self.data_detail.insert('', 'end', text='PC'+str(i+1), open=True)
+                for col in self.data[data_set]['scdata'].pca.columns.values:
+                    self.data_detail.insert('', 'end', text=col, open=True)
 
             elif 'tSNE' in name:
                 data_set = name.split(' tSNE')[0]
-                for i in range(self.data[data_set]['scdata'].tsne.shape[1]):
-                    if magic:
-                        self.data_detail.insert('', 'end', text='MAGIC tSNE'+str(i+1), open=True)
-                    else:
-                        self.data_detail.insert('', 'end', text='tSNE'+str(i+1), open=True)
+                for col in self.data[data_set]['scdata'].tsne.columns.values:
+                    self.data_detail.insert('', 'end', text=col, open=True)
 
             elif 'Diffusion components' in name:
                 data_set = name.split(' Diffusion components')[0]
-                for i in range(len(self.data[data_set]['scdata'].diffusion_eigenvectors)):
-                    if magic:
-                        self.data_detail.insert('', 'end', text='MAGIC DC'+str(i+1), open=True)
-                    else:
-                        self.data_detail.insert('', 'end', text='DC'+str(i+1), open=True)
+                for col in self.data[data_set]['scdata'].diffusion_eigenvectors.columns.values:
+                    self.data_detail.insert('', 'end', text=col, open=True)
 
             else:
                 for gene in self.data[name]['scdata'].data:
-                    if magic:
-                        self.data_detail.insert('', 'end', text='MAGIC ' + gene, open=True)
-                    else:
-                        self.data_detail.insert('', 'end', text=gene, open=True)
+                    self.data_detail.insert('', 'end', text=gene, open=True)
 
     def showRawDataDistributions(self, file_type='csv'):
         if file_type == 'csv':    # sc-seq data
@@ -689,13 +753,14 @@ class magic_gui(tk.Tk):
         self.data_list.insert(self.curKey, 'end', text=name + ' MAGIC' +
                               ' (' + str(self.data[name]['scdata'].magic.data.shape[0]) + 
                               ' x ' + str(self.data[name]['scdata'].magic.data.shape[1]) + ')', open=True)
+
         self.magicProgress.destroy()
         
     def plotPCAVariance(self):
         for key in self.data_list.selection():
             #pop up for parameters
             self.plotOptions = tk.Toplevel()
-            self.plotOptions.title(self.data_list.item(key)['text'].split(' (')[0] + ": PCA plot options")
+            self.plotOptions.title(self.data_list.item(key)['text'].split(' (')[0] + ": % explained PCA plot options")
             self.curKey = key
 
             tk.Label(self.plotOptions,text=u"# of PCA components:" ,fg="black",bg="white").grid(column=0, row=1)
@@ -718,7 +783,7 @@ class magic_gui(tk.Tk):
                                                                                   random=self.randomVar.get())
 
         self.tabs.append([tk.Frame(self.notebook), self.fig])
-        self.notebook.add(self.tabs[len(self.tabs)-1][0], text='PCA plot')
+        self.notebook.add(self.tabs[len(self.tabs)-1][0], text='% explained PCA plot')
 
         self.canvas = FigureCanvasTkAgg(self.fig, self.tabs[len(self.tabs)-1][0])
         self.canvas.show()
@@ -874,7 +939,7 @@ class magic_gui(tk.Tk):
                 if len(xSelection) == 1 and len(keys) == 1:
                     self.fig = plt.figure(figsize=[6*len(xSelection), 6 * len(keys)])
                 else:
-                    self.fig = plt.figure(figsize=[4*len(xSelection), 4*len(keys)])
+                    self.fig = plt.figure(figsize=[4*len(xSelection), 40*len(keys)])
                 gs = gridspec.GridSpec(len(keys), len(xSelection))
                 self.ax = []
                 for i in range(len(keys)):
@@ -888,15 +953,26 @@ class magic_gui(tk.Tk):
                         else:
                             self.ax.append(self.fig.add_subplot(gs[i, j]))
                             genes = [xSelection[j], ySelection[j]]
+                        if 'MAGIC' in name:
+                            for i, gene in enumerate(genes):
+                                if 'MAGIC' not in gene:
+                                    genes[i] = 'MAGIC ' + gene
 
                         if colorSelection[j] in self.data[name]['scdata'].extended_data.columns.get_level_values(1):
                             self.data[name]['scdata'].scatter_gene_expression(genes, fig=self.fig, ax=self.ax[len(self.ax)-1],
                                                                                   color=colorSelection[j])
+
+                        elif 'MAGIC ' + colorSelection[j] in self.data[name]['scdata'].extended_data.columns.get_level_values(1):
+                            colorSelection[j] = 'MAGIC ' + colorSelection[j]
+                            self.data[name]['scdata'].scatter_gene_expression(genes, fig=self.fig, ax=self.ax[len(self.ax)-1],
+                                                                                  color=colorSelection[j])
+
                         elif 'MAGIC' in colorSelection[j]:
-                            color = colorSelection[j].split('MAGIC ')[0]
-                            if color in self.data[name]['scdata'].magic.data.columns:
-                                    self.data[name]['scdata'].scatter_gene_expression(genes, fig=self.fig, ax=self.ax[len(self.ax)-1],
-                                                                                      color=self.data[name]['scdata'].magic.data[color])
+                            if colorSelection[j] in self.data[name]['scdata'].magic.extended_data.columns.get_level_values(1):
+                                color_ind = np.where([colorSelection[j] in col for col in self.data[name]['scdata'].magic.extended_data.columns.values])[0][0]
+                                color = self.data[name]['scdata'].magic.extended_data.columns.values[color_ind]
+                                self.data[name]['scdata'].scatter_gene_expression(genes, fig=self.fig, ax=self.ax[len(self.ax)-1],
+                                                                                  color=self.data[name]['scdata'].magic.extended_data[color])
                             
                         elif colorSelection[j] == 'density':
                             self.data[name]['scdata'].scatter_gene_expression(genes, fig=self.fig, ax=self.ax[len(self.ax)-1],
@@ -958,6 +1034,7 @@ class magic_gui(tk.Tk):
             tk.Label(self.scatterSelection, text=u"x:", fg="black",bg="white").grid(row=5, column=0)
             self.xVar = tk.StringVar()
             tk.Entry(self.scatterSelection, textvariable=self.xVar).grid(column=1,row=5)
+            tk.Button(self.scatterSelection, text="Choose from feature list", command=self.getXSelection).grid(column=2, row=5)
 
         #y
         if plot_type == 'tsne':
@@ -971,6 +1048,7 @@ class magic_gui(tk.Tk):
             tk.Label(self.scatterSelection, text=u"y:", fg="black",bg="white").grid(row=6, column=0)
             self.yVar = tk.StringVar()
             tk.Entry(self.scatterSelection, textvariable=self.yVar).grid(column=1,row=6)
+            tk.Button(self.scatterSelection, text="Choose from feature list", command=self.getYSelection).grid(column=2, row=6)
 
         #z
         if plot_type != 'tsne':
@@ -982,16 +1060,42 @@ class magic_gui(tk.Tk):
             else:
                 tk.Label(self.scatterSelection, text=u"z:", fg="black",bg="white").grid(row=7, column=0)
                 tk.Entry(self.scatterSelection, textvariable=self.zVar).grid(column=1,row=7)
+                tk.Button(self.scatterSelection, text="Choose from feature list", command=self.getZSelection).grid(column=2, row=7)
 
         #color
         tk.Label(self.scatterSelection, text=u"color:", fg="black",bg="white").grid(row=8, column=0)
         self.colorVar = tk.StringVar()
         self.colorVar.set('blue')
         tk.Entry(self.scatterSelection, textvariable=self.colorVar).grid(column=1,row=8)
+        tk.Button(self.scatterSelection, text="Choose from feature list", command=self.getColorSelection).grid(column=2, row=8)
 
         tk.Button(self.scatterSelection, text="Plot", command=self.scatterSelection.destroy).grid(column=1, row=9)
         tk.Button(self.scatterSelection, text="Cancel", command=self._cancelScatter).grid(column=0, row=9)
         self.wait_window(self.scatterSelection)
+
+    def getXSelection(self):
+        self.data_detail.bind('<<TreeviewSelect>>', self._getXSelection)
+
+    def _getXSelection(self, event):
+        self.xVar.set(self.data_detail.item(self.data_detail.selection()[0])['text'])
+
+    def getYSelection(self):
+        self.data_detail.bind('<<TreeviewSelect>>', self._getYSelection)
+
+    def _getYSelection(self, event):
+        self.yVar.set(self.data_detail.item(self.data_detail.selection()[0])['text'])
+
+    def getZSelection(self):
+        self.data_detail.bind('<<TreeviewSelect>>', self._getZSelection)
+
+    def _getZSelection(self, event):
+        self.zVar.set(self.data_detail.item(self.data_detail.selection()[0])['text'])
+
+    def getColorSelection(self):
+        self.data_detail.bind('<<TreeviewSelect>>', self._getColorSelection)
+
+    def _getColorSelection(self, event):
+        self.colorVar.set(self.data_detail.item(self.data_detail.selection()[0])['text'])
 
     def _cancelScatter(self):
         self.colorVar.set('')
