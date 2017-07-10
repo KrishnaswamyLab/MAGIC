@@ -9,7 +9,7 @@ from copy import deepcopy
 from collections import defaultdict, Counter
 from subprocess import call, Popen, PIPE
 import glob
-
+import tables
 import numpy as np
 import pandas as pd
 
@@ -31,7 +31,7 @@ from sklearn.manifold.t_sne import _joint_probabilities, _joint_probabilities_nn
 from sklearn.neighbors import NearestNeighbors
 from sklearn.decomposition import PCA
 from scipy.spatial.distance import squareform
-from scipy.sparse import csr_matrix, find, vstack, hstack, issparse
+from scipy.sparse import csr_matrix, find, vstack, hstack, issparse, csc_matrix
 from scipy.sparse.linalg import eigs
 from numpy.linalg import norm
 from scipy.stats import gaussian_kde
@@ -52,7 +52,7 @@ size = 8
 
 
 def qualitative_colors(n):
-    """ Generalte list of colors
+    """ Generate list of colors
     :param n: Number of colors
     """
     return sns.color_palette('Set1', n)
@@ -123,10 +123,10 @@ class SCData:
         with open(fout, 'wb') as f:
             pickle.dump(vars(self), f)
 
-    def save_magic_to_csv(self, fout: str):
-        if not isinstance(self.magic, magic.mg.SCData):
-            raise RuntimeError('Must call run_magic() on data before saving output to csv.')
-        self.magic.data.to_csv(fout)
+    def to_csv(self, fout: str):
+        temp = self.data
+        temp.columns = [col.split(self._data_prefix)[1] for col in temp.columns]
+        temp.to_csv(fout)
             
     @classmethod
     def load(cls, fin):
@@ -422,6 +422,51 @@ class SCData:
             scdata = scdata.normalize_scseq_data( )
 
         return scdata
+
+    @classmethod
+    def from_10x_HDF5(cls, filename, genome, use_ensemble_id=True, normalize=True):
+
+        with tables.open_file(filename, 'r') as f:
+            try:
+                group = f.get_node(f.root, genome)
+            except tables.NoSuchNodeError:
+                print("That genome does not exist in this file.")
+                return None
+            if use_ensemble_id:
+                gene_names = getattr(group, 'genes').read()
+            else:
+                gene_names = getattr(group, 'gene_names').read()
+            barcodes = getattr(group, 'barcodes').read()
+            data = getattr(group, 'data').read()
+            indices = getattr(group, 'indices').read()
+            indptr = getattr(group, 'indptr').read()
+            shape = getattr(group, 'shape').read()
+            matrix = csc_matrix((data, indices, indptr), shape=shape)
+
+            dataMatrix = pd.DataFrame(matrix.todense(), columns=np.array([b.decode() for b in barcodes]), 
+                                      index=np.array([g.decode() for g in gene_names]))
+            dataMatrix = dataMatrix.transpose()
+
+            #Remove empty cells
+            print('Removing empty cells')
+            cell_sums = dataMatrix.sum(axis=1)
+            to_keep = np.where(cell_sums > 0)[0]
+            dataMatrix = dataMatrix.ix[dataMatrix.index[to_keep], :].astype(np.float32)
+
+            #Remove empty genes
+            print('Removing empty genes')
+            gene_sums = dataMatrix.sum(axis=0)
+            to_keep = np.where(gene_sums > 0)[0]
+            dataMatrix = dataMatrix.ix[:, to_keep].astype(np.float32)
+
+            # Construct class object
+            scdata = cls( dataMatrix, data_type='sc-seq' )
+
+            # Normalize if specified
+            if normalize==True:
+                scdata = scdata.normalize_scseq_data( )
+
+            return scdata
 
     def filter_scseq_data(self, filter_cell_min=0, filter_cell_max=np.inf, filter_gene_nonzero=None, filter_gene_mols=None):
 
