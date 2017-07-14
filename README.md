@@ -1,5 +1,8 @@
 Markov Affinity-based Graph Imputation of Cells (MAGIC)
 -------------------------------------------------------
+van Dijk, David, et al. "MAGIC: A diffusion-based imputation method reveals gene-gene interactions in single-cell RNA-sequencing data." BioRxiv (2017): 111591.
+
+http://www.biorxiv.org/content/early/2017/02/25/111591
 
 MAGIC has been implemented in Python3 and Matlab.
 
