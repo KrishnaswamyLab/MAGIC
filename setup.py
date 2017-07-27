@@ -25,6 +25,7 @@ setup(name='magic',
           'networkx',
           'fcsparser',
           'statsmodels',
+          'tables'
       ],
       scripts=['src/magic/magic_gui.py',
                'src/magic/MAGIC.py'],
