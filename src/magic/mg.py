@@ -97,8 +97,11 @@ class SCData:
             raise RuntimeError('data_type must be either sc-seq or masscyt')
         if metadata is None:
             metadata = pd.DataFrame(index=data.index, dtype='O')
-        cols = [np.array(['data' for i in range(data.shape[1])]), np.array(data.columns.values)]
-        self._data = pd.DataFrame(data.values, index=data.index, columns=cols)
+        if data.columns.nlevels == 1:
+            cols = [np.array(['data' for i in range(data.shape[1])]), np.array(data.columns.values)]
+            self._data = pd.DataFrame(data.values, index=data.index, columns=cols)
+        else:
+            self._data = data
         self._metadata = metadata
         self._data_type = data_type
         self._normalized = False
@@ -137,7 +140,7 @@ class SCData:
         """
         with open(fin, 'rb') as f:
             data = pickle.load(f)
-        scdata = cls(data['_data'], data['_metadata'])
+        scdata = cls(data['_data'], metadata=data['_metadata'])
         del data['_data']
         del data['_metadata']
         for k, v in data.items():
@@ -155,6 +158,12 @@ class SCData:
     @property
     def data_type(self):
         return self._data_type
+
+    @data_type.setter
+    def data_type(self, item):
+        if not item in ['sc-seq', 'masscyt']:
+            raise RuntimeError('data_type must be either sc-seq or masscyt')
+        self._data_type = item
 
     @property
     def data(self):
@@ -195,11 +204,14 @@ class SCData:
 
     @pca.setter
     def pca(self, item):
-        if not (isinstance(item, pd.DataFrame) or item is None):
-            raise TypeError('self.pca must be a dictionary of pd.DataFrame object')
-        if item is None:
+        if not (isinstance(item, pd.DataFrame) or item is None or isinstance(item, bool)):
+            print(type(item))
+            raise TypeError('self.pca must be a pd.DataFrame object')
+
+        if item != True and 'PCA' in self._data.columns.get_level_values(0):
             del self._data['PCA']
-            self._pca = None
+        if not isinstance(item, pd.DataFrame):
+            self._pca = item
         else:
             item.columns = [np.array(['PCA' for i in range(item.shape[1])]), item.columns.values]
             self._data = pd.concat([self._data, item], axis=1)
@@ -214,11 +226,12 @@ class SCData:
 
     @tsne.setter
     def tsne(self, item):
-        if not (isinstance(item, pd.DataFrame) or item is None):
+        if not (isinstance(item, pd.DataFrame) or item is None or isinstance(item, bool)):
             raise TypeError('self.tsne must be a pd.DataFrame object')
-        if item is None:
+        if item != True and 'tSNE' in self._data.columns.get_level_values(0):
             del self._data['tSNE']
-            self._tsne = None
+        if not isinstance(item, pd.DataFrame):
+            self._tsne = item
         else:
             item.columns = [np.array(['tSNE' for i in range(item.shape[1])]), item.columns.values]
             self._data = pd.concat([self._data, item], axis=1)
@@ -232,11 +245,12 @@ class SCData:
 
     @diffusion_eigenvectors.setter
     def diffusion_eigenvectors(self, item):
-        if not (isinstance(item, pd.DataFrame) or item is None):
+        if not (isinstance(item, pd.DataFrame) or item is None or isinstance(item, bool)):
             raise TypeError('self.diffusion_eigenvectors must be a pd.DataFrame object')
-        if item is None:
+        if item != True and 'diffusion_eigenvectors' in self._data.columns.get_level_values(0):
             del self._data['diffusion_eigenvectors']
-            self._diffusion_eigenvectors = None
+        if not isinstance(item, pd.DataFrame):
+            self._diffusion_eigenvectors = item
         else:
             item.columns = [np.array(['diffusion_eigenvectors' for i in range(item.shape[1])]), item.columns.values]
             self._data = pd.concat([self._data, item], axis=1)
