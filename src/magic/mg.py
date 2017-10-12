@@ -208,7 +208,7 @@ class SCData:
             print(type(item))
             raise TypeError('self.pca must be a pd.DataFrame object')
 
-        if item != True and 'PCA' in self._data.columns.get_level_values(0):
+        if 'PCA' in self._data.columns.get_level_values(0):
             del self._data['PCA']
         if not isinstance(item, pd.DataFrame):
             self._pca = item
@@ -228,7 +228,7 @@ class SCData:
     def tsne(self, item):
         if not (isinstance(item, pd.DataFrame) or item is None or isinstance(item, bool)):
             raise TypeError('self.tsne must be a pd.DataFrame object')
-        if item != True and 'tSNE' in self._data.columns.get_level_values(0):
+        if 'tSNE' in self._data.columns.get_level_values(0):
             del self._data['tSNE']
         if not isinstance(item, pd.DataFrame):
             self._tsne = item
@@ -247,7 +247,7 @@ class SCData:
     def diffusion_eigenvectors(self, item):
         if not (isinstance(item, pd.DataFrame) or item is None or isinstance(item, bool)):
             raise TypeError('self.diffusion_eigenvectors must be a pd.DataFrame object')
-        if item != True and 'diffusion_eigenvectors' in self._data.columns.get_level_values(0):
+        if 'diffusion_eigenvectors' in self._data.columns.get_level_values(0):
             del self._data['diffusion_eigenvectors']
         if not isinstance(item, pd.DataFrame):
             self._diffusion_eigenvectors = item
