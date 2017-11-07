@@ -1,0 +1,19 @@
+Package: MAGIC
+Type: Source
+Title: Markov Affinity-based Graph Imputation of Cells (MAGIC)
+Version: 0.1
+Date: 2017-11-7
+Authors@R: c( 
+  person("David", "van Dijk", email = "davidvandijk@gmail.com", role = "aut"),
+  person("Pooja", "Kathail", email = "pk2485@columbia.edu", role = "cre"))
+Description: Markov Affinity-based Graph Imputation of Cells.
+Depends:
+  R (>= 3.2.1)
+License: GNU GENERAL PUBLIC LICENSE
+LazyData: true
+Suggests:
+  ggplot2
+Imports:
+	Matrix
+	rxvd
+	FNN
