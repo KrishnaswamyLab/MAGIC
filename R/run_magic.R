@@ -21,8 +21,8 @@
 run_magic <- function(data, t_diffusion, lib_size_norm=TRUE,
                       log_transform=FALSE,
                       pseudo_count=0.1,
-                      npca=20, k=30,
-                      ka=10, epsilon=1, rescale_percent=0) {
+                      npca=100, k=12,
+                      ka=4, epsilon=1, rescale_percent=0) {
 
   if (lib_size_norm){
     print('Library size normalization')
