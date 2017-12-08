@@ -22,7 +22,6 @@ setup(name='magic',
           'matplotlib',
           'seaborn',
           'scikit-learn',
-          'networkx',
       ],
       extras_require={
           'FCS': ['fcsparser'],
