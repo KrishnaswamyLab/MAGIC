@@ -19,9 +19,9 @@ function data_imputed = run_magic(data, t, varargin)
 %       set to 0 for log scaled data
 
 % set up default parameters
-k = 30;
-ka = 10;
-npca = 20;
+k = 12;
+ka = 4;
+npca = 100;
 rescale_to = 0;
 epsilon = 1;
 lib_size_norm = true;

@@ -4,7 +4,9 @@ van Dijk, David, et al. "MAGIC: A diffusion-based imputation method reveals gene
 
 http://www.biorxiv.org/content/early/2017/02/25/111591
 
-MAGIC has been implemented in Python3 and Matlab.
+MAGIC has been implemented in Python3, Matlab, and R.
+
+## Python3
 
 #### Installation and dependencies for the Python version
 1. The Python3 version of MAGIC can be installed using:
@@ -93,6 +95,26 @@ MAGIC can be run using the command line script `MAGIC.py` with the following par
 		  -r R, --rescale R	Percentile to rescale data to after running MAGIC
                         		(Default = 99).
 
+## Matlab
+
 #### Instructions for the Matlab version
 1. run_magic.m -- MAGIC imputation function
 2. test_magic.m -- Shows how to run MAGIC. Also included is a function for loading 10x format data (load_10x.m)
+
+## R
+
+#### Installation and dependencies for the R version
+1. The R version of MAGIC can be installed using:
+
+        $> library("devtools")
+        $> install_github("pkathail/magic")
+
+2. MAGIC depends on a number of `R` packages and these dependencies are listed in `DESCRIPTION`
+All the dependencies will be automatically installed using the above commands
+
+#### Usage
+
+After installing the package, MAGIC can be run by loading the library and calling `run_magic()`:
+	
+	$> library(Rmagic)
+	$> MAGIC_data <- run_magic(data, t , rescale_percent=0.99)
