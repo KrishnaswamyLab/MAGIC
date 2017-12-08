@@ -60,6 +60,7 @@ run_magic <- function(data, t_diffusion, lib_size_norm=TRUE,
     W <- sparseMatrix(i, j, x = 1) # unweighted kNN graph
 
   print('Symmetrize distances')
+  W <- as.matrix(W)
   W <- W + t(W);
 
   if (epsilon > 0){
@@ -79,7 +80,7 @@ run_magic <- function(data, t_diffusion, lib_size_norm=TRUE,
   W <- as.matrix(W) # to dense matrix
 
   print('Diffusing')
-  W_t <- W %^% t
+  W_t <- W^t
 
   print('Imputing')
   data_imputed <- W_t %*% as.matrix(data)
