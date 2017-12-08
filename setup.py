@@ -23,7 +23,6 @@ setup(name='magic',
           'seaborn',
           'scikit-learn',
           'networkx',
-          'statsmodels',
       ],
       extras_require={
           'FCS': ['fcsparser'],
