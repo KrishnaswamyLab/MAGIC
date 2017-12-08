@@ -9,7 +9,6 @@ from copy import deepcopy
 from collections import defaultdict, Counter
 from subprocess import call, Popen, PIPE
 import glob
-import tables
 import numpy as np
 import pandas as pd
 
@@ -37,8 +36,6 @@ from numpy.linalg import norm
 from scipy.stats import gaussian_kde
 from scipy.io import mmread
 from numpy.core.umath_tests import inner1d
-
-import fcsparser
 
 import magic
 
@@ -326,6 +323,7 @@ class SCData:
     @classmethod
     def from_fcs(cls, fcs_file, cofactor=5, 
         metadata_channels=['Time', 'Event_length', 'DNA1', 'DNA2', 'Cisplatin', 'beadDist', 'bead1']):
+        import fcsparser
 
         # Parse the fcs file
         text, data = fcsparser.parse( fcs_file )
@@ -439,6 +437,7 @@ class SCData:
 
     @classmethod
     def from_10x_HDF5(cls, filename, genome, use_ensemble_id=True, normalize=True):
+        import tables
 
         with tables.open_file(filename, 'r') as f:
             try:
