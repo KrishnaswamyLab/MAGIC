@@ -7,8 +7,8 @@ from sklearn.decomposition import PCA
 from scipy.spatial.distance import squareform
 from sklearn.neighbors import NearestNeighbors
 
-def magic(data, n_pca_components=20, random_pca=True, 
-          t=6, k=30, ka=10, epsilon=1, rescale=99):
+def magic(data, n_pca_components=100, random_pca=True, 
+          t=4, k=12, ka=4, epsilon=1, rescale=99):
 
     if n_pca_components != None:
         print('doing PCA')

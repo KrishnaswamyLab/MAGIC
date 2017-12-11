@@ -21,8 +21,8 @@
 run_magic <- function(data, t_diffusion, lib_size_norm=TRUE,
                       log_transform=FALSE,
                       pseudo_count=0.1,
-                      npca=20, k=30,
-                      ka=10, epsilon=1, rescale_percent=0) {
+                      npca=100, k=12,
+                      ka=4, epsilon=1, rescale_percent=0) {
 
   if (lib_size_norm){
     print('Library size normalization')
@@ -60,6 +60,7 @@ run_magic <- function(data, t_diffusion, lib_size_norm=TRUE,
     W <- sparseMatrix(i, j, x = 1) # unweighted kNN graph
 
   print('Symmetrize distances')
+  W <- as.matrix(W)
   W <- W + t(W);
 
   if (epsilon > 0){
@@ -79,7 +80,7 @@ run_magic <- function(data, t_diffusion, lib_size_norm=TRUE,
   W <- as.matrix(W) # to dense matrix
 
   print('Diffusing')
-  W_t <- W %^% t
+  W_t <- W^t
 
   print('Imputing')
   data_imputed <- W_t %*% as.matrix(data)
