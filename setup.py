@@ -22,11 +22,11 @@ setup(name='magic',
           'matplotlib',
           'seaborn',
           'scikit-learn',
-          'networkx',
-          'fcsparser',
-          'statsmodels',
-          'tables'
       ],
+      extras_require={
+          'FCS': ['fcsparser'],
+          'HDF5': ['tables'],
+      },
       scripts=['src/magic/magic_gui.py',
                'src/magic/MAGIC.py'],
       )
