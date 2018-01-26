@@ -701,37 +701,47 @@ class magic_gui(tk.Tk):
             self.randomVar.set(True)
             tk.Checkbutton(self.magicOptions, text=u"Randomized PCA", variable=self.randomVar).grid(column=0, row=2, columnspan=2)
 
-            tk.Label(self.magicOptions,text=u"t:" ,fg="black",bg="white").grid(column=0, row=3)
+            tk.Label(self.magicOptions,text=u"t (to use the optimal t calculation, enter a negative value):" ,fg="black",bg="white").grid(column=0, row=3)
             self.tVar = tk.IntVar()
-            self.tVar.set(6)
+            self.tVar.set(-1)
             tk.Entry(self.magicOptions, textvariable=self.tVar).grid(column=1,row=3)
-            
-            tk.Label(self.magicOptions,text=u"k:" ,fg="black",bg="white").grid(column=0, row=4)
+           
+            tk.Label(self.magicOptions, text=u"Maximum t to consider in optimal t calculation", fg="black", bg="white").grid(column=0, row=4)
+            self.tMaxVar = tk.IntVar()
+            self.tMaxVar.set(12)
+            tk.Entry(self.magicOptions, textvariable=self.tMaxVar).grid(column=1, row=4)
+
+            tk.Label(self.magicOptions, text=u"Number of genes to use in optimal t calculation", fg="black", bg="white").grid(column=0, row=5)
+            self.nGenesVar = tk.IntVar()
+            self.nGenesVar.set(500)
+            tk.Entry(self.magicOptions, textvariable=self.nGenesVar).grid(column=1, row=5)
+
+            tk.Label(self.magicOptions,text=u"k:" ,fg="black",bg="white").grid(column=0, row=6)
             self.kVar = tk.IntVar()
             self.kVar.set(30)
-            tk.Entry(self.magicOptions, textvariable=self.kVar).grid(column=1,row=4)
+            tk.Entry(self.magicOptions, textvariable=self.kVar).grid(column=1,row=6)
 
-            tk.Label(self.magicOptions,text=u"ka:" ,fg="black",bg="white").grid(column=0, row=5)
+            tk.Label(self.magicOptions,text=u"ka:" ,fg="black",bg="white").grid(column=0, row=7)
             self.autotuneVar = tk.IntVar()
             self.autotuneVar.set(10)
-            tk.Entry(self.magicOptions, textvariable=self.autotuneVar).grid(column=1,row=5)
+            tk.Entry(self.magicOptions, textvariable=self.autotuneVar).grid(column=1,row=7)
 
-            tk.Label(self.magicOptions,text=u"Epsilon:" ,fg="black",bg="white").grid(column=0, row=6)
+            tk.Label(self.magicOptions,text=u"Epsilon:" ,fg="black",bg="white").grid(column=0, row=8)
             self.epsilonVar = tk.IntVar()
             self.epsilonVar.set(1)
-            tk.Entry(self.magicOptions, textvariable=self.epsilonVar).grid(column=1,row=6)
+            tk.Entry(self.magicOptions, textvariable=self.epsilonVar).grid(column=1,row=8)
 
-            tk.Label(self.magicOptions, text=u"(Epsilon 0 is the uniform kernel)",fg="black",bg="white").grid(column=0,columnspan=2,row=7)
+            tk.Label(self.magicOptions, text=u"(Epsilon 0 is the uniform kernel)",fg="black",bg="white").grid(column=0,columnspan=2,row=9)
 
             self.rescaleVar = tk.IntVar()
             self.rescaleVar.set(99)
-            tk.Label(self.magicOptions, text=u"Rescale data to ",fg="black", bg="white").grid(column=0, row=8)
-            tk.Entry(self.magicOptions, textvariable=self.rescaleVar).grid(column=1, row=8)
-            tk.Label(self.magicOptions, text=u" percentile",fg="black", bg="white").grid(column=2, row=8)
-            tk.Label(self.magicOptions, text=u"0 is no rescale (use for log-transformed data).").grid(row=9, column=0, columnspan=2)
+            tk.Label(self.magicOptions, text=u"Rescale data to ",fg="black", bg="white").grid(column=0, row=10)
+            tk.Entry(self.magicOptions, textvariable=self.rescaleVar).grid(column=1, row=10)
+            tk.Label(self.magicOptions, text=u" percentile",fg="black", bg="white").grid(column=2, row=10)
+            tk.Label(self.magicOptions, text=u"0 is no rescale (use for log-transformed data).").grid(row=11, column=0, columnspan=2)
 
-            tk.Button(self.magicOptions, text="Cancel", command=self.magicOptions.destroy).grid(column=0, row=10)
-            tk.Button(self.magicOptions, text="Run", command=self._runMagic).grid(column=1, row=10)
+            tk.Button(self.magicOptions, text="Cancel", command=self.magicOptions.destroy).grid(column=0, row=12)
+            tk.Button(self.magicOptions, text="Run", command=self._runMagic).grid(column=1, row=12)
             self.wait_window(self.magicOptions)
 
     def _runMagic(self):
@@ -743,9 +753,10 @@ class magic_gui(tk.Tk):
         tk.Label(self.magicProgress, text="Running MAGIC - refer to console for progress updates.").grid(column=0, row=0)
         
         self.data[name]['scdata'].run_magic(n_pca_components=self.nCompVar.get() if self.nCompVar.get() > 0 else None,
-                                            t=self.tVar.get(), k=self.kVar.get(), epsilon=self.epsilonVar.get(), 
+                                            t=None if self.tVar.get() < 0 else self.tVar.get(), k=self.kVar.get(), epsilon=self.epsilonVar.get(), 
                                             rescale_percent=self.rescaleVar.get(), ka=self.autotuneVar.get(),
-                                            random_pca=self.randomVar.get())
+                                            random_pca=self.randomVar.get(), compute_t_make_plots=False, t_max=self.tMaxVar.get(),
+                                            compute_t_n_genes=self.nGenesVar.get())
         
         self.data[name + ' MAGIC'] = {'scdata' : self.data[name]['scdata'].magic, 'wb' : None, 'state' : tk.BooleanVar(),
                                       'genes' : self.data[name]['scdata'].magic.data.columns.values, 'gates' : {}}

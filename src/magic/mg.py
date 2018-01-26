@@ -1148,10 +1148,11 @@ class SCData:
         return fig, axes
 
 
-    def run_magic(self, n_pca_components=20, random_pca=True, t=6, k=30, ka=10, epsilon=1, rescale_percent=99):
+    def run_magic(self, n_pca_components=20, random_pca=True, t=None, k=30, ka=10, epsilon=1, rescale_percent=99, compute_t_make_plots=True, t_max=12, compute_t_n_genes=500):
 
         new_data = magic.MAGIC_core.magic(self.data.values, n_pca_components=n_pca_components, random_pca=random_pca, t=t, 
-                                     k=k, ka=ka, epsilon=epsilon, rescale=rescale_percent)
+                                     k=k, ka=ka, epsilon=epsilon, rescale=rescale_percent, compute_t_make_plots=compute_t_make_plots,
+                                     t_max=t_max, compute_t_n_genes=compute_t_n_genes)
 
         new_data = pd.DataFrame(new_data, index=self.data.index, columns=['MAGIC ' + gene for gene in self.data.columns.values])
 
