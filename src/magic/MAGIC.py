@@ -55,8 +55,8 @@ def parse_args(args):
 				   help='Number of pca components to use when running MAGIC (Default = 20).')
 	m.add_argument('--pca-non-random', default=True, action='store_false',
 				    help='Do not used randomized solver in PCA computation.')
-	m.add_argument('-t', metavar='T', default=6, type=int,
-					help='t parameter for running MAGIC (Default = 6).')
+	m.add_argument('-t', metavar='T', default=None, type=int,
+					help='t parameter for running MAGIC. Default = None, in this case, the optimal t will be calculated .')
 	m.add_argument('-k', metavar='K', default=30, type=int,
 					help='Number of nearest neighbors to use when running MAGIC (Default = 30).')
 	m.add_argument('-ka', metavar='KA', default=10, type=int,
@@ -65,6 +65,12 @@ def parse_args(args):
 					help='Epsilon parameter for running MAGIC (Default = 1).')
 	m.add_argument('-r', '--rescale', metavar='R', default=99, type=int,
 					help='Percentile to rescale data to after running MAGIC (Default = 99).')
+	m.add_argument('--plot', metavar='PL', default=False, action='store_true',
+					help='Plot R2 plot generated in optimal t calculation (Default=False).')
+	m.add_argument('--t-max', metavar='TM', default=12, type=int,
+					help='Maximum t value used in optimal t calculation (Default=12).')
+	m.add_argument('--n-genes', metavar='NG', default=500, type=int,
+					help='Number of genes to use in optimal t calculation, a smaller number of genes speeds up the calculation (Default=500).')
 
 	try:
 		return p.parse_args(args)
@@ -102,7 +108,8 @@ def main(args: list = None):
 			scdata.log_transform_scseq_data(pseudocount=args.log_transform)
 
 		scdata.run_magic(n_pca_components=args.pca_components, random_pca=args.pca_non_random, t=args.t,
-						 k=args.k, ka=args.ka, epsilon=args.epsilon, rescale_percent=args.rescale)
+						 k=args.k, ka=args.ka, epsilon=args.epsilon, rescale_percent=args.rescale,
+						 compute_t_make_plots=args.plot, t_max=args.t_max, compute_t_n_genes=args.n_genes)
 
 		scdata.magic.to_csv(os.path.expanduser(args.output_file))
 
