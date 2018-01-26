@@ -80,7 +80,7 @@ run_magic <- function(data, t_diffusion, lib_size_norm=TRUE,
   W <- as.matrix(W) # to dense matrix
 
   print('Diffusing')
-  W_t <- W^t
+  W_t <- W^t_diffusion
 
   print('Imputing')
   data_imputed <- W_t %*% as.matrix(data)

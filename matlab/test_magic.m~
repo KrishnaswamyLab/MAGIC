@@ -1,7 +1,39 @@
 %% load data (e.g. 10x data)
 % data should be cells as rows and genes as columns
-sample_dir = 'path_to_data/';
-[data, gene_names, gene_ids, cells] = load_10x(sample_dir);
+%sample_dir = 'path_to_data/';
+%[data, gene_names, gene_ids, cells] = load_10x(sample_dir);
+
+%% load EMT data
+file = '/Users/david/Documents/GitHub/magic/matlab/EMT.csv';
+data = importdata(file);
+genes = data.colheaders;
+data = data.data;
+
+%% optimal t
+npca = 20; % ususally between 10 and 200
+ka = 10; % can be smaller, eg 3
+k = 30; % can be smaller, eg 9 (3*ka)
+lib_size_norm = true; % library size normalize
+log_transform = false; % log transform, some data requires this
+[~, W] = run_magic(data, 0, 'npca', npca, 'ka', ka, 'k', k, ...
+    'lib_size_norm', lib_size_norm, 'log_transform', log_transform);
+
+%% optimal t
+[~, Rsq_vec] = find_optimal_t_p(Zh_swap, DiffOp, 't_max', 8, 'make_plots', false);
+
+% plot optimal t
+figure;
+hold all;
+plot(1:length(Rsq_vec), Rsq_vec, '*-');
+xlabel 't'
+ylabel '1 - R^2(data_{t},data_{t-1})'
+axis tight
+ylim([0 1]);
+plot(xlim, [0.05 0.05], '--k');
+set(gcf,'paperposition',[0 0 4 3]);
+print('-dtiff',[out_base 't_vs_Rsq.tiff']);
+%close
+
 
 %% MAGIC
 npca = 20; % ususally between 10 and 200
