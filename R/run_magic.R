@@ -75,7 +75,7 @@ run_magic <- function(data, t_diffusion, lib_size_norm=TRUE,
   }
 
   print('Markov normalization')
-  W <- W / rowSums(W) # Markov normalization
+  W <- W / rowSums(as.matrix(W)) # Markov normalization
 
   W <- as.matrix(W) # to dense matrix
 
