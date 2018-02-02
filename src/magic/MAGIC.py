@@ -65,7 +65,7 @@ def parse_args(args):
 					help='Epsilon parameter for running MAGIC (Default = 1).')
 	m.add_argument('-r', '--rescale', metavar='R', default=99, type=int,
 					help='Percentile to rescale data to after running MAGIC (Default = 99).')
-	m.add_argument('--plot', metavar='PL', default=False, action='store_true',
+	m.add_argument('--plot', default=False, action='store_true',
 					help='Plot R2 plot generated in optimal t calculation (Default=False).')
 	m.add_argument('--t-max', metavar='TM', default=12, type=int,
 					help='Maximum t value used in optimal t calculation (Default=12).')
