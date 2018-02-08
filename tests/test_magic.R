@@ -1,11 +1,11 @@
-source('run_magic.R')
+source('R/run_magic.R')
 
 test_magic <- function() {
 
 	require('ggplot2')
 
 	# load data
-	data <- read.csv('data/sdata_nn_TGFb_day_8_10.csv', header=TRUE, sep=',')
+	data <- read.csv('data/HMLE_TGFb_day_8_10.csv', header=TRUE, sep=',')
 
 	# run MAGIC
 	data_MAGIC <- run_magic(data, 6, rescale_percent=.99)
