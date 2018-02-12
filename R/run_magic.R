@@ -24,10 +24,10 @@ run_magic <- function(data, t_diffusion, lib_size_norm=TRUE,
                       npca=100, k=12,
                       ka=4, epsilon=1, rescale_percent=0) {
 
-  require('rsvd')
-  require('FNN')
-  require('Matrix')
-  
+  if (!require(rsvd)) install.packages('rsvd'); library(rsvd)
+  if (!require(FNN)) install.packages('FNN'); library(FNN)
+  if (!require(Matrix)) install.packages('Matrix'); library(Matrix)
+
   if (lib_size_norm){
     print('Library size normalization')
     libsize <- rowSums(data)
