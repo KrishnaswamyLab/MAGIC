@@ -2,7 +2,7 @@ source('R/run_magic.R')
 
 test_magic <- function() {
 
-	require('ggplot2')
+  if (!require(ggplot2)) install.packages('ggplot2'); library(ggplot2)
 
 	# load data
 	data <- read.csv('data/HMLE_TGFb_day_8_10.csv', header=TRUE, sep=',')
@@ -19,5 +19,5 @@ test_magic <- function() {
 
     p_m + geom_point(aes(VIM, CDH1, colour=ZEB1)) + scale_colour_gradient(low = 'purple', high='yellow')
     ggsave('EMT_data_R_after_magic.png')
-	
+
 }
