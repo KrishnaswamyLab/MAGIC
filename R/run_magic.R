@@ -24,10 +24,6 @@ run_magic <- function(data, t_diffusion, lib_size_norm=TRUE,
                       npca=100, k=12,
                       ka=4, epsilon=1, rescale_percent=0) {
 
-  if (!require(rsvd)) install.packages('rsvd'); library(rsvd)
-  if (!require(FNN)) install.packages('FNN'); library(FNN)
-  if (!require(Matrix)) install.packages('Matrix'); library(Matrix)
-
   if (lib_size_norm){
     print('Library size normalization')
     libsize <- rowSums(data)
@@ -43,25 +39,27 @@ run_magic <- function(data, t_diffusion, lib_size_norm=TRUE,
 
   print('PCA')
   data_centr <- scale(data, scale = FALSE)
-  svd <- rsvd(t(data_centr), k=npca)
+  svd <- rsvd::rsvd(t(data_centr), k=npca)
   data_pc <- data_centr %*% svd$u
 
   print('Computing distances')
-  knndata <- get.knn(data_pc, k=k)
+  knndata <- FNN::get.knn(data_pc, k=k)
   idx <- knndata$nn.index
   dist <- knndata$nn.dist
 
-  if (ka>0)
+  if (ka>0) {
     print('Adapting sigma')
     dist <- dist / dist[,ka]
+  }
 
   i <- rep((1:N), k)
   j <- c(idx)
   s <- c(dist)
-  if (epsilon > 0)
-    W <- sparseMatrix(i, j, x = s)
-  else
-    W <- sparseMatrix(i, j, x = 1) # unweighted kNN graph
+  if (epsilon > 0) {
+    W <- Matrix::sparseMatrix(i, j, x = s)
+  } else {
+    W <- Matrix::sparseMatrix(i, j, x = 1) # unweighted kNN graph
+  }
 
   print('Symmetrize distances')
   W <- as.matrix(W)
@@ -70,13 +68,13 @@ run_magic <- function(data, t_diffusion, lib_size_norm=TRUE,
   if (epsilon > 0){
     print('Computing kernel')
     W <- as(W, "sparseMatrix")
-    Q <- summary(W)
+    Q <- Matrix::summary(W)
     i <- Q$i
     j <- Q$j
     s <- Q$x
     s <- s / epsilon^2
     s <- exp(-s);
-    W <- sparseMatrix(i, j, x = s)
+    W <- Matrix::sparseMatrix(i, j, x = s)
   }
 
   print('Markov normalization')
