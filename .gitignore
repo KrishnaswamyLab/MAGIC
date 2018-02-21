@@ -1,21 +1,3 @@
-# R project files
-
 .Rproj.user
-*.Rproj
 .Rhistory
 .RData
-.Ruserdata
-.Rbuildignore
-
-# R installation files
-
-build
-dist
-
-# Python installation files
-
-python/*.o
-python/*.so
-python/*.dll
-python/*.egg-info
-python/magic/__pycache__

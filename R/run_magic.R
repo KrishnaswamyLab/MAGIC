@@ -9,7 +9,7 @@
 #'  log-transformation of zeros. Default: 0.1.
 #' @param npca number of PCA components that should be used; default: 20.
 #' @param k Number of nearest neighbors to use when running MAGIC. Default: 30.
-#' @param ka kNN-autotune parameter for running MAGIC; default: 4
+#' @param ka kNN-autotune parameter for running MAGIC; default: 10
 #' @param epsilon a value for the standard deviation of the kernel. Default: 1.
 #' \code{epsilon = 0} is the uniform kernel.
 #' @param rescale_percent To which percentile should the data be re-scaled.
@@ -26,7 +26,7 @@ run_magic <- function(data, t_diffusion, lib_size_norm=TRUE,
 
   if (lib_size_norm){
     print('Library size normalization')
-    libsize <- rowSums(data)
+    libsize  = rowSums(data)
     data <- data / libsize * median(libsize)
   }
 
@@ -52,7 +52,7 @@ run_magic <- function(data, t_diffusion, lib_size_norm=TRUE,
     dist <- dist / dist[,ka]
   }
 
-  i <- rep((1:N), k)
+  i <- rep((1:N), ncol(idx))
   j <- c(idx)
   s <- c(dist)
   if (epsilon > 0) {
@@ -63,7 +63,7 @@ run_magic <- function(data, t_diffusion, lib_size_norm=TRUE,
 
   print('Symmetrize distances')
   W <- as.matrix(W)
-  W <- W + t(W)
+  W <- W + t(W);
 
   if (epsilon > 0){
     print('Computing kernel')
@@ -83,7 +83,7 @@ run_magic <- function(data, t_diffusion, lib_size_norm=TRUE,
   W <- as.matrix(W) # to dense matrix
 
   print('Diffusing')
-  W_t <- W%^%t_diffusion
+  W_t <- W^t_diffusion
 
   print('Imputing')
   data_imputed <- W_t %*% as.matrix(data)
@@ -113,13 +113,13 @@ run_magic <- function(data, t_diffusion, lib_size_norm=TRUE,
 
 }
 
-#' Matrix powering.
+#' Another function
 #'
-#' @description Multiply n matrices A together.
+#' @description Not sure what it does.
 #'
-#' @param A a matrix
-#' @param n an interger, the exponent
-#' @return a matrix
+#' @param A some parameter
+#' @param n some other parameter
+#' @return not sure
 "%^%"<-function(A,n){
   if(n==1) A else {B<-A; for(i in (2:n)){A<-A%*%B}}; A
 }
