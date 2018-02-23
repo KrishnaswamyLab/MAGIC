@@ -2,8 +2,6 @@ source('R/run_magic.R')
 
 test_magic <- function() {
 
-  if (!require(ggplot2)) install.packages('ggplot2'); library(ggplot2)
-
 	# load data
 	data <- read.csv('data/HMLE_TGFb_day_8_10.csv', header=TRUE, sep=',')
 

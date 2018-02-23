@@ -24,10 +24,6 @@ run_magic <- function(data, t_diffusion, lib_size_norm=TRUE,
                       npca=100, k=12,
                       ka=4, epsilon=1, rescale_percent=0) {
 
-  if (!require(rsvd)) install.packages('rsvd'); library(rsvd)
-  if (!require(FNN)) install.packages('FNN'); library(FNN)
-  if (!require(Matrix)) install.packages('Matrix'); library(Matrix)
-
   if (lib_size_norm){
     print('Library size normalization')
     libsize <- rowSums(data)
@@ -85,6 +81,9 @@ run_magic <- function(data, t_diffusion, lib_size_norm=TRUE,
   W <- as.matrix(W) # to dense matrix
 
   print('Diffusing')
+  if (is.nan(t_diffusion)) {
+    t_diffusion <- compute_optimal_t(data, W, t_max=12, n_genes=500)
+  }
   W_t <- W%^%t_diffusion
 
   print('Imputing')
@@ -115,9 +114,48 @@ run_magic <- function(data, t_diffusion, lib_size_norm=TRUE,
 
 }
 
-#' Matrix powering.
+#' @description Computing optimal t automatically
 #'
-#' @description Multiply n matrices A together.
+#' @param data input data
+#' @param diff_op diffusion operator
+#' @param t_max maximum number of t
+#' @param n_genes number of genes
+#' @param make_plots create a plot of R2 with respect to t
+#' @return the optimal t and a vector of R2 values for all t
+compute_optimal_t <-function(data, diff_op,
+                             t_max=32, n_genes=ncol(data),
+                             make_plots=true) {
+  diff_op <- as(diff_op, "sparseMatrix")
+  idx_genes <- sample(1:ncol(data), n_genes)
+  data_imputed <- data[,idx_genes]
+
+  if (min(data_imputed) < 0) {
+    print('Data has negative values, shifting to positive')
+    data_imputed = data_imputed - min(data_imputed)
+  }
+
+  r2_vec <- rep(NA, t_max)
+  data_prev <- data_imputed / sum(data_imputed)
+  print('Computing optimal t')
+  for (i in 1:t_max) {
+    data_imputed <- diff_op %*% data_imputed
+    data_curr <- data_imputed / sum(data_imputed)
+    cvec <- c(t(data_curr)) # Unroll the data frame to a vector.
+    pvec <- c(t(data_prev))
+    r2 <- sum((pvec - cvec)^2)/sum((cvec)^2)
+    if (r2 < 0) {
+      print('consider adding a constant term to your model')
+      r2 = 0
+    }
+  }
+  t_opt <- min(which(r2_vec < 0.05)) + 1
+  print(paste('Optimal t =', t_opt))
+  if (make_plots) {
+  }
+  return(t)
+}
+
+#' @description Matrix powering: multiplying n matrices A together.
 #'
 #' @param A a matrix
 #' @param n an interger, the exponent
