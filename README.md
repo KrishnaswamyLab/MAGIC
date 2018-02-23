@@ -39,17 +39,19 @@ MAGIC can be run using the command line script `MAGIC.py` with the following par
 
 		$> MAGIC.py -h
 		usage: MAGIC.py [-h] -d D -o O [-g G] [--gene-name-file GN]
-        		        [--use-ensemble-ids] [--cell-axis CA] [--skip-rows SKIP_ROWS]
-                		[--skip-columns SKIP_COLUMNS] [-n] [-l L]
-                		[--mols-per-cell-min MOLS_PER_CELL_MIN]
-                		[--mols-per-cell-max MOLS_PER_CELL_MAX] [-p P]
-                		[--pca-non-random] [-t T] [-k K] [-ka KA] [-e E] [-r R]
-                		{csv,10x,10x_HDF5,mtx}
-		
+                [--use-ensemble-ids] [--cell-axis CA] [--skip-rows SKIP_ROWS]
+                [--skip-columns SKIP_COLUMNS] [-n] [-l L]
+                [--mols-per-cell-min MOLS_PER_CELL_MIN]
+                [--mols-per-cell-max MOLS_PER_CELL_MAX] [-p P]
+                [--pca-non-random] [-t T] [-k K] [-ka KA] [-e E] [-r R]
+                [--plot] [--t-max TM] [--n-genes NG]
+                {csv,10x,10x_HDF5,mtx}
+
 		run MAGIC
 
 		positional arguments:
-		  {csv,10x,mtx}         what is the file type of your original data?
+		  {csv,10x,10x_HDF5,mtx}
+		                        what is the file type of your original data?
 
 		optional arguments:
 		  -h, --help            show this help message and exit
@@ -71,7 +73,7 @@ MAGIC can be run using the command line script `MAGIC.py` with the following par
 		  --skip-columns SKIP_COLUMNS
 		                        When loading a csv, number of columns to skip after
 		                        the header columns (Default = 0).
-		
+
 		normalization/filtering parameters:
 		  -n, --no-normalize    Do not perform library size normalization on the data
 		  -l L, --log-transform L
@@ -86,15 +88,23 @@ MAGIC can be run using the command line script `MAGIC.py` with the following par
 		                        Number of pca components to use when running MAGIC
 		                        (Default = 20).
 		  --pca-non-random      Do not used randomized solver in PCA computation.
-		  -t T			t parameter for running MAGIC (Default = 6).
-		  -k K			Number of nearest neighbors to use when running MAGIC
-                        		(Default = 30).
-		  -ka KA		knn-autotune parameter for running MAGIC (Default =
-                        		10).
-		  -e E, --epsilon E	Epsilon parameter for running MAGIC (Default = 1).
-		  -r R, --rescale R	Percentile to rescale data to after running MAGIC
-                        		(Default = 99).
-
+		  -t T                  t parameter for running MAGIC. Default = None, in this
+		                        case, the optimal t will be calculated .
+		  -k K                  Number of nearest neighbors to use when running MAGIC
+		                        (Default = 30).
+		  -ka KA                knn-autotune parameter for running MAGIC (Default =
+		                        10).
+		  -e E, --epsilon E     Epsilon parameter for running MAGIC (Default = 1).
+		  -r R, --rescale R     Percentile to rescale data to after running MAGIC
+		                        (Default = 99).
+		  --plot                Plot R2 plot generated in optimal t calculation
+		                        (Default=False).
+		  --t-max TM            Maximum t value used in optimal t calculation
+		                        (Default=12).
+		  --n-genes NG          Number of genes to use in optimal t calculation, a
+		                        smaller number of genes speeds up the calculation
+		                        (Default=500).
+                        
 ## Matlab
 
 #### Instructions for the Matlab version
