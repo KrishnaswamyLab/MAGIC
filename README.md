@@ -130,4 +130,4 @@ All the dependencies will be automatically installed using the above commands
 After installing the package, MAGIC can be run by loading the library and calling `run_magic()`:
 	
 	$> library(Rmagic)
-	$> MAGIC_data <- run_magic(data, t , rescale_percent=0.99)
+	$> MAGIC_data <- run_magic(data, t=6, rescale_percent=0.99)
