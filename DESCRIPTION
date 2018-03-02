@@ -7,6 +7,8 @@ Maintainer: David van Dijk <davidvandijk@gmail.com>
 Description: MAGIC is an interactive tool to impute missing values in single-cell
     data and restore the structure of the data.
 Imports:
+		expm,
+		ggplot2
     FNN,
     Matrix,
     rsvd
