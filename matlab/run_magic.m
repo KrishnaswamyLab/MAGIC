@@ -1,4 +1,4 @@
-function data_imputed = run_magic(data, t, varargin)
+function [data_imputed, W] = run_magic(data, t, varargin)
 % MAGIC (Markov Affinity-based Graph Imputation of Cells)
 % data must have cells on the rows and genes on the columns
 % t is diffusion time
@@ -17,6 +17,8 @@ function data_imputed = run_magic(data, t, varargin)
 %   'rescale_to' (default = 0, no rescale)
 %       rescale genes to 'rescale_to' percentile
 %       set to 0 for log scaled data
+%   'operator' (default = [], compute operator)
+%       use provided operator
 
 % set up default parameters
 k = 12;
@@ -27,6 +29,7 @@ epsilon = 1;
 lib_size_norm = true;
 log_transform = false;
 pseudo_count = 0.1;
+W = [];
 
 % get the input parameters
 if ~isempty(varargin)
@@ -63,6 +66,10 @@ if ~isempty(varargin)
         if strcmp(varargin{j}, 'pseudo_count')
             pseudo_count = varargin{j+1};
         end
+        % operator
+        if strcmp(varargin{j}, 'operator')
+            W = varargin{j+1};
+        end
     end
 end
 
@@ -81,51 +88,68 @@ end
 
 N = size(data, 1); % number of cells
 
-disp 'PCA'
-data_centr = bsxfun(@minus, data, mean(data,1));
-[U,~,~] = randPCA(data_centr', npca); % fast random svd
-%[U,~,~] = svds(data', npca);
-data_pc = data_centr * U; % PCA project
+if isempty(W)
 
-disp 'Computing distances'
-[idx, dist] = knnsearch(data_pc, data_pc, 'k', k);
-
-disp 'Adapting sigma'
-dist = bsxfun(@rdivide, dist, dist(:,ka));
-
-i = repmat((1:N)',1,size(idx,2));
-i = i(:);
-j = idx(:);
-s = dist(:);
-if epsilon > 0
-    W = sparse(i, j, s);
-else
-    W = sparse(i, j, ones(size(s))); % unweighted kNN graph
+    if ~isempty(npca)
+        disp 'PCA'
+        data_centr = bsxfun(@minus, data, mean(data,1));
+        [U,~,~] = randPCA(data_centr', npca); % fast random svd
+        %[U,~,~] = svds(data', npca);
+        data_pc = data_centr * U; % PCA project
+    else
+        data_pc = data;
+    end
+    
+    disp 'Computing distances'
+    [idx, dist] = knnsearch(data_pc, data_pc, 'k', k);
+    
+    disp 'Adapting sigma'
+    dist = bsxfun(@rdivide, dist, dist(:,ka));
+    
+    i = repmat((1:N)',1,size(idx,2));
+    i = i(:);
+    j = idx(:);
+    s = dist(:);
+    if epsilon > 0
+        W = sparse(i, j, s);
+    else
+        W = sparse(i, j, ones(size(s))); % unweighted kNN graph
+    end
+    
+    disp 'Symmetrize distances'
+    W = W + W';
+    
+    if epsilon > 0
+        disp 'Computing kernel'
+        [i,j,s] = find(W);
+        i = [i; (1:N)'];
+        j = [j; (1:N)'];
+        s = [s./(epsilon^2); zeros(N,1)];
+        s = exp(-s);
+        W = sparse(i,j,s);
+    end
+    
+    disp 'Markov normalization'
+    W = bsxfun(@rdivide, W, sum(W,2)); % Markov normalization
+    
 end
-
-disp 'Symmetrize distances'
-W = W + W';
-
-if epsilon > 0
-    disp 'Computing kernel'
-    [i,j,s] = find(W);
-    i = [i; (1:N)'];
-    j = [j; (1:N)'];
-    s = [s./(epsilon^2); zeros(N,1)];
-    s = exp(-s);
-    W = sparse(i,j,s);
-end
-
-disp 'Markov normalization'
-W = bsxfun(@rdivide, W, sum(W,2)); % Markov normalization
 
 W = full(W);
 
-disp(['Diffusing for ' num2str(t) ' steps']);
-W_t = W^t; % diffuse
+if isempty(t)
+    t = compute_optimal_t(data, W, 'make_plots', true, 't_max', 12, 'n_genes', 500);
+    drawnow;
+end
 
-disp 'Imputing'
-data_imputed = W_t * data; % impute
+if t>0
+    disp(['Diffusing for ' num2str(t) ' steps']);
+    W_t = W^t; % diffuse
+    
+    disp 'Imputing'
+    data_imputed = W_t * data; % impute
+else
+    data_imputed = data;
+end
 
 % Rescale
 if rescale_to > 0
