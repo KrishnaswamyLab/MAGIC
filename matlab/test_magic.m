@@ -1,16 +1,22 @@
 %% load data (e.g. 10x data)
 % data should be cells as rows and genes as columns
-sample_dir = 'path_to_data/';
-[data, gene_names, gene_ids, cells] = load_10x(sample_dir);
+%sample_dir = 'path_to_data/';
+%[data, gene_names, gene_ids, cells] = load_10x(sample_dir);
+
+%% load EMT data
+file = 'EMT.csv'; % unzip EMT.csv.zip
+data = importdata(file);
+gene_names = data.colheaders;
+data = data.data;
 
 %% MAGIC
 npca = 20; % ususally between 10 and 200
 ka = 10; % can be smaller, eg 3
 k = 30; % can be smaller, eg 9 (3*ka)
-t = 6; % usually between 6 and 12, smaller ka/k requitres bigger t
+t = []; % automatically find and use optimal t
 lib_size_norm = true; % library size normalize
 log_transform = false; % log transform, some data requires this
-data_imputed = run_magic(data, t, 'npca', npca, 'ka', ka, 'k', k, ...
+[data_imputed, DiffOp] = run_magic(data, t, 'npca', npca, 'ka', ka, 'k', k, ...
     'lib_size_norm', lib_size_norm, 'log_transform', log_transform);
 
 %% plot
