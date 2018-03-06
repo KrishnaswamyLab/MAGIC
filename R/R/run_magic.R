@@ -18,7 +18,6 @@
 #' Default: 0.
 #'
 #' @export
-#'
 run_magic <- function(data, t_diffusion=0, lib_size_norm=TRUE,
                       log_transform=FALSE,
                       pseudo_count=0.1,
