@@ -28,9 +28,9 @@ All the dependencies will be automatically installed using the above commands
 ##### Interactive command line
 We have included two tutorial notebooks on MAGIC usage and results visualization for single cell RNA-seq data.
 
-EMT data notebook: http://nbviewer.jupyter.org/github/KrishnaswamyLab/magic/blob/develop/tutorial_notebooks/Magic_single_cell_RNAseq_EMT_data.ipynb
+EMT data notebook: http://nbviewer.jupyter.org/github/KrishnaswamyLab/magic/blob/develop/python/tutorial_notebooks/Magic_single_cell_RNAseq_EMT_data.ipynb
 
-Bone Marrow data notebook: http://nbviewer.jupyter.org/github/KrishnaswamyLab/magic/blob/develop/tutorial_notebooks/Magic_single_cell_RNAseq_bone_marrow_data.ipynb
+Bone Marrow data notebook: http://nbviewer.jupyter.org/github/KrishnaswamyLab/magic/blob/develop/python/tutorial_notebooks/Magic_single_cell_RNAseq_bone_marrow_data.ipynb
 
 ##### GUI
 A python GUI is now available for MAGIC. After following the installation steps listed below, the GUI can be invoked using
