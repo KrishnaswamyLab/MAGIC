@@ -1,6 +1,6 @@
 # To run this file:
-# - Set the working directory to R/tests.
-# - Unzip the data files in R/data.
+# - Set the working directory to 'R/tests'.
+# - Unzip the data files in 'data'.
 
 source('../R/run_magic.R')
 
