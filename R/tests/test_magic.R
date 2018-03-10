@@ -1,4 +1,7 @@
-# Set the current directory to /R/tests to run this file.
+# To run this file:
+# - Set the working directory to R/tests.
+# - Unzip the data files in R/data.
+
 source('../R/run_magic.R')
 
 test_magic <- function() {
