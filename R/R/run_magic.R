@@ -63,6 +63,11 @@ run_magic <- function(data, t_diffusion=0, lib_size_norm=TRUE,
 
   print('Symmetrize distances')
   W <- as.matrix(W)
+  W_ncol = ncol(W)
+  if (W_ncol != N){
+    m <- matrix(data=rep(0, (N - W_ncol) * N), nrow=N, ncol=(N - W_ncol))
+    W = cbind(W, m)
+  }
   W <- W + t(W)
 
   if (epsilon > 0){
