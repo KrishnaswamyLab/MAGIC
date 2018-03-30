@@ -27,6 +27,7 @@ run_magic <- function(data, t_diffusion=0, lib_size_norm=TRUE,
   if (lib_size_norm){
     print('Library size normalization')
     libsize <- rowSums(data)
+    libsize[which(libsize == 0)] = 1 # avoid division by 0
     data <- data / libsize * median(libsize)
   }
 
