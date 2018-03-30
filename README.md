@@ -12,7 +12,7 @@ MAGIC has been implemented in Python3, Matlab, and R.
 1. The Python3 version of MAGIC can be installed using:
 
         $> git clone git://github.com/KrishnaswamyLab/magic.git
-        $> cd magic
+        $> cd magic/python
         $> sudo -H pip3 install .
 
 2. MAGIC depends on a number of `python3` packages available on pypi and these dependencies are listed in `setup.py`
