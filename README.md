@@ -131,4 +131,4 @@ After installing the package, MAGIC can be run by loading the library and callin
 	
 	$> library(Rmagic)
 	$> MAGIC_data <- run_magic(data, t=6, rescale_percent=0.99)
-For a working example, see `test_magic.R`. Please unzip the data provided in the `data` folder.
+For a working example, see `R/tests/test_magic.R`. Please unzip the data provided in the `data` folder.
