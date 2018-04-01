@@ -173,8 +173,13 @@ def compute_optimal_t(data, diff_op, make_plots=True, t_max=32, n_genes=None):
         r2_vec[i] = 1 - r2
         data_prev = data_curr
 
-    t_opt = np.min(np.where(r2_vec < 0.05)) + 2
-    print('optimal t = ', t_opt)
+    try:
+        t_opt = np.min(np.where(r2_vec < 0.05)) + 2
+        print('optimal t = ', t_opt)
+    except ValueError:
+        # r2 has not converged
+        t_opt = t_max
+        print("Warning: optimal t > t_max ({})".format(t_opt))
 
     # plot
     if make_plots:
