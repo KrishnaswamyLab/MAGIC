@@ -1,34 +1,35 @@
 import numpy as np
-import pandas as pd
 from scipy.sparse import issparse, csr_matrix, find
-from sklearn.metrics.pairwise import pairwise_distances
-from sklearn.manifold.t_sne import _joint_probabilities, _joint_probabilities_nn
 from sklearn.decomposition import PCA
-from scipy.spatial.distance import squareform
 from sklearn.neighbors import NearestNeighbors
-import matplotlib
 import matplotlib.pyplot as plt
 
-def magic(data, diffusion_operator=None, n_pca_components=100, random_pca=True, 
-          t=None, k=12, ka=4, epsilon=1, rescale=0, compute_t_make_plots=True, t_max=12, compute_t_n_genes=500):
-    
-    if diffusion_operator == None:
-        if n_pca_components != None:
+
+def magic(data, diffusion_operator=None, n_pca_components=100, random_pca=True,
+          t=None, k=12, ka=4, epsilon=1, rescale=0, compute_t_make_plots=True,
+          t_max=12, compute_t_n_genes=500):
+
+    if diffusion_operator is None:
+        if n_pca_components is not None:
             print('doing PCA')
-            pca_projected_data = run_pca(data, n_components=n_pca_components, random=random_pca)
+            pca_projected_data = run_pca(
+                data, n_components=n_pca_components, random=random_pca)
         else:
             pca_projected_data = data
 
-        #run diffusion maps to get markov matrix
-        W = compute_markov(pca_projected_data, k=k, epsilon=epsilon, 
+        # run diffusion maps to get markov matrix
+        W = compute_markov(pca_projected_data, k=k, epsilon=epsilon,
                            distance_metric='euclidean', ka=ka)
+    else:
+        W = diffusion_operator
 
+    if t is None:
+        t, _ = compute_optimal_t(
+            data, W, make_plots=compute_t_make_plots, t_max=t_max,
+            n_genes=compute_t_n_genes)
 
-    if t == None:
-        t, r2_vec = compute_optimal_t(data, W, make_plots=compute_t_make_plots, t_max=t_max, n_genes=compute_t_n_genes)
-
-    #get imputed data matrix
-    new_data, W_t = impute_fast(data, W, t, rescale_percent=rescale)
+    # get imputed data matrix
+    new_data, _ = impute_fast(data, W, t, rescale_percent=rescale)
 
     return new_data
 
@@ -36,7 +37,7 @@ def magic(data, diffusion_operator=None, n_pca_components=100, random_pca=True,
 def run_pca(data, n_components=100, random=True):
 
     solver = 'randomized'
-    if random != True:
+    if not random:
         solver = 'full'
 
     pca = PCA(n_components=n_components, svd_solver=solver)
@@ -45,28 +46,28 @@ def run_pca(data, n_components=100, random=True):
 
 def impute_fast(data, W, t, rescale_percent=0, W_t=None, tprev=None):
 
-    #convert L to full matrix
+    # convert L to full matrix
     if issparse(W):
         W = W.todense()
 
-    #L^t
+    # L^t
     print('MAGIC: W_t = W^t')
-    if W_t == None:
+    if W_t is None:
         W_t = np.linalg.matrix_power(W, t)
     else:
-        W_t = np.dot(W_t, np.linalg.matrix_power(W, t-tprev))
+        W_t = np.dot(W_t, np.linalg.matrix_power(W, t - tprev))
 
     print('MAGIC: data_new = W_t * data')
     if t > 0:
         data_new = np.array(np.dot(W_t, data))
 
-    #rescale data
+    # rescale data
     if rescale_percent != 0:
         if len(np.where(data_new < 0)[0]) > 0:
-            print('Rescaling should not be performed on log-transformed '
-                  '(or other negative) values. Imputed data returned unscaled.')
+            print('Rescaling should not be performed on log-transformed (or'
+                  ' other negative) values. Imputed data returned unscaled.')
             return data_new, W_t
-            
+
         M99 = np.percentile(data, rescale_percent, axis=0)
         M100 = data.max(axis=0)
         indices = np.where(M99 == 0)[0]
@@ -77,7 +78,7 @@ def impute_fast(data, W, t, rescale_percent=0, W_t=None, tprev=None):
         M99_new[indices] = M100_new[indices]
         max_ratio = np.divide(M99, M99_new)
         data_new = np.multiply(data_new, np.tile(max_ratio, (len(data), 1)))
-    
+
     return data_new, W_t
 
 
@@ -113,9 +114,9 @@ def compute_markov(data, k=10, epsilon=1, distance_metric='euclidean', ka=0):
         dists[inds] = distances[i, :]
         location += k
     if epsilon > 0:
-        W = csr_matrix( (dists, (rows, cols)), shape=[N, N] )
+        W = csr_matrix((dists, (rows, cols)), shape=[N, N])
     else:
-        W = csr_matrix( (np.ones(dists.shape), (rows, cols)), shape=[N, N] )
+        W = csr_matrix((np.ones(dists.shape), (rows, cols)), shape=[N, N])
 
     # Symmetrize W
     W = W + W.T
@@ -125,22 +126,22 @@ def compute_markov(data, k=10, epsilon=1, distance_metric='euclidean', ka=0):
         rows, cols, dists = find(W)
         rows = np.append(rows, range(N))
         cols = np.append(cols, range(N))
-        dists = np.append(dists/(epsilon ** 2), np.zeros(N))
-        W = csr_matrix( (np.exp(-dists), (rows, cols)), shape=[N, N] )
+        dists = np.append(dists / (epsilon ** 2), np.zeros(N))
+        W = csr_matrix((np.exp(-dists), (rows, cols)), shape=[N, N])
 
     # Create D
-    D = np.ravel(W.sum(axis = 1))
-    D[D!=0] = 1/D[D!=0]
+    D = np.ravel(W.sum(axis=1))
+    D[D != 0] = 1 / D[D != 0]
 
-    #markov normalization
+    # markov normalization
     T = csr_matrix((D, (range(N), range(N))), shape=[N, N]).dot(W)
 
     return T
 
 
 def compute_optimal_t(data, diff_op, make_plots=True, t_max=32, n_genes=None):
-    
-    if n_genes == None:
+
+    if n_genes is None:
         n_genes = data.shape[1]
 
     if not issparse(diff_op):
@@ -159,13 +160,15 @@ def compute_optimal_t(data, diff_op, make_plots=True, t_max=32, n_genes=None):
 
     r2_vec = np.full(t_max, np.nan)
     data_prev = data_imputed
-    data_prev = np.divide(data_prev, np.broadcast_to(data_prev.sum(axis=0), data_prev.shape))
+    data_prev = np.divide(data_prev, np.broadcast_to(
+        data_prev.sum(axis=0), data_prev.shape))
 
     print('computing optimal t')
     for i in range(t_max):
         data_imputed = diff_op.dot(data_imputed)
         data_curr = data_imputed
-        data_curr = np.divide(data_curr, np.broadcast_to(data_curr.sum(axis=0), data_curr.shape))
+        data_curr = np.divide(data_curr, np.broadcast_to(
+            data_curr.sum(axis=0), data_curr.shape))
         r2, rmse = rsquare(data_prev, data_curr)
         r2_vec[i] = 1 - r2
         data_prev = data_curr
@@ -173,12 +176,12 @@ def compute_optimal_t(data, diff_op, make_plots=True, t_max=32, n_genes=None):
     t_opt = np.min(np.where(r2_vec < 0.05)) + 2
     print('optimal t = ', t_opt)
 
-    #plot
+    # plot
     if make_plots:
-        fig = plt.figure()
-        plt.plot(np.arange(1, t_max+1), r2_vec)
-        plt.plot(t_opt, r2_vec[t_opt-1], 'ro', markersize=10,)
-        plt.plot(np.arange(1, t_max+1), np.full(len(r2_vec), 0.05), 'k--')
+        plt.figure()
+        plt.plot(np.arange(1, t_max + 1), r2_vec)
+        plt.plot(t_opt, r2_vec[t_opt - 1], 'ro', markersize=10,)
+        plt.plot(np.arange(1, t_max + 1), np.full(len(r2_vec), 0.05), 'k--')
         plt.xlabel('t')
         plt.ylabel('1 - R^2(data_{t},data_{t-1})')
         plt.xlim([1, t_max])
@@ -188,26 +191,29 @@ def compute_optimal_t(data, diff_op, make_plots=True, t_max=32, n_genes=None):
 
     return t_opt, r2_vec
 
+
 def rsquare(y, f, c=True):
 
     if y.shape != f.shape:
         raise RuntimeError('Y and F must be the same size.')
 
-    #flatten arrays
+    # flatten arrays
     y = np.ravel(y)
     f = np.ravel(f)
 
-    #remove NaNs
-    temp = np.intersect1d(np.where(np.isfinite(y))[0], np.where(np.isfinite(f))[0])
+    # remove NaNs
+    temp = np.intersect1d(np.where(np.isfinite(y))[
+                          0], np.where(np.isfinite(f))[0])
     y = y[temp]
     f = f[temp]
 
     if c:
-        r2 = max(0, 1 - np.power(y-f, 2).sum()/ np.power(y - y.mean(), 2).sum()) 
+        r2 = max(0, 1 - np.power(y - f, 2).sum() /
+                 np.power(y - y.mean(), 2).sum())
     else:
-        r2 = 1 - np.power(y - f, 2).sum()/np.power(y, 2).sum()
+        r2 = 1 - np.power(y - f, 2).sum() / np.power(y, 2).sum()
         if r2 < 0:
-            #http://web.maths.unsw.edu.au/~adelle/Garvan/Assays/GoodnessOfFit.html
+            # http://web.maths.unsw.edu.au/~adelle/Garvan/Assays/GoodnessOfFit.html
             print('Warning: Consider adding a constant term to your model')
             r2 = 0
 
