@@ -133,6 +133,10 @@ run_magic <- function(data, t_diffusion=0, lib_size_norm=TRUE,
 compute_optimal_t <- function(data, diff_op,
                              t_max=32, n_genes=ncol(data),
                              make_plots=TRUE) {
+  if (n_genes > ncol(data)) {
+    print('n_genes too large, capping n_genes at maximum possible number of genes')
+    n_genes = ncol(data)
+  }
   idx_genes <- sample(1:ncol(data), n_genes)
   data_imputed <- data[,idx_genes]
   data_imputed <- data.matrix(data_imputed)
