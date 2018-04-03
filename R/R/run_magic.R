@@ -89,7 +89,7 @@ run_magic <- function(data, t_diffusion=0, lib_size_norm=TRUE,
 
   print('Diffusing')
   if (t_diffusion == 0) {
-    t_diffusion <- compute_optimal_t(data, W, t_max=12, n_genes=500)
+    t_diffusion <- compute_optimal_t(data, W)
   }
   W_t <- expm::"%^%"(W, t_diffusion)
 
