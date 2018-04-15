@@ -6,6 +6,8 @@ http://www.biorxiv.org/content/early/2017/02/25/111591
 
 MAGIC has been implemented in Python3, Matlab, and R.
 
+![MAGIC revealing gene-gene interactions](https://github.com/KrishnaswamyLab/MAGIC/master/magic.gif "MAGIC revealing gene-gene interactions")
+
 ## Python3
 
 #### Installation and dependencies for the Python version
