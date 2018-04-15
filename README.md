@@ -6,7 +6,10 @@ http://www.biorxiv.org/content/early/2017/02/25/111591
 
 MAGIC has been implemented in Python3, Matlab, and R.
 
+<p align="center">
 ![MAGIC revealing gene-gene interactions](https://github.com/KrishnaswamyLab/MAGIC/blob/master/magic.gif "MAGIC revealing gene-gene interactions")
+Magic reveals the interaction between Vimentin (VIM), Cadherin-1 (CDH1), and Zinc finger E-box-binding homeobox 1 (ZEB1, encoded by colors).
+</p>
 
 ## Python3
 
