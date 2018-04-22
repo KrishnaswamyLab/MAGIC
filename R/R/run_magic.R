@@ -23,7 +23,6 @@ run_magic <- function(data, t_diffusion=0, lib_size_norm=TRUE,
                       pseudo_count=0.1,
                       npca=100, k=12,
                       ka=4, epsilon=1, rescale_percent=0) {
-
   if (lib_size_norm){
     print('Library size normalization')
     libsize <- rowSums(data)
@@ -131,12 +130,13 @@ run_magic <- function(data, t_diffusion=0, lib_size_norm=TRUE,
 #' @param make_plots create a plot of R2 with respect to t
 #' @return the optimal t and a vector of R2 values for all t
 compute_optimal_t <- function(data, diff_op,
-                             t_max=32, n_genes=ncol(data),
+                             t_max=15, n_genes=ncol(data),
                              make_plots=TRUE) {
   if (n_genes > ncol(data)) {
     print('n_genes too large, capping n_genes at maximum possible number of genes')
     n_genes = ncol(data)
   }
+  n_genes = min(n_genes,500)
   idx_genes <- sample(1:ncol(data), n_genes)
   data_imputed <- data[,idx_genes]
   data_imputed <- data.matrix(data_imputed)
