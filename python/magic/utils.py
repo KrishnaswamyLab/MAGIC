@@ -1,4 +1,8 @@
 import numbers
+try:
+    import pandas as pd
+except ImportError:
+    pass
 
 
 def check_positive(**params):
@@ -94,3 +98,17 @@ def check_between(v_min, v_max, **params):
         if params[p] < v_min or params[p] > v_max:
             raise ValueError("Expected {} between {} and {}, "
                              "got {}".format(p, v_min, v_max, params[p]))
+
+
+def convert_to_same_format(data, target_data):
+    try:
+        if isinstance(target_data, pd.SparseDataFrame):
+            data = pd.SparseDataFrame(data)
+        elif isinstance(target_data, pd.DataFrame):
+            data = pd.DataFrame(data)
+        data.columns = target_data.columns
+        data.index = target_data.index
+    except NameError:
+        # pandas not installed
+        pass
+    return data
