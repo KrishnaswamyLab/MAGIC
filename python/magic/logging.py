@@ -1,8 +1,9 @@
-from __future__ import absolute_import
+from __future__ import absolute_import, print_function
 from builtins import super, bytes
 import os
 import logging
 import time
+import sys
 
 
 __logger_name__ = "MAGIC"
@@ -14,11 +15,21 @@ class RSafeStdErr(object):
     This class writes directly to stderr to avoid this.
     """
 
-    def write(self, msg):
-        os.write(2, bytes(msg, 'utf8'))
+    def __init__(self):
+        try:
+            __IPYTHON__
+            self.write = self.write_ipython
+        except NameError:
+            self.write = self.write_r_safe
+
+    def write_ipython(self, msg):
+        print(msg, end='', file=sys.stdout)
+
+    def write_r_safe(self, msg):
+        os.write(1, bytes(msg, 'utf8'))
 
     def flush(self):
-        pass
+        sys.stdout.flush()
 
 
 class TaskLogger(object):
@@ -31,17 +42,22 @@ class TaskLogger(object):
         self.logger = logger
         super().__init__(*args, **kwargs)
 
+    def log(self, msg):
+        self.logger.info(msg)
+
     def start_task(self, name):
         self.tasks[name] = time.time()
-        self.logger.info("Calculating {}...".format(name))
+        self.log("Calculating {}...".format(name))
 
     def complete_task(self, name):
         try:
-            self.logger.info("Calculated {} in {:.2f} seconds.".format(
-                name, time.time() - self.tasks[name]))
+            runtime = time.time() - self.tasks[name]
+            if runtime >= 0.01:
+                self.log("Calculated {} in {:.2f} seconds.".format(
+                    name, runtime))
             del self.tasks[name]
         except KeyError:
-            self.logger.info("Calculated {}.".format(name))
+            self.log("Calculated {}.".format(name))
 
 
 def set_logging(level=1):
@@ -66,10 +82,10 @@ def set_logging(level=1):
         level_name = "DEBUG"
 
     logger = get_logger()
-    logger.task_logger = TaskLogger(logger)
     logger.setLevel(level)
-    logger.propagate = False
     if not logger.handlers:
+        logger.task_logger = TaskLogger(logger)
+        logger.propagate = False
         handler = logging.StreamHandler(stream=RSafeStdErr())
         handler.setFormatter(logging.Formatter(fmt='%(message)s'))
         logger.addHandler(handler)
