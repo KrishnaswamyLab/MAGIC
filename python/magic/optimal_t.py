@@ -32,7 +32,7 @@ def compute_optimal_t(data, diff_op, make_plots=True, t_max=32, n_genes=None):
         data_curr = data_imputed
         data_curr = np.divide(data_curr, np.broadcast_to(
             data_curr.sum(axis=0), data_curr.shape))
-        r2, rmse = rsquare(data_prev, data_curr)
+        r2 = rsquare(data_prev, data_curr)
         r2_vec[i] = 1 - r2
         if r2_vec[i] < 0.05:
             complete = True
@@ -75,6 +75,6 @@ def rsquare(y, f, c=True):
             print('Warning: Consider adding a constant term to your model')
             r2 = 0
 
-    rmse = np.sqrt(np.power((y - f).mean(), 2))
+    # rmse = np.sqrt(np.power((y - f).mean(), 2))
 
-    return r2, rmse
+    return r2  # , rmse
