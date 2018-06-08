@@ -19,3 +19,4 @@ python/*.so
 python/*.dll
 python/*.egg-info
 python/magic/__pycache__
+python/magic/*.pyc
