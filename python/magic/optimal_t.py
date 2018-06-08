@@ -2,7 +2,8 @@ import numpy as np
 from scipy import sparse
 
 
-def compute_optimal_t(data, diff_op, make_plots=True, t_max=32, n_genes=None):
+def compute_optimal_t(data, diff_op, make_plots=False, t_max=32, n_genes=None,
+                      early_stopping=True):
 
     if n_genes is None:
         n_genes = data.shape[1]
@@ -34,10 +35,11 @@ def compute_optimal_t(data, diff_op, make_plots=True, t_max=32, n_genes=None):
             data_curr.sum(axis=0), data_curr.shape))
         r2 = rsquare(data_prev, data_curr)
         r2_vec[i] = 1 - r2
-        if r2_vec[i] < 0.05:
+        if r2_vec[i] < 0.05 and not complete:
             complete = True
             t_opt = i + 2
-            break
+            if early_stopping:
+                break
         data_prev = data_curr
 
     if complete:
