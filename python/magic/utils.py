@@ -106,6 +106,9 @@ def convert_to_same_format(data, target_data):
             data = pd.SparseDataFrame(data)
         elif isinstance(target_data, pd.DataFrame):
             data = pd.DataFrame(data)
+        else:
+            # nothing to do
+            return data
         data.columns = target_data.columns
         data.index = target_data.index
     except NameError:

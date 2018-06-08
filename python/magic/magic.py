@@ -10,11 +10,11 @@ import numpy as np
 import graphtools
 from sklearn.base import BaseEstimator
 from sklearn.exceptions import NotFittedError
-from sklearn.decomposition import PCA
 import warnings
 import matplotlib.pyplot as plt
+from scipy import sparse, stats
+from functools import partial
 
-from .optimal_t import compute_optimal_t
 from .utils import check_int, check_positive, check_between, check_in, check_if_not, convert_to_same_format
 from .logging import set_logging, log_start, log_complete, log_info, log_debug
 
@@ -117,21 +117,23 @@ class MAGIC(BaseEstimator):
 
     References
     ----------
-    .. [1] TODO: Update reference Moon KR, van Dijk D, Zheng W, *et al.* (2017),
+    .. [1] TODO: Update reference Moon KR, van Dijk D, Zheng W, *et al.* (2017)
         *PHATE: A Dimensionality Reduction Method for Visualizing Trajectory
         Structures in High-Dimensional Biological Data*,
         `BioRxiv <http://biorxiv.org/content/early/2017/03/24/120378>`_.
     """
 
     def __init__(self, k=10, a=10, rescale=99,
-                 t='auto', n_pca=100,
+                 t='auto', n_pca=100, knn_dist='euclidean',
                  n_jobs=1, random_state=None, verbose=1):
         self.k = k
         self.a = a
         self.t = t
         self.n_pca = n_pca
+        self.knn_dist = knn_dist
         self.n_jobs = n_jobs
         self.random_state = random_state
+        self.rescale = rescale
 
         self.graph = None
         self.X = None
@@ -167,12 +169,20 @@ class MAGIC(BaseEstimator):
         check_int(k=self.k,
                   n_jobs=self.n_jobs)
         # TODO: epsilon
-        check_if_not(0, check_between, v_min=1,
-                     v_max=100, rescale=self.rescale)
+        check_between(v_min=0,
+                      v_max=100,
+                      rescale=self.rescale)
         check_if_not(None, check_positive, check_int,
                      n_pca=self.n_pca)
         check_if_not('auto', check_positive, check_int,
                      t=self.t)
+        check_in(['euclidean', 'precomputed', 'cosine', 'correlation',
+                  'cityblock', 'l1', 'l2', 'manhattan', 'braycurtis',
+                  'canberra', 'chebyshev', 'dice', 'hamming', 'jaccard',
+                  'kulsinski', 'mahalanobis', 'matching', 'minkowski',
+                  'rogerstanimoto', 'russellrao', 'seuclidean',
+                  'sokalmichener', 'sokalsneath', 'sqeuclidean', 'yule'],
+                 knn_dist=self.knn_dist)
 
     def fit(self, X):
         """Computes the diffusion operator
@@ -197,12 +207,6 @@ class MAGIC(BaseEstimator):
         except NameError:
             # anndata not installed
             pass
-        if self.X is not None and not np.all(X == self.X):
-            """
-            If the same data is used, we can reuse existing kernel and
-            diffusion matrices. Otherwise we have to recompute.
-            """
-            self.graph = None
 
         if self.knn_dist == 'precomputed':
             if isinstance(X, sparse.coo_matrix):
@@ -211,6 +215,7 @@ class MAGIC(BaseEstimator):
                 precomputed = "distance"
             else:
                 precomputed = "affinity"
+            log_info("Using precomputed {} matrix...".format(precomputed))
             n_pca = None
         else:
             precomputed = None
@@ -218,11 +223,13 @@ class MAGIC(BaseEstimator):
                 n_pca = None
             else:
                 n_pca = self.n_pca
-        if self.n_landmark is None or X.shape[0] <= self.n_landmark:
-            n_landmark = None
-        else:
-            n_landmark = self.n_landmark
 
+        if self.rescale != 0 and np.any(X < 0):
+            warnings.warn(
+                'Rescaling should not be performed on log-transformed (or'
+                ' other negative) values. Setting `rescale=0`.',
+                RuntimeWarning)
+            self.rescale = 0
         if self.graph is not None:
             if self.X is not None and not (X != self.X).sum() == 0:
                 """
@@ -237,7 +244,8 @@ class MAGIC(BaseEstimator):
                         precomputed=precomputed,
                         n_jobs=self.n_jobs, verbose=self.verbose, n_pca=n_pca,
                         thresh=1e-4, random_state=self.random_state)
-                    log_info("Using precomputed graph and diffusion operator...")
+                    log_info(
+                        "Using precomputed graph and diffusion operator...")
                 except ValueError as e:
                     # something changed that should have invalidated the graph
                     log_debug("Reset graph due to {}".format(str(e)))
@@ -260,7 +268,7 @@ class MAGIC(BaseEstimator):
 
         return self
 
-    def transform(self, X=None, t_max=100, plot_optimal_t=False, ax=None):
+    def transform(self, X=None, t_max=20, plot_optimal_t=False, ax=None):
         """Computes the position of the cells in the embedding space
 
         Parameters
@@ -278,7 +286,8 @@ class MAGIC(BaseEstimator):
             maximum t to test if `t` is set to 'auto'
 
         plot_optimal_t : boolean, optional, default: False
-            If true and `t` is set to 'auto', plot the R squared used to select t
+            If true and `t` is set to 'auto', plot the R squared used to
+            select t
 
         ax : matplotlib.axes.Axes, optional
             If given and `plot_optimal_t` is true, plot will be drawn
@@ -302,8 +311,9 @@ class MAGIC(BaseEstimator):
             X_magic = convert_to_same_format(X_magic, X)
             return X_magic
         else:
-            self.X_magic = self.impute(self.graph)
-            self.X_magic = self.rescale(self.X_magic, self.graph.data)
+            self.X_magic = self.impute(self.graph, t_max=t_max,
+                                       plot=plot_optimal_t, ax=ax)
+            self.X_magic = self.rescale_data(self.X_magic, self.graph.data)
             self.X_magic = convert_to_same_format(self.X_magic, self.X)
             return self.X_magic
 
@@ -334,35 +344,108 @@ class MAGIC(BaseEstimator):
         log_complete('MAGIC')
         return X_magic
 
-    def impute(self, X, t_max=20, plot=False):
+    def rsquare(self, data, data_prev):
+        """
+        Returns
+        -------
+
+        r2 : R squared value
+
+        data_curr : transformed data for next time
+        """
+        data_curr = np.divide(data, np.broadcast_to(
+            data.sum(axis=0), data.shape)).reshape(-1)
+        data_curr = data_curr - data_curr.min()
+        if data_prev is not None:
+            r = stats.linregress(data_prev, data_curr).rvalue
+            r2 = 1 - r**2
+        else:
+            r2 = None
+        return r2, data_curr
+
+    def impute(self, data, t_max=20, plot=False, ax=None):
         """Impute with PCA
 
         Parameters
         ----------
-        X : graphtools.Graph or array-like
+        data : graphtools.Graph, graphtools.Data or array-like
         """
-        if not isinstance(X, graphtools.base.Data):
-            X = graphtools.base.Data(X, n_pca=self.n_pca)
-        data = X.data_nu
-        if self.t == 'auto':
-            t = self.optimal_t(data, t_max=t_max, plot=plot_optimal_t, ax=ax)
-            log_info("Automatically selected t = {}".format(t))
-        else:
-            t = self.t
-        for _ in range(t):
-            data = self.diff_op.dot(data)
-        data = X.inverse_transform(data)
-        return data
+        if not isinstance(data, graphtools.base.Data):
+            data = graphtools.base.Data(data, n_pca=self.n_pca)
+        data_imputed = data.data_nu
 
-    def rescale(self, data, target_data):
+        if self.t == 'auto':
+            _, data_prev = self.rsquare(data_imputed, data_prev=None)
+            r2_vec = []
+            t_opt = None
+        else:
+            t_opt = self.t
+
+        log_start("imputation")
+        i = 0
+        while (t_opt is None and i < t_max) or (i < t_opt):
+            i += 1
+            data_imputed = self.diff_op.dot(data_imputed)
+            if self.t == 'auto':
+                r2, data_prev = self.rsquare(data_imputed, data_prev)
+                r2_vec.append(r2)
+                log_debug("{}: {}".format(i, r2_vec))
+                if r2 < 0.05 and t_opt is None:
+                    t_opt = i + 2
+                    log_info("Automatically selected t = {}".format(t_opt))
+        log_complete("imputation")
+
+        if plot:
+            # continue to t_max
+            log_start("optimal t plot")
+            if t_opt is None:
+                # never converged
+                warnings.warn("optimal t > t_max ({})".format(t_max),
+                              RuntimeWarning)
+            else:
+                data_overimputed = data_imputed
+                while i < t_max:
+                    i += 1
+                    data_overimputed = self.diff_op.dot(data_overimputed)
+                    r2, data_prev = self.rsquare(data_overimputed, data_prev)
+                    r2_vec.append(r2)
+
+            # create axis
+            if ax is None:
+                fig, ax = plt.subplots()
+                show = True
+            else:
+                show = False
+
+            # plot
+            x = np.arange(len(r2_vec)) + 1
+            ax.plot(x, r2_vec)
+            ax.plot(t_opt, r2_vec[t_opt - 1], 'ro', markersize=10,)
+            ax.plot(x, np.full(len(r2_vec), 0.05), 'k--')
+            ax.set_xlabel('t')
+            ax.set_ylabel('1 - R^2(data_{t},data_{t-1})')
+            ax.set_xlim([1, len(r2_vec)])
+            ax.set_ylim([0, 1])
+            plt.tight_layout()
+            log_complete("optimal t plot")
+            if show:
+                plt.show()
+
+        data_imputed = data.inverse_transform(data_imputed)
+        return data_imputed
+
+    def rescale_data(self, data, target_data):
         if self.rescale == 0:
             return data
-        elif np.any(data < 0):
-            warnings.warn('Rescaling should not be performed on log-transformed (or'
-                          ' other negative) values. Imputed data returned unscaled.',
-                          RuntimeWarning)
-            return data
         else:
+            if np.min(data) < -0.2:
+                warnings.warn("Imputed data has values less than -0.2 "
+                              "(min == {}). Rescaling not used.".format(
+                                  np.min(data)),
+                              RuntimeWarning)
+                return data
+            else:
+                data[data < 0] = 0
             M99 = np.percentile(target_data, self.rescale, axis=0)
             M100 = target_data.max(axis=0)
             indices = np.where(M99 == 0)[0]
@@ -375,46 +458,3 @@ class MAGIC(BaseEstimator):
             data = np.multiply(data, np.tile(max_ratio,
                                              (target_data.shape[0], 1)))
         return data
-
-    def optimal_t(self, data, plot=False,
-                  t_max=20, compute_t_n_genes=500):
-        """Find the optimal value of t
-
-        Selects the optimal value of t based on the R squared of the transformed data
-
-        Parameters
-        ----------
-        t_max : int, default: 20
-            Maximum value of t to test
-
-        plot : boolean, default: False
-            If true, plots the R squared and convergence point
-
-        ax : matplotlib.Axes, default: None
-            If plot=True and ax is not None, plots the R squared on the given axis
-            Otherwise, creates a new axis and displays the plot
-
-        Returns
-        -------
-        t_opt : int
-            The optimal value of t
-        """
-        log_start("optimal t")
-        t_opt, r2_vec = compute_optimal_t(data, self.diff_op, compute_t_make_plots=True,
-                                          t_max=20, compute_t_n_genes=500)
-        log_complete("optimal t")
-
-        if plot:
-            plt.figure()
-            plt.plot(np.arange(1, t_max + 1), r2_vec)
-            plt.plot(t_opt, r2_vec[t_opt - 1], 'ro', markersize=10,)
-            plt.plot(np.arange(1, t_max + 1),
-                     np.full(len(r2_vec), 0.05), 'k--')
-            plt.xlabel('t')
-            plt.ylabel('1 - R^2(data_{t},data_{t-1})')
-            plt.xlim([1, t_max])
-            plt.ylim([0, 1])
-            plt.tight_layout()
-    #     legend({'y' 'optimal t' 'y=0.05'});
-
-        return t_opt
