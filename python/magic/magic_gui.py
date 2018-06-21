@@ -75,7 +75,7 @@ class magic_gui(tk.Tk):
 
     def loadCSV(self):
         self.dataFileName = filedialog.askopenfilename(title='Load data file', initialdir='~/.magic/data')
-        if(self.dataFileName != ""):
+        if self.dataFileName:
             #pop up data options menu
             self.fileInfo = tk.Toplevel()
             self.fileInfo.title("Data options")
@@ -151,7 +151,7 @@ class magic_gui(tk.Tk):
 
     def loadMTX(self):
         self.dataFileName = filedialog.askopenfilename(title='Load data file', initialdir='~/.magic/data')
-        if(self.dataFileName != ""):
+        if self.dataFileName:
             #pop up data options menu
             self.fileInfo = tk.Toplevel()
             self.fileInfo.title("Data options")
@@ -206,7 +206,7 @@ class magic_gui(tk.Tk):
 
     def load10x(self):
         self.dataDir = filedialog.askdirectory(title='Select data directory', initialdir='~/.magic/data')
-        if(self.dataDir != None):
+        if self.dataDir:
             #pop up data options menu
             self.fileInfo = tk.Toplevel()
             self.fileInfo.title("Data options")
@@ -265,7 +265,7 @@ class magic_gui(tk.Tk):
 
     def load10xHDF5(self):
         self.dataFileName = filedialog.askopenfilename(title='Load data file', initialdir='~/.magic/data')
-        if(self.dataFileName != None):
+        if self.dataFileName:
             #pop up data options menu
             self.fileInfo = tk.Toplevel()
             self.fileInfo.title("Data options")
@@ -332,7 +332,7 @@ class magic_gui(tk.Tk):
 
     def loadPickle(self):
         self.dataFileName = filedialog.askopenfilename(title='Load saved session', initialdir='~/.magic/data')
-        if(self.dataFileName != ""):
+        if self.dataFileName:
             #pop up data options menu
             self.fileInfo = tk.Toplevel()
             self.fileInfo.title("Data options")
