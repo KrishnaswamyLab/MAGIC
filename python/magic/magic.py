@@ -248,7 +248,7 @@ class MAGIC(BaseEstimator):
                     self.graph.set_params(
                         decay=self.a, knn=self.k + 1, distance=self.knn_dist,
                         precomputed=precomputed,
-                        n_jobs=self.n_jobs, verbose=self.verbose, n_pca=self.n_pca,
+                        n_jobs=self.n_jobs, verbose=self.verbose, n_pca=n_pca,
                         thresh=1e-4, random_state=self.random_state)
                     log_info(
                         "Using precomputed graph and diffusion operator...")
