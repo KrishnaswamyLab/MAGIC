@@ -12,9 +12,10 @@ import graphtools
 from sklearn.base import BaseEstimator
 from sklearn.exceptions import NotFittedError
 import warnings
+import preprocessing.library_size_normalize as normalize
 import matplotlib.pyplot as plt
 from scipy import sparse, stats
-from functools import partial
+
 
 from .utils import check_int, check_positive, check_between, check_in, check_if_not, convert_to_same_format
 from .logging import set_logging, log_start, log_complete, log_info, log_debug
@@ -26,13 +27,12 @@ from .logging import set_logging, log_start, log_complete, log_info, log_debug
 #     pass
 
 
-class magic():
+class MAGIC(BaseEstimator):
     """MAGIC operator which performs dimensionality reduction.
 
     Markov Affinity-based Graph Imputation of Cells (MAGIC) is an 
     algorithm for denoising and transcript recover of single cells
     applied to single-cell RNA sequencing data.
-
 
     Parameters
     ----------
@@ -117,8 +117,7 @@ class magic():
   
     """
 
-    def __init__(self, k=10, a=10, rescale=99,
-                 t='auto', n_pca=100, knn_dist='euclidean',
+    def __init__(self, k=10, a=10, t='auto', n_pca=100, knn_dist='euclidean',
                  n_jobs=1, random_state=None, verbose=1):
         self.k = k
         self.a = a
@@ -127,7 +126,6 @@ class magic():
         self.knn_dist = knn_dist
         self.n_jobs = n_jobs
         self.random_state = random_state
-        self.rescale = rescale
 
         self.graph = None
         self.X = None
@@ -428,27 +426,27 @@ class magic():
         data_imputed = data.inverse_transform(data_imputed)
         return data_imputed
 
-    def rescale_data(self, data, target_data):
-        if self.rescale == 0:
-            return data
-        else:
-            if np.min(data) < -0.2:
-                warnings.warn("Imputed data has values less than -0.2 "
-                              "(min == {}). Rescaling not used.".format(
-                                  np.min(data)),
-                              RuntimeWarning)
-                return data
-            else:
-                data[data < 0] = 0
-            M99 = np.percentile(target_data, self.rescale, axis=0)
-            M100 = target_data.max(axis=0)
-            indices = np.where(M99 == 0)[0]
-            M99[indices] = M100[indices]
-            M99_new = np.percentile(data, self.rescale, axis=0)
-            M100_new = data.max(axis=0)
-            indices = np.where(M99_new == 0)[0]
-            M99_new[indices] = M100_new[indices]
-            max_ratio = np.divide(M99, M99_new)
-            data = np.multiply(data, np.tile(max_ratio,
-                                             (target_data.shape[0], 1)))
-        return data
+    # def rescale_data(self, data, target_data):
+    #     if self.rescale == 0:
+    #         return data
+    #     else:
+    #         if np.min(data) < -0.2:
+    #             warnings.warn("Imputed data has values less than -0.2 "
+    #                           "(min == {}). Rescaling not used.".format(
+    #                               np.min(data)),
+    #                           RuntimeWarning)
+    #             return data
+    #         else:
+    #             data[data < 0] = 0
+    #         M99 = np.percentile(target_data, self.rescale, axis=0)
+    #         M100 = target_data.max(axis=0)
+    #         indices = np.where(M99 == 0)[0]
+    #         M99[indices] = M100[indices]
+    #         M99_new = np.percentile(data, self.rescale, axis=0)
+    #         M100_new = data.max(axis=0)
+    #         indices = np.where(M99_new == 0)[0]
+    #         M99_new[indices] = M100_new[indices]
+    #         max_ratio = np.divide(M99, M99_new)
+    #         data = np.multiply(data, np.tile(max_ratio,
+    #                                          (target_data.shape[0], 1)))
+    #     return data
