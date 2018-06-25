@@ -187,6 +187,7 @@ class MAGIC(BaseEstimator):
                   'rogerstanimoto', 'russellrao', 'seuclidean',
                   'sokalmichener', 'sokalsneath', 'sqeuclidean', 'yule'],
                  knn_dist=self.knn_dist)
+        check_in(['strict', 'fast'], magic_type=self.magic_type)
 
 
     def fit(self, X):
