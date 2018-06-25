@@ -20,11 +20,11 @@ from scipy import sparse, stats
 from .utils import check_int, check_positive, check_between, check_in, check_if_not, convert_to_same_format
 from .logging import set_logging, log_start, log_complete, log_info, log_debug
 
-# try:
-#     import anndata
-# except ImportError:
-#     # anndata not installed
-#     pass
+try:
+    import anndata
+except ImportError:
+    # anndata not installed
+    pass
 
 
 class MAGIC(BaseEstimator):
@@ -74,6 +74,15 @@ class MAGIC(BaseEstimator):
         If an integer is given, it fixes the seed
         Defaults to the global `numpy` random number generator
 
+    magic_type : string, optional, default: 'strict'
+        The type of magic implementation used
+        'strict' ensures that the algorithm specified
+        in the Magic paper is used. (W^t * D)
+        'fast' is recommended when the dimensions of 
+        the Markov transition matrix W (to be powered
+        by t) are smaller than those of the preprocessed
+        data matrix D. (W^t) * D
+
     verbose : `int` or `boolean`, optional (default: 1)
         If `True` or `> 0`, print status messages
 
@@ -113,7 +122,7 @@ class MAGIC(BaseEstimator):
     """
 
     def __init__(self, k=10, a=10, t='auto', n_pca=100, knn_dist='euclidean',
-                 n_jobs=1, random_state=None, verbose=1):
+                 n_jobs=1, random_state=None, magic_type='strict', verbose=1):
         self.k = k
         self.a = a
         self.t = t
@@ -121,12 +130,14 @@ class MAGIC(BaseEstimator):
         self.knn_dist = knn_dist
         self.n_jobs = n_jobs
         self.random_state = random_state
+        self.magic_type = magic_type
 
         self.graph = None
         self.X = None
         self._check_params()
         self.verbose = verbose
         set_logging(verbose)
+
 
     @property
     def diff_op(self):
@@ -139,8 +150,9 @@ class MAGIC(BaseEstimator):
                                  "'fit' with appropriate arguments before "
                                  "using this method.")
 
+
     def _check_params(self):
-        """Check PHATE parameters
+        """Check MAGIC parameters
 
         This allows us to fail early - otherwise certain unacceptable
         parameter choices, such as mds='mmds', would only fail after
@@ -170,6 +182,7 @@ class MAGIC(BaseEstimator):
                   'rogerstanimoto', 'russellrao', 'seuclidean',
                   'sokalmichener', 'sokalsneath', 'sqeuclidean', 'yule'],
                  knn_dist=self.knn_dist)
+
 
     def fit(self, X):
         """Computes the diffusion operator
@@ -255,6 +268,7 @@ class MAGIC(BaseEstimator):
 
         return self
 
+
     def transform(self, X=None, t_max=20, plot_optimal_t=False, ax=None):
         """Computes the position of the cells in the embedding space
 
@@ -304,6 +318,7 @@ class MAGIC(BaseEstimator):
             self.X_magic = convert_to_same_format(self.X_magic, self.X)
             return self.X_magic
 
+
     def fit_transform(self, X, **kwargs):
         """Computes the diffusion operator and the position of the cells in the
         embedding space
@@ -331,6 +346,7 @@ class MAGIC(BaseEstimator):
         log_complete('MAGIC')
         return X_magic
 
+
     def rsquare(self, data, data_prev):
         """
         Returns
@@ -349,6 +365,7 @@ class MAGIC(BaseEstimator):
         else:
             r2 = None
         return r2, data_curr
+
 
     def impute(self, data, t_max=20, plot=False, ax=None):
         """Impute with PCA
