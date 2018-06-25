@@ -44,11 +44,6 @@ class MAGIC(BaseEstimator):
         sets decay rate of kernel tails.
         If None, alpha decaying kernel is not used
 
-    rescale : integer between 0 and 100, optional, default: 99
-        Percentile to rescale data to after running MAGIC
-        such that the output data has the same range and the
-        input data. If 0, no rescaling is performed
-
     t : int, optional, default: 'auto'
         power to which the diffusion operator is powered.
         This sets the level of diffusion. If 'auto', t is selected
@@ -426,27 +421,4 @@ class MAGIC(BaseEstimator):
         data_imputed = data.inverse_transform(data_imputed)
         return data_imputed
 
-    # def rescale_data(self, data, target_data):
-    #     if self.rescale == 0:
-    #         return data
-    #     else:
-    #         if np.min(data) < -0.2:
-    #             warnings.warn("Imputed data has values less than -0.2 "
-    #                           "(min == {}). Rescaling not used.".format(
-    #                               np.min(data)),
-    #                           RuntimeWarning)
-    #             return data
-    #         else:
-    #             data[data < 0] = 0
-    #         M99 = np.percentile(target_data, self.rescale, axis=0)
-    #         M100 = target_data.max(axis=0)
-    #         indices = np.where(M99 == 0)[0]
-    #         M99[indices] = M100[indices]
-    #         M99_new = np.percentile(data, self.rescale, axis=0)
-    #         M100_new = data.max(axis=0)
-    #         indices = np.where(M99_new == 0)[0]
-    #         M99_new[indices] = M100_new[indices]
-    #         max_ratio = np.divide(M99, M99_new)
-    #         data = np.multiply(data, np.tile(max_ratio,
-    #                                          (target_data.shape[0], 1)))
-    #     return data
+    
