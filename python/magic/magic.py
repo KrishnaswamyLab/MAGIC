@@ -16,7 +16,6 @@ import preprocessing.library_size_normalize as normalize
 import matplotlib.pyplot as plt
 from scipy import sparse, stats
 
-
 from .utils import check_int, check_positive, check_between, check_in, check_if_not, convert_to_same_format
 from .logging import set_logging, log_start, log_complete, log_info, log_debug
 
@@ -82,11 +81,10 @@ class MAGIC(BaseEstimator):
     magic_type : string, optional, default: 'strict'
         The type of magic implementation used
         'strict' ensures that the algorithm specified
-        in the Magic paper is used. (M^t * D)
-        'fast' is recommended when the dimensions of 
-        the Markov transition matrix M (to be powered
-        by t) are smaller than those of the preprocessed
-        data matrix D. (M^t) * D
+        in the Magic paper is used. (M^t) * D
+        'fast' is recommended when the dimensions of the 
+        preprocessed data matrix D is smaller than those 
+        of the Markov transition matrix M. M^(t-1)(M * D)
 
     verbose : `int` or `boolean`, optional (default: 1)
         If `True` or `> 0`, print status messages
@@ -307,7 +305,7 @@ class MAGIC(BaseEstimator):
         The cells embedded in a lower dimensional space using PHATE
         """
         if self.graph is None:
-            raise NotFittedError("This PHATE instance is not fitted yet. Call "
+            raise NotFittedError("This MAGIC instance is not fitted yet. Call "
                                  "'fit' with appropriate arguments before "
                                  "using this method.")
         elif X is not None and np.sum(X != self.X) > 0:
