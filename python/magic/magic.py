@@ -74,14 +74,19 @@ class MAGIC(BaseEstimator):
         If an integer is given, it fixes the seed
         Defaults to the global `numpy` random number generator
 
+    rescale : integer between 0 and 100, optional, default: 99
+        Percentile to rescale data to after running MAGIC
+        such that the output data has the same range and the
+        input data. If 0, no rescaling is performed
+
     magic_type : string, optional, default: 'strict'
         The type of magic implementation used
         'strict' ensures that the algorithm specified
-        in the Magic paper is used. (W^t * D)
+        in the Magic paper is used. (M^t * D)
         'fast' is recommended when the dimensions of 
-        the Markov transition matrix W (to be powered
+        the Markov transition matrix M (to be powered
         by t) are smaller than those of the preprocessed
-        data matrix D. (W^t) * D
+        data matrix D. (M^t) * D
 
     verbose : `int` or `boolean`, optional (default: 1)
         If `True` or `> 0`, print status messages
@@ -121,8 +126,9 @@ class MAGIC(BaseEstimator):
   
     """
 
-    def __init__(self, k=10, a=10, t='auto', n_pca=100, knn_dist='euclidean',
-                 n_jobs=1, random_state=None, magic_type='strict', verbose=1):
+    def __init__(self, k=10, a=10, t='auto', n_pca=100, 
+                 knn_dist='euclidean', n_jobs=1, random_state=None, 
+                 rescale=99, magic_type='strict', verbose=1):
         self.k = k
         self.a = a
         self.t = t
@@ -130,6 +136,7 @@ class MAGIC(BaseEstimator):
         self.knn_dist = knn_dist
         self.n_jobs = n_jobs
         self.random_state = random_state
+        self.rescale = rescale
         self.magic_type = magic_type
 
         self.graph = None
@@ -437,5 +444,31 @@ class MAGIC(BaseEstimator):
 
         data_imputed = data.inverse_transform(data_imputed)
         return data_imputed
+
+
+    def rescale_data(self, data, target_data):
+        if self.rescale == 0:
+            return data
+        else:
+            if np.min(data) < -0.2:
+                warnings.warn("Imputed data has values less than -0.2 "
+                              "(min == {}). Rescaling not used.".format(
+                                  np.min(data)),
+                              RuntimeWarning)
+                return data
+            else:
+                data[data < 0] = 0
+            M99 = np.percentile(target_data, self.rescale, axis=0)
+            M100 = target_data.max(axis=0)
+            indices = np.where(M99 == 0)[0]
+            M99[indices] = M100[indices]
+            M99_new = np.percentile(data, self.rescale, axis=0)
+            M100_new = data.max(axis=0)
+            indices = np.where(M99_new == 0)[0]
+            M99_new[indices] = M100_new[indices]
+            max_ratio = np.divide(M99, M99_new)
+            data = np.multiply(data, np.tile(max_ratio,
+                                             (target_data.shape[0], 1)))
+        return data
 
     
