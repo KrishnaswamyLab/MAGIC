@@ -1,9 +1,10 @@
 """
-Potential of Heat-diffusion for Affinity-based Trajectory Embedding (PHATE)
+Markov Affinity-based Graph Imputation of Cells (MAGIC)
 """
 
-# author: Daniel Burkhardt <daniel.burkhardt@yale.edu>
+# author: 
 # (C) 2017 Krishnaswamy Lab GPLv2
+
 from __future__ import print_function, division, absolute_import
 
 import numpy as np
@@ -18,22 +19,20 @@ from functools import partial
 from .utils import check_int, check_positive, check_between, check_in, check_if_not, convert_to_same_format
 from .logging import set_logging, log_start, log_complete, log_info, log_debug
 
-try:
-    import anndata
-except ImportError:
-    # anndata not installed
-    pass
+# try:
+#     import anndata
+# except ImportError:
+#     # anndata not installed
+#     pass
 
 
-class MAGIC(BaseEstimator):
+class magic():
     """MAGIC operator which performs dimensionality reduction.
 
-    TODO: description and citation
+    Markov Affinity-based Graph Imputation of Cells (MAGIC) is an 
+    algorithm for denoising and transcript recover of single cells
+    applied to single-cell RNA sequencing data.
 
-    Potential of Heat-diffusion for Affinity-based Trajectory Embedding
-    (PHATE) embeds high dimensional single-cell data into two or three
-    dimensions for visualization of biological progressions as described
-    in Moon et al, 2017 [1]_.
 
     Parameters
     ----------
@@ -115,12 +114,7 @@ class MAGIC(BaseEstimator):
     >>> # plt.scatter(tree_phate[:,0], tree_phate[:,1], c=tree_magic[:,0])
     >>> # plt.show()
 
-    References
-    ----------
-    .. [1] TODO: Update reference Moon KR, van Dijk D, Zheng W, *et al.* (2017)
-        *PHATE: A Dimensionality Reduction Method for Visualizing Trajectory
-        Structures in High-Dimensional Biological Data*,
-        `BioRxiv <http://biorxiv.org/content/early/2017/03/24/120378>`_.
+  
     """
 
     def __init__(self, k=10, a=10, rescale=99,
