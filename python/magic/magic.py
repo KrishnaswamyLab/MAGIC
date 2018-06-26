@@ -391,7 +391,7 @@ class MAGIC(BaseEstimator):
             data_imputed = powered_diff_op.dot(data_imputed)
 
         # fast magic
-        if t_opt is None: 
+        else:
             i = 0
             while (t_opt is None and i < t_max) or (i < t_opt):
                 i += 1
