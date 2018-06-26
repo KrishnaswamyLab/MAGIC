@@ -78,13 +78,6 @@ class MAGIC(BaseEstimator):
         such that the output data has the same range and the
         input data. If 0, no rescaling is performed
 
-    magic_type : string, optional, default: 'strict'
-        The type of magic implementation used
-        'strict' ensures that the algorithm specified
-        in the Magic paper is used. (M^t) * D
-        'fast' is recommended when the dimensions of the 
-        preprocessed data matrix D is smaller than those 
-        of the Markov transition matrix M. M^(t-1)(M * D)
 
     verbose : `int` or `boolean`, optional (default: 1)
         If `True` or `> 0`, print status messages
@@ -126,7 +119,7 @@ class MAGIC(BaseEstimator):
 
     def __init__(self, k=10, a=10, t='auto', n_pca=100, 
                  knn_dist='euclidean', n_jobs=1, random_state=None, 
-                 rescale=99, magic_type='strict', verbose=1):
+                 rescale=99, verbose=1):
         self.k = k
         self.a = a
         self.t = t
@@ -135,7 +128,6 @@ class MAGIC(BaseEstimator):
         self.n_jobs = n_jobs
         self.random_state = random_state
         self.rescale = rescale
-        self.magic_type = magic_type
 
         self.graph = None
         self.X = None
@@ -187,7 +179,7 @@ class MAGIC(BaseEstimator):
                   'rogerstanimoto', 'russellrao', 'seuclidean',
                   'sokalmichener', 'sokalsneath', 'sqeuclidean', 'yule'],
                  knn_dist=self.knn_dist)
-        check_in(['strict', 'fast'], magic_type=self.magic_type)
+        
 
 
     def fit(self, X):
@@ -289,7 +281,7 @@ class MAGIC(BaseEstimator):
             `knn_dist` is 'precomputed', `data` should be a n_samples x
             n_samples distance or affinity matrix
 
-        t_max : int, optional, default: 100
+        t_max : int, optional, default: 20
             maximum t to test if `t` is set to 'auto'
 
         plot_optimal_t : boolean, optional, default: False
@@ -392,17 +384,24 @@ class MAGIC(BaseEstimator):
             t_opt = self.t
 
         log_start("imputation")
-        i = 0
-        while (t_opt is None and i < t_max) or (i < t_opt):
-            i += 1
-            data_imputed = self.diff_op.dot(data_imputed)
-            if self.t == 'auto':
-                r2, data_prev = self.rsquare(data_imputed, data_prev)
-                r2_vec.append(r2)
-                log_debug("{}: {}".format(i, r2_vec))
-                if r2 < 0.05 and t_opt is None:
-                    t_opt = i + 2
-                    log_info("Automatically selected t = {}".format(t_opt))
+
+        if self.magic_type == 'strict'
+            i = 0
+            while (t_opt is None and i < t_max) or (i < t_opt):
+                i += 1
+                data_imputed = self.diff_op.dot(data_imputed)
+                if self.t == 'auto':
+                    r2, data_prev = self.rsquare(data_imputed, data_prev)
+                    r2_vec.append(r2)
+                    log_debug("{}: {}".format(i, r2_vec))
+                    if r2 < 0.05 and t_opt is None:
+                        t_opt = i + 2
+                        log_info("Automatically selected t = {}".format(t_opt))
+        
+        elif self.magic_type == 'fast'
+            while (t_opt is None and i < t_max) or (i < t_opt):
+
+
         log_complete("imputation")
 
         if plot:
