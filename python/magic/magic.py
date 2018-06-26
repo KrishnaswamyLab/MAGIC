@@ -385,7 +385,13 @@ class MAGIC(BaseEstimator):
 
         log_start("imputation")
 
-        if self.magic_type == 'strict'
+         # classic magic 
+        if (t_opt is not None) and (self.diff_op.shape[1] == data_imputed.shape[1]):
+            powered_diff_op = np.linalg.matrix_power(self.diff_op, t_opt)
+            data_imputed = powered_diff_op.dot(data_imputed)
+
+        # fast magic
+        if t_opt is None: 
             i = 0
             while (t_opt is None and i < t_max) or (i < t_opt):
                 i += 1
@@ -398,10 +404,6 @@ class MAGIC(BaseEstimator):
                         t_opt = i + 2
                         log_info("Automatically selected t = {}".format(t_opt))
         
-        elif self.magic_type == 'fast'
-            while (t_opt is None and i < t_max) or (i < t_opt):
-
-
         log_complete("imputation")
 
         if plot:
