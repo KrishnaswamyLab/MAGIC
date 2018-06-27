@@ -12,10 +12,11 @@ import graphtools
 from sklearn.base import BaseEstimator
 from sklearn.exceptions import NotFittedError
 import warnings
-import preprocessing.library_size_normalize as normalize
 import matplotlib.pyplot as plt
 from scipy import sparse, stats
 
+
+from .preprocessing import library_size_normalize as normalize 
 from .utils import check_int, check_positive, check_between, check_in, check_if_not, convert_to_same_format
 from .logging import set_logging, log_start, log_complete, log_info, log_debug
 
