@@ -98,7 +98,7 @@ data <- sqrt(data)
 
 ### Running MAGIC
 
-Running MAGIC is as simple as running the `magic` function. We use `rescale_percent=99` to make the output range comparable to the input, but this is not strictly necessary for downstream analysis.
+Running MAGIC is as simple as running the `magic` function.
 
 ```{r run_magic}
 # run MAGIC
