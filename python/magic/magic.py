@@ -171,8 +171,7 @@ class MAGIC(BaseEstimator):
         ValueError : unacceptable choice of parameters
         """
         check_positive(k=self.k,
-                       a=self.a,
-                       n_pca=self.n_pca)
+                       a=self.a)
         check_int(k=self.k,
                   n_jobs=self.n_jobs)
         # TODO: epsilon
@@ -226,7 +225,7 @@ class MAGIC(BaseEstimator):
             n_pca = None
         else:
             precomputed = None
-            if X.shape[1] <= self.n_pca:
+            if self.n_pca == None or X.shape[1] <= self.n_pca:
                 n_pca = None
             else:
                 n_pca = self.n_pca
@@ -316,19 +315,6 @@ class MAGIC(BaseEstimator):
             raise NotFittedError("This MAGIC instance is not fitted yet. Call "
                                  "'fit' with appropriate arguments before "
                                  "using this method.")
-        store_result = True
-        if X is not None and np.sum(X != self.X) > 0:
-            store_result = False
-            graph = graphtools.base.Data(X, n_pca=self.n_pca)
-            warnings.warn(UserWarning, "Running MAGIC.transform on different "
-                          "data to that which was used for MAGIC.fit may not "
-                          "produce sensible output, unless it comes from the "
-                          "same manifold.")
-        else:
-            X = self.X
-            graph = self.graph
-            store_result = True
-
         if genes is None and isinstance(X, (pd.SparseDataFrame,
                                             sparse.spmatrix)) and \
                 np.prod(X.shape) > 5000 * 20000:
@@ -344,17 +330,24 @@ class MAGIC(BaseEstimator):
         elif genes is not None:
             genes = np.array([genes]).flatten()
             if not issubclass(genes.dtype.type, numbers.Integral):
-                if not isinstance(X, pd.DataFrame):
-                    raise ValueError("Gene names can only be given with "
-                                     "pd.DataFrame input. Got genes={},"
-                                     "data is {}".format(
-                                         genes,
-                                         type(X).__name__))
                 # gene names
                 if not np.all(np.isin(genes, X.columns)):
                     warnings.warn("genes {} missing from input data".format(
                         genes[~np.isin(genes, X.columns)]))
                 genes = np.argwhere(np.isin(genes, X.columns)).reshape(-1)
+
+        store_result = True
+        if X is not None and np.sum(X != self.X) > 0:
+            store_result = False
+            graph = graphtools.base.Data(X, n_pca=self.n_pca)
+            warnings.warn(UserWarning, "Running MAGIC.transform on different "
+                          "data to that which was used for MAGIC.fit may not "
+                          "produce sensible output, unless it comes from the "
+                          "same manifold.")
+        else:
+            X = self.X
+            graph = self.graph
+            store_result = True
 
         if store_result and self.X_magic is not None:
             X_magic = self.X_magic
