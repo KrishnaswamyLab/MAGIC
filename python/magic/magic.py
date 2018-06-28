@@ -82,12 +82,6 @@ class MAGIC(BaseEstimator):
         If an integer is given, it fixes the seed
         Defaults to the global `numpy` random number generator
 
-    rescale : integer between 0 and 100, optional, default: 99
-        Percentile to rescale data to after running MAGIC
-        such that the output data has the same range and the
-        input data. If 0, no rescaling is performed
-
-
     verbose : `int` or `boolean`, optional (default: 1)
         If `True` or `> 0`, print status messages
 
@@ -131,7 +125,7 @@ class MAGIC(BaseEstimator):
 
     def __init__(self, k=10, a=10, t='auto', n_pca=100,
                  knn_dist='euclidean', n_jobs=1, random_state=None,
-                 rescale=99, verbose=1):
+                 verbose=1):
         self.k = k
         self.a = a
         self.t = t
@@ -139,7 +133,6 @@ class MAGIC(BaseEstimator):
         self.knn_dist = knn_dist
         self.n_jobs = n_jobs
         self.random_state = random_state
-        self.rescale = rescale
 
         self.graph = None
         self.X = None
@@ -176,8 +169,7 @@ class MAGIC(BaseEstimator):
                   n_jobs=self.n_jobs)
         # TODO: epsilon
         check_between(v_min=0,
-                      v_max=100,
-                      rescale=self.rescale)
+                      v_max=100)
         check_if_not(None, check_positive, check_int,
                      n_pca=self.n_pca)
         check_if_not('auto', check_positive, check_int,
@@ -230,12 +222,6 @@ class MAGIC(BaseEstimator):
             else:
                 n_pca = self.n_pca
 
-        if self.rescale != 0 and np.any(X < 0):
-            warnings.warn(
-                'Rescaling should not be performed on log-transformed (or'
-                ' other negative) values. Setting `rescale=0`.',
-                RuntimeWarning)
-            self.rescale = 0
         if self.graph is not None:
             if self.X is not None and not (X != self.X).sum() == 0:
                 """
@@ -355,8 +341,6 @@ class MAGIC(BaseEstimator):
 
         # return selected genes
         X_magic = graph.inverse_transform(X_magic, columns=genes)
-        # rescale
-        X_magic = self.rescale_data(X_magic, select_cols(graph.data, genes))
         # convert back to pandas dataframe, if necessary
         X_magic = convert_to_same_format(X_magic, X, columns=genes)
         return X_magic
@@ -493,27 +477,3 @@ class MAGIC(BaseEstimator):
 
         return data_imputed
 
-    def rescale_data(self, data, target_data):
-        if self.rescale == 0:
-            return data
-        else:
-            if np.min(data) < -0.2:
-                warnings.warn("Imputed data has values less than -0.2 "
-                              "(min == {}). Rescaling not used.".format(
-                                  np.min(data)),
-                              RuntimeWarning)
-                return data
-            else:
-                data[data < 0] = 0
-            M99 = np.percentile(target_data, self.rescale, axis=0)
-            M100 = target_data.max(axis=0)
-            indices = np.where(M99 == 0)[0]
-            M99[indices] = M100[indices]
-            M99_new = np.percentile(data, self.rescale, axis=0)
-            M100_new = data.max(axis=0)
-            indices = np.where(M99_new == 0)[0]
-            M99_new[indices] = M100_new[indices]
-            max_ratio = np.divide(M99, M99_new)
-            data = np.multiply(data, np.tile(max_ratio,
-                                             (target_data.shape[0], 1)))
-        return data
