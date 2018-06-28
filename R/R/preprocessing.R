@@ -19,8 +19,15 @@ library.size.normalize <- function(data, verbose=FALSE) {
       nrow(data), " cells"
     ))
   }
+  if (methods::is(data, "data.frame")) {
+    data <- as.matrix(data)
+    dataframe <- TRUE
+  } else {
+    dataframe <- FALSE
+  }
   library_size <- Matrix::rowSums(data)
   median_transcript_count <- stats::median(library_size)
   data_norm <- median_transcript_count * data / library_size
+  if (dataframe) data_norm <- as.data.frame(data_norm)
   data_norm
 }
