@@ -245,6 +245,10 @@ class MAGIC(BaseEstimator):
 
         self.X = X
 
+        if np.any(np.array(X.sum(0))) == 0:
+            warnings.warn("Input matrix contains unexpressed genes. "
+                          "Please remove them prior to running MAGIC.")
+
         if self.graph is None:
             # reset X_magic in case it was previously set
             self.X_magic = None
