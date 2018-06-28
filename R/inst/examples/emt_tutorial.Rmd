@@ -42,6 +42,7 @@ We'll install a couple more tools for this tutorial.
 ```{r eval=FALSE}
 if (!require(viridis)) install.packages("viridis")
 if (!require(ggplot2)) install.packages("ggplot2")
+if (!require(readr)) install.packages("readr")
 if (!require(phateR)) install.packages("phateR")
 ```
 
@@ -67,7 +68,7 @@ The example data is located in the MAGIC Github repository.
 
 ```{r}
 # load data
-data <- read_csv('../../../data/HMLE_TGFb_day_8_10.csv.zip')
+data <- read_csv("../../../data/HMLE_TGFb_day_8_10.csv.gz")
 str(data)
 ```
 
