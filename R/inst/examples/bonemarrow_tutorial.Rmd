@@ -44,6 +44,7 @@ We'll install a couple more tools for this tutorial.
 ```{r eval=FALSE}
 if (!require(viridis)) install.packages("viridis")
 if (!require(ggplot2)) install.packages("ggplot2")
+if (!require(readr)) install.packages("readr")
 if (!require(phateR)) install.packages("phateR")
 ```
 
@@ -60,6 +61,7 @@ We load the Rmagic package and a few others for convenience functions.
 ```{r}
 library(Rmagic)
 library(ggplot2)
+library(readr)
 library(viridis)
 library(phateR)
 ```
@@ -68,9 +70,9 @@ The example data is located in the MAGIC Github repository.
 
 ```{r}
 # load data
-clusters <- read.csv("../../../data/MAP.csv", row.names=NULL, header=FALSE,
-                     col.names=c('wells', 'clusters'))
-bmmsc <- read.csv("../../../data/BMMC_myeloid.csv.gz", row.names=NULL)
+clusters <- read_csv("https://raw.githubusercontent.com/KrishnaswamyLab/PHATE/master/data/MAP.csv", 
+                     col_names=c('wells', 'clusters'))
+bmmsc <- read_csv("https://github.com/KrishnaswamyLab/PHATE/raw/master/data/BMMC_myeloid.csv.gz")
 bmmsc <- bmmsc[,2:ncol(bmmsc)]
 bmmsc[1:5,1:10]
 ```
