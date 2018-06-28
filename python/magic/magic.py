@@ -342,7 +342,9 @@ class MAGIC(BaseEstimator):
             if not issubclass(genes.dtype.type, numbers.Integral):
                 if not isinstance(X, pd.DataFrame):
                     raise ValueError("Gene names can only be given with "
-                                     "pd.DataFrame input. Got {}".format(
+                                     "pd.DataFrame input. Got genes={},"
+                                     "data is {}".format(
+                                         genes,
                                          type(X).__name__))
                 # gene names
                 if not np.all(np.isin(genes, X.columns)):
