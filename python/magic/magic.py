@@ -2,7 +2,7 @@
 Markov Affinity-based Graph Imputation of Cells (MAGIC)
 """
 
-# author: Scott Gigante <scott.gigante@yale.edu>, Daniel Dager <daniel.dager@yale.edu>
+# authors: Scott Gigante <scott.gigante@yale.edu>, Daniel Dager <daniel.dager@yale.edu>
 # (C) 2017 Krishnaswamy Lab GPLv2
 
 from __future__ import print_function, division, absolute_import
@@ -24,8 +24,7 @@ from .utils import (check_int,
                     check_in,
                     check_if_not,
                     convert_to_same_format,
-                    matrix_is_equivalent,
-                    select_cols)
+                    matrix_is_equivalent)
 from .logging import set_logging, log_start, log_complete, log_info, log_debug
 
 try:
@@ -328,13 +327,13 @@ class MAGIC(BaseEstimator):
             n_pca = None
         else:
             precomputed = None
-            if self.n_pca == None or X.shape[1] <= self.n_pca:
+            if self.n_pca is None or X.shape[1] <= self.n_pca:
                 n_pca = None
             else:
                 n_pca = self.n_pca
 
         if self.graph is not None:
-            if self.X is not None and not (X != self.X).sum() == 0:
+            if self.X is not None and not matrix_is_equivalent(X, self.X):
                 """
                 If the same data is used, we can reuse existing kernel and
                 diffusion matrices. Otherwise we have to recompute.
@@ -434,7 +433,7 @@ class MAGIC(BaseEstimator):
                 genes = np.argwhere(np.isin(genes, X.columns)).reshape(-1)
 
         store_result = True
-        if X is not None and np.sum(X != self.X) > 0:
+        if X is not None and not matrix_is_equivalent(X, self.X):
             store_result = False
             graph = graphtools.base.Data(X, n_pca=self.n_pca)
             warnings.warn(UserWarning, "Running MAGIC.transform on different "
@@ -510,7 +509,8 @@ class MAGIC(BaseEstimator):
             r2 = None
         return r2, data
 
-    def impute(self, data, t_max=20, plot=False, ax=None, max_genes_compute_t=500):
+    def impute(self, data, t_max=20, plot=False, ax=None,
+               max_genes_compute_t=500):
         """Impute with PCA
 
         Parameters
@@ -558,7 +558,8 @@ class MAGIC(BaseEstimator):
         # (so as to allow for the calculation of the optimal t value)
         else:
             i = 0
-            while (t_opt is None and i < t_max) or (i < t_opt):
+            while (t_opt is None and i < t_max) or \
+                    (t_opt is not None and i < t_opt):
                 i += 1
                 data_imputed = self.diff_op.dot(data_imputed)
                 if self.t == 'auto':
