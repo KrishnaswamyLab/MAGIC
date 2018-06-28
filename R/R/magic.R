@@ -101,7 +101,12 @@ magic <- function(data,
     gene_names <- colnames(data)
   } else {
     # character vector
-    gene_names <- colnames(data)[colnames(data) %in% genes]
+    if (!all(genes %in% colnames(data))) {
+      warn(paste0("Genes ", genes[!(genes %in% colnames(data))],
+                  " not found.", collapse=", "))
+    }
+    genes <- colnames(data) %in% genes
+    gene_names <- colnames(data)[genes]
   }
 
   # store parameters
@@ -162,11 +167,9 @@ magic <- function(data,
 #' data_magic <- magic(magic_testdata)
 #' print(data_magic)
 #' ## MAGIC with elements
-#' ## $result : (3000, 2)
+#' ## $result : (500, 197)
 #' ## $operator : Python MAGIC operator
-#' ## $params : list with elements (data, k, alpha, t, n.landmark, ndim,
-#' ##                               potential.method, npca, mds.method,
-#' ##                               knn.dist.method, mds.dist.method)
+#' ## $params : list with elements (data, k, alpha, t, npca, knn.dist.method, rescale_percent)
 #'
 #' }
 #' @rdname print
@@ -174,8 +177,8 @@ magic <- function(data,
 #' @export
 print.magic <- function(x, ...) {
   result <- paste0("MAGIC with elements\n",
-                   "  $result : (", nrow(x$embedding), ", ",
-                   ncol(x$embedding), ")\n",
+                   "  $result : (", nrow(x$result), ", ",
+                   ncol(x$result), ")\n",
                    "  $operator : Python MAGIC operator\n",
                    "  $params : list with elements (",
                    paste(names(x$params), collapse = ", "), ")")
