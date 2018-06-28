@@ -45,10 +45,10 @@ class MAGIC(BaseEstimator):
     Parameters
     ----------
 
-    k : int, optional, default: 10
+    k : int, optional, default: 5
         number of nearest neighbors on which to build kernel
 
-    a : int, optional, default: 10
+    a : int, optional, default: 15
         sets decay rate of kernel tails.
         If None, alpha decaying kernel is not used
 
@@ -123,7 +123,7 @@ class MAGIC(BaseEstimator):
 
     """
 
-    def __init__(self, k=10, a=10, t='auto', n_pca=100,
+    def __init__(self, k=5, a=15, t='auto', n_pca=100,
                  knn_dist='euclidean', n_jobs=1, random_state=None,
                  verbose=1):
         self.k = k
@@ -198,10 +198,10 @@ class MAGIC(BaseEstimator):
         Parameters
         ----------
 
-        k : int, optional, default: 10
+        k : int, optional, default: 5
             number of nearest neighbors on which to build kernel
 
-        a : int, optional, default: 10
+        a : int, optional, default: 15
             sets decay rate of kernel tails.
             If None, alpha decaying kernel is not used
 
