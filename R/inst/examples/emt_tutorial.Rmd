@@ -22,11 +22,33 @@ Biorxiv (preprint) February 2017. DOI: doi.org/10.1101/111591
 
 ### Installation
 
-In R, run these commands to install MAGIC and all dependencies :
+To use MAGIC, you will need to install both the R and Python packages.
+
+In R, run these commands to install MAGIC and all dependencies:
 
 ```{r eval=FALSE}
 if (!require(devtools)) install.packages(devtools)
-devtools::install_github("KrishnaswamyLab/magic/R")
+if (!require(Rmagic)) devtools::install_github("KrishnaswamyLab/magic/R")
+```
+
+In a terminal, run the following command to install the Python repository.
+
+```{bash eval=False}
+pip install --user git+git://github.com/KrishnaswamyLab/MAGIC.git#subdirectory=python
+```
+
+We'll install a couple more tools for this tutorial.
+
+```{r eval=FALSE}
+if (!require(viridis)) install.packages("viridis")
+if (!require(ggplot2)) install.packages("ggplot2")
+if (!require(phateR)) install.packages("phateR")
+```
+
+If you have never used PHATE, you should also install PHATE from the command line as follows:
+
+```{bash eval=FALSE}
+pip install --user phate
 ```
 
 ### Running MAGIC
@@ -38,6 +60,7 @@ library(Rmagic)
 library(readr)
 library(ggplot2)
 library(viridis)
+library(phateR)
 ```
 
 The example data is located in the MAGIC Github repository.
@@ -48,11 +71,11 @@ data <- read_csv('../../../data/HMLE_TGFb_day_8_10.csv.zip')
 str(data)
 ```
 
-Running MAGIC is as simple as running the `run_magic` function. We use `rescale_percent=0.99` to make the output range comparable to the input, but this is not strictly necessary for downstream analysis.
+Running MAGIC is as simple as running the `run_magic` function. We use `rescale_percent=99` to make the output range comparable to the input, but this is not strictly necessary for downstream analysis.
 
 ```{r}
 # run MAGIC
-data_MAGIC <- run_magic(data, rescale_percent=0.99)
+data_MAGIC <- run_magic(data, genes=c("VIM", "CDH1", "ZEB1"), rescale_percent=0.99)
 ```
 
 ### Results
@@ -73,4 +96,23 @@ ggplot(data_MAGIC) +
 ggsave('EMT_data_R_after_magic.png', width=5, height=5)
 ```
 
-As you can see, the gene-gene relationships are much clearer after MAGIC. That's it, we're done!
+As you can see, the gene-gene relationships are much clearer after MAGIC. We can look at the entire smoothed matrix with `genes='all_genes'`, passing the original result to the argument `init` to avoid recomputing intermediate steps.
+
+```{r}
+data_MAGIC <- magic(data, genes="all_genes", rescale_percent=99, init=data_MAGIC)
+as.matrix(data_MAGIC)[1:5, 1:10]
+```
+
+### Visualizing MAGIC values on PHATE
+
+We can visualize the results of MAGIC on PHATE as follows.
+
+```{r}
+data_PHATE <- phate(data)
+ggplot(data_PHATE) +
+  geom_point(aes(x=PHATE1, y=PHATE2, color=data_MAGIC$result$VIM)) +
+  scale_color_viridis() +
+  labs(color="VIM")
+ggsave('EMT_data_R_phate_colored_by_magic.png', width=5, height=5)
+```
+

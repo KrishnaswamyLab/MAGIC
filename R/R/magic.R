@@ -175,9 +175,9 @@ magic <- function(data,
 #'
 #' }
 #' @rdname print
-#' @method print phate
+#' @method print magic
 #' @export
-print.phate <- function(x, ...) {
+print.magic <- function(x, ...) {
   result <- paste0("MAGIC with elements\n",
                    "  $result : (", nrow(x$embedding), ", ",
                    ncol(x$embedding), ")\n",
@@ -206,9 +206,9 @@ print.phate <- function(x, ...) {
 #'
 #' }
 #' @rdname summary
-#' @method summary phate
+#' @method summary magic
 #' @export
-summary.phate <- function(object, ...) {
+summary.magic <- function(object, ...) {
   summary(object$result)
 }
 
@@ -219,9 +219,9 @@ summary.phate <- function(object, ...) {
 #' @param x A fitted MAGIC object
 #' @param ... Arguments for as.matrix()
 #' @rdname as.matrix
-#' @method as.matrix phate
+#' @method as.matrix magic
 #' @export
-as.matrix.phate <- function(x, ...) {
+as.matrix.magic <- function(x, ...) {
   x$result
 }
 #' Convert a MAGIC object to a data.frame
@@ -231,9 +231,33 @@ as.matrix.phate <- function(x, ...) {
 #' @param x A fitted MAGIC object
 #' @param ... Arguments for as.data.frame()
 #' @rdname as.data.frame
-#' @method as.data.frame phate
+#' @method as.data.frame magic
 #' @export
-as.data.frame.phate <- function(x, ...) {
+as.data.frame.magic <- function(x, ...) {
   as.data.frame(as.matrix(x), ...)
 }
 
+
+#' Convert a MAGIC object to a data.frame for ggplot
+#'
+#' Passes the smoothed data matrix to ggplot
+#' @importFrom ggplot2 ggplot
+#' @param data A fitted MAGIC object
+#' @param ... Arguments for ggplot()
+#' @examples
+#' if (reticulate::py_module_available("phate") && require(ggplot2)) {
+#'
+#' # data(tree.data)
+#' # We use a smaller tree to make examples run faster
+#' data(tree.data.small)
+#' phate.tree <- phate(tree.data.small$data)
+#' ggplot(phate.tree, aes(x=PHATE1, y=PHATE2, color=tree.data.small$branches)) +
+#'   geom_point()
+#'
+#' }
+#' @rdname ggplot
+#' @method ggplot magic
+#' @export
+ggplot.magic <- function(data, ...) {
+  ggplot2::ggplot(as.data.frame(data), ...)
+}
