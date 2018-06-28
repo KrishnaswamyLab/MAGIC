@@ -225,7 +225,7 @@ class MAGIC(BaseEstimator):
             n_pca = None
         else:
             precomputed = None
-            if X.shape[1] <= self.n_pca:
+            if n_pca = None or X.shape[1] <= self.n_pca:
                 n_pca = None
             else:
                 n_pca = self.n_pca

@@ -16,7 +16,10 @@ fast_magic_operator = magic.MAGIC(t='auto', a=20, k=10)
 classic_magic_operator = magic.MAGIC(t=10, a=20, k=10, n_pca=None)
 
 fast_magic = fast_magic_operator.fit_transform(scdata_norm)
+assert scdata_norm.shape == fast_magic.shape
+
 classic_magic = classic_magic_operator.fit_transform(scdata_norm)
+assert scdata_norm.shape == classic_magic.shape 
 
 
 
