@@ -121,7 +121,6 @@ magic <- function(data,
   if (!methods::is(data, "Matrix")) {
     data <- as.matrix(data)
   }
-  print(genes)
   if (is.null(genes) || is.na(genes)) {
     genes <- NULL
     gene_names <- colnames(data)
@@ -177,6 +176,7 @@ magic <- function(data,
   result <- operator$fit_transform(data,
                                    genes = genes,
                                    t_max = t.max)
+  result <- as.data.frame(result)
   colnames(result) <- gene_names
   rownames(result) <- rownames(data)
   result <- list("result" = result, "operator" = operator,
@@ -253,7 +253,7 @@ summary.magic <- function(object, ...) {
 #' @method as.matrix magic
 #' @export
 as.matrix.magic <- function(x, ...) {
-  x$result
+  as.matrix(as.data.frame(x))
 }
 #' Convert a MAGIC object to a data.frame
 #'
@@ -265,7 +265,7 @@ as.matrix.magic <- function(x, ...) {
 #' @method as.data.frame magic
 #' @export
 as.data.frame.magic <- function(x, ...) {
-  as.data.frame(as.matrix(x), ...)
+  x$result
 }
 
 
