@@ -24,11 +24,19 @@ Biorxiv (preprint) February 2017. DOI: doi.org/10.1101/111591
 
 ### Installation
 
+To use MAGIC, you will need to install both the R and Python packages.
+
 In R, run these commands to install MAGIC and all dependencies:
 
 ```{r eval=FALSE}
 if (!require(devtools)) install.packages(devtools)
 if (!require(Rmagic)) devtools::install_github("KrishnaswamyLab/magic/R")
+```
+
+In a terminal, run the following command to install the Pythonn repository.
+
+```{bash eval=False}
+pip install --user git+git://github.com/KrishnaswamyLab/MAGIC.git#subdirectory=python
 ```
 
 We'll install a couple more tools for this tutorial.
@@ -44,7 +52,6 @@ If you have never used PHATE, you should also install PHATE from the command lin
 ```{bash eval=FALSE}
 pip install --user phate
 ```
-
 
 ### Running MAGIC
 
@@ -71,16 +78,15 @@ bmmsc[1:5,1:10]
 We should normalize the data prior to running MAGIC. For scRNAseq, it is always a good idea to library size normalize and then either log or square root transform the data. Here, we use square root transform.
 
 ```{r}
-bmmsc <- phateR::library.size.normalize(bmmsc)
+bmmsc <- Rmagic::library.size.normalize(bmmsc)
 bmmsc <- sqrt(bmmsc)
 ```
 
-
-Running MAGIC is as simple as running the `run_magic` function. We use `rescale_percent=0.99` to make the output range comparable to the input, but this is not strictly necessary for downstream analysis.
+Running MAGIC is as simple as running the `run_magic` function. We use `rescale_percent=99` to make the output range comparable to the input, but this is not strictly necessary for downstream analysis.
 
 ```{r}
 # run MAGIC
-bmmsc_MAGIC <- run_magic(bmmsc, rescale_percent=0.99)
+bmmsc_MAGIC <- magic(bmmsc, genes=c("Mpo", "Klf1", "Ifitm1"), rescale_percent=99)
 ```
 
 ### Results
@@ -89,7 +95,7 @@ We can plot the data before and after MAGIC to visualize the results.
 
 ```{r}
 ggplot(bmmsc) +
-  geom_point(aes(Cd34, Klf1, colour=Apoe)) + 
+  geom_point(aes(Mpo, Klf1, colour=Ifitm1)) + 
   scale_colour_viridis()
 ggsave('BMMSC_data_R_before_magic.png', width=5, height=5)
 ```
@@ -105,14 +111,22 @@ ggsave('BMMSC_data_R_after_magic.png', width=5, height=5)
 
 As you can see, the gene-gene relationships are much clearer after MAGIC. These relationships also match the biological progression we expect to see - Ifitm1 is a stem cell marker, Klf1 is an erythroid marker, and Mpo is a myeloid marker.
 
+We can look at the entire smoothed matrix with `genes='all_genes'`, passing the original result to the argument `init` to avoid recomputing intermediate steps.
+
+```{r}
+bmmsc_MAGIC <- magic(bmmsc, genes="all_genes", rescale_percent=99, init=bmmsc_MAGIC)
+as.matrix(bmmsc_MAGIC)[1:5, 1:10]
+```
+
+
 ### Visualizing MAGIC values on PHATE
 
 We can visualize the results of MAGIC on PHATE as follows.
 
 ```{r}
-bmmsc_PHATE <- phateR::phate(bmmsc)
+bmmsc_PHATE <- phate(bmmsc)
 ggplot(bmmsc_PHATE) +
-  geom_point(aes(x=PHATE1, y=PHATE2, color=bmmsc_MAGIC$Klf1)) +
+  geom_point(aes(x=PHATE1, y=PHATE2, color=bmmsc_MAGIC$result$Klf1)) +
   scale_color_viridis() +
   labs(color="Mpo")
 ggsave('BMMSC_data_R_phate_colored_by_magic.png', width=5, height=5)
