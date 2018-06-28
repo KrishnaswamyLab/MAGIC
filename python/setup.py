@@ -13,7 +13,7 @@ setup(name='magic',
       description='MAGIC',
       author='',
       author_email='',
-      package_dir={'': 'src'},
+      package_dir={'': '.'},
       packages=['magic'],
       install_requires=[
           'numpy>=1.10.0',
@@ -27,8 +27,8 @@ setup(name='magic',
           'FCS': ['fcsparser'],
           'HDF5': ['tables'],
       },
-      scripts=['src/magic/magic_gui.py',
-               'src/magic/MAGIC.py'],
+      scripts=['magic/magic_gui.py',
+               'magic/MAGIC.py'],
       )
 
 

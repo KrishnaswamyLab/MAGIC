@@ -1,0 +1,76 @@
+---
+title: "Rmagic Tutorial"
+output: github_document
+---
+
+<!-- README.md is generated from README.Rmd. Please edit that file -->
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## MAGIC (Markov Affinity-Based Graph Imputation of Cells)
+
+* MAGIC imputes missing data values on sparse data sets, restoring the structure of the data
+* It also proves dimensionality reduction and gene expression visualizations
+* MAGIC can be performed on a variety of datasets
+* Here, we show the effectiveness of MAGIC on epithelial-to-mesenchymal transition (EMT) data
+
+To use MAGIC, cite:
+MAGIC: A diffusion-based imputation method reveals gene-gene interactions in single-cell RNA-sequencing data
+Biorxiv (preprint) February 2017. DOI: doi.org/10.1101/111591
+
+### Installation
+
+In R, run these commands to install MAGIC and all dependencies :
+
+```{r eval=FALSE}
+if (!require(devtools)) install.packages(devtools)
+devtools::install_github("KrishnaswamyLab/magic/R")
+```
+
+### Running MAGIC
+
+We load the Rmagic package and a few others for convenience functions.
+
+```{r}
+library(Rmagic)
+library(readr)
+library(ggplot2)
+library(viridis)
+```
+
+The example data is located in the MAGIC Github repository.
+
+```{r}
+# load data
+data <- read_csv('../../../data/HMLE_TGFb_day_8_10.csv.zip')
+str(data)
+```
+
+Running MAGIC is as simple as running the `run_magic` function. We use `rescale_percent=0.99` to make the output range comparable to the input, but this is not strictly necessary for downstream analysis.
+
+```{r}
+# run MAGIC
+data_MAGIC <- run_magic(data, rescale_percent=0.99)
+```
+
+### Results
+
+We can plot the data before and after MAGIC to visualize the results.
+
+```{r}
+ggplot(data) +
+  geom_point(aes(VIM, CDH1, colour=ZEB1)) + 
+  scale_colour_viridis()
+ggsave('EMT_data_R_before_magic.png', width=5, height=5)
+```
+
+```{r}
+ggplot(data_MAGIC) +
+  geom_point(aes(VIM, CDH1, colour=ZEB1)) + 
+  scale_colour_viridis()
+ggsave('EMT_data_R_after_magic.png', width=5, height=5)
+```
+
+As you can see, the gene-gene relationships are much clearer after MAGIC. That's it, we're done!
