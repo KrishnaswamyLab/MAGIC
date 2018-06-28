@@ -45,9 +45,11 @@ magic <- function(data,
                   npca=100,
                   rescale_percent=0,
                   init=NULL,
+                  t.max=20,
                   knn.dist.method='euclidean',
                   verbose=1,
-                  n.jobs=1) {
+                  n.jobs=1,
+                  seed=NULL) {
   # check installation
   if (!reticulate::py_module_available(module = "magic")) {
     install.magic()
@@ -57,11 +59,6 @@ magic <- function(data,
   t.max <- as.integer(t.max)
   n.jobs <- as.integer(n.jobs)
 
-  if (is.numeric(n.landmark)) {
-    n.landmark <- as.integer(n.landmark)
-  } else if (!is.null(n.landmark) && is.na(n.landmark)) {
-    n.landmark <- NULL
-  }
   if (is.numeric(npca)) {
     npca <- as.integer(npca)
   } else if (!is.null(npca) && is.na(npca)) {
@@ -161,11 +158,9 @@ magic <- function(data,
 #' @examples
 #' if (reticulate::py_module_available("magic")) {
 #'
-#' # data(tree.data)
-#' # We use a smaller tree to make examples run faster
-#' data(tree.data.small)
-#' phate.tree <- phate(tree.data.small$data)
-#' print(phate.tree)
+#' data(magic_testdata)
+#' data_magic <- magic(magic_testdata)
+#' print(data_magic)
 #' ## MAGIC with elements
 #' ## $result : (3000, 2)
 #' ## $operator : Python MAGIC operator
