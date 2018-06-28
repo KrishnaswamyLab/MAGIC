@@ -31,6 +31,11 @@ if ~issparse(DiffOp)
     DiffOp = sparse(DiffOp);
 end
 
+if n_genes > size(data,2)
+    disp 'n_genes too large, capping n_genes at maximum possible number of genes'
+    n_genes = size(data,2)
+end
+
 idx_genes = randsample(size(data,2), n_genes);
 data_imputed = data;
 data_imputed = data_imputed(:,idx_genes);
