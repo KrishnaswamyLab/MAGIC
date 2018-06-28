@@ -171,8 +171,7 @@ class MAGIC(BaseEstimator):
         ValueError : unacceptable choice of parameters
         """
         check_positive(k=self.k,
-                       a=self.a,
-                       n_pca=self.n_pca)
+                       a=self.a,)
         check_int(k=self.k,
                   n_jobs=self.n_jobs)
         # TODO: epsilon
@@ -313,7 +312,7 @@ class MAGIC(BaseEstimator):
                                  "'fit' with appropriate arguments before "
                                  "using this method.")
         if genes is None and isinstance(X, (pd.SparseDataFrame,
-                                            sparse.sp_matrix)) and \
+                                            sparse.spmatrix)) and \
                 np.prod(X.shape) > 5000 * 20000:
             warnings.warn("Returning imputed values for all genes on a ({} x "
                           "{}) matrix will require approximately {}GB of "

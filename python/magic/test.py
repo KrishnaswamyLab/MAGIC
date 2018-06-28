@@ -1,39 +1,30 @@
 #!/usr/bin/env python
 
-# Generating random fractal tree via DLA
+
 from __future__ import print_function, division
 import doctest
-import pandas as pd
-import phate
 import magic
+import pandas as pd
 import numpy as np
 
 
-clusters = pd.read_csv("../data/MAP.csv", header=None)
-clusters.columns = pd.Index(['wells', 'clusters'])
-bmmsc = pd.read_csv("../data/BMMC_myeloid.csv.gz", index_col=0)
+scdata = pd.read_csv("../data/HMLE_TGFb_day_8_10.csv")
+scdata_norm = magic.preprocessing.library_size_normalize(scdata)
+assert scdata.shape == scdata_norm
 
-C = clusters['clusters']  # using cluster labels from original publication
+fast_magic_operator = magic.MAGIC(t='auto', a=20, k=10)
+classic_magic_operator = magic.MAGIC(t=10, a=20, k=10, n_pca=None)
 
-# library_size_normalize performs L1 normalization on each cell
-bmmsc_norm = phate.preprocessing.library_size_normalize(bmmsc)
-bmmsc_norm = np.sqrt(bmmsc_norm)
-magic_operator = magic.MAGIC(
-    t='auto', a=20, k=10)
-phate_operator = phate.PHATE(
-    n_components=2, t='auto', a=200,
-    k=10, mds='metric', mds_dist='euclidean',
-    n_landmark=1000)
+fast_magic = fast_magic_operator.fit_transform(scdata_norm)
+classic_magic = classic_magic_operator.fit_transform(scdata_norm)
 
-y_magic = magic_operator.fit_transform(bmmsc_norm)
-y_phate = phate_operator.fit_transform(bmmsc_norm)
 
 
 def test_magic():
     doctest.testmod()
 
 
-def test_bmmsc():
+def test_scdata():
 
     return 0
 
