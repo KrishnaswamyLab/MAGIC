@@ -182,6 +182,13 @@ class MAGIC(BaseEstimator):
                   'sokalmichener', 'sokalsneath', 'sqeuclidean', 'yule'],
                  knn_dist=self.knn_dist)
 
+    def _set_graph_params(self, **params):
+        try:
+            self.graph.set_params(**params)
+        except AttributeError:
+            # graph not defined
+            pass
+
     def set_params(self, **params):
         """Set the parameters on this estimator.
 
