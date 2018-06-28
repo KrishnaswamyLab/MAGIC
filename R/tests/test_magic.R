@@ -1,10 +1,14 @@
-source('R/run_magic.R')
+# To run this file:
+# - Set the working directory to 'R/tests'.
+# - Unzip the data files in 'data'.
+
+source('../R/run_magic.R')
 
 test_magic <- function() {
   require(ggplot2)
 
 	# load data
-	data <- read.csv('data/HMLE_TGFb_day_8_10.csv', header=TRUE, sep=',')
+	data <- read.csv('../../data/HMLE_TGFb_day_8_10.csv', header=TRUE, sep=',')
 
 	# run MAGIC
 	data_MAGIC <- run_magic(data, rescale_percent=0.99)
