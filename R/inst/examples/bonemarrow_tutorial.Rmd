@@ -103,14 +103,12 @@ bmmsc <- sqrt(bmmsc)
 
 ### Running MAGIC
 
-Running MAGIC is as simple as running the `magic` function. We use `rescale_percent=99` to make the output range comparable to the input, but this is not strictly necessary for downstream analysis.
+Running MAGIC is as simple as running the `magic` function.
 
 ```{r run_magic}
 # run MAGIC
-bmmsc_MAGIC <- magic(bmmsc, genes=c("Mpo", "Klf1", "Ifitm1"), rescale_percent=99)
+bmmsc_MAGIC <- magic(bmmsc, genes=c("Mpo", "Klf1", "Ifitm1"))
 ```
-
-### Results
 
 We can plot the data before and after MAGIC to visualize the results.
 
@@ -127,15 +125,25 @@ The data suffers from dropout to the point that we cannot infer anything about t
 ggplot(bmmsc_MAGIC) +
   geom_point(aes(Mpo, Klf1, colour=Ifitm1)) + 
   scale_colour_viridis()
-ggsave('BMMSC_data_R_after_magic.png', width=5, height=5)
 ```
 
 As you can see, the gene-gene relationships are much clearer after MAGIC. These relationships also match the biological progression we expect to see - Ifitm1 is a stem cell marker, Klf1 is an erythroid marker, and Mpo is a myeloid marker.
 
+The data is a little too smooth - we can decrease `t` from the automatic value to reduce the amount of diffusion. We pass the original result to the argument `init` to avoid recomputing intermediate steps.
+
+```{r}
+bmmsc_MAGIC <- magic(bmmsc, genes=c("Mpo", "Klf1", "Ifitm1"), t=6, init=bmmsc_MAGIC)
+ggplot(bmmsc_MAGIC) +
+  geom_point(aes(Mpo, Klf1, colour=Ifitm1)) + 
+  scale_colour_viridis()
+ggsave('BMMSC_data_R_after_magic.png', width=5, height=5)
+```
+
+
 We can look at the entire smoothed matrix with `genes='all_genes'`, passing the original result to the argument `init` to avoid recomputing intermediate steps. Note that this matrix may be large and could take up a lot of memory.
 
 ```{r run_magic_full_matrix}
-bmmsc_MAGIC <- magic(bmmsc, genes="all_genes", rescale_percent=99, init=bmmsc_MAGIC)
+bmmsc_MAGIC <- magic(bmmsc, genes="all_genes", init=bmmsc_MAGIC)
 as.data.frame(bmmsc_MAGIC)[1:5, 1:10]
 ```
 

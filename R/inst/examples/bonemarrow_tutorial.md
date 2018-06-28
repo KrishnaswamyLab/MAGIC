@@ -123,6 +123,25 @@ bmmsc[1:5,1:10]
     ## #   `0610009B22Rik` <int>, `0610009D07Rik` <int>, `0610009O20Rik` <int>,
     ## #   `0610010B08Rik;Gm14434;Gm14308` <int>
 
+First, we need to remove lowly expressed genes and cells with small
+library size.
+
+``` r
+# keep genes expressed in at least 10 cells
+keep_cols <- colSums(bmmsc > 0) > 10
+bmmsc <- bmmsc[,keep_cols]
+# look at the distribution of library sizes
+hist(rowSums(bmmsc))
+```
+
+![](bonemarrow_tutorial_files/figure-gfm/unnamed-chunk-1-1.png)<!-- -->
+
+``` r
+# keep cells with at least 2000 UMIs
+keep_rows <- rowSums(bmmsc) > 2000
+bmmsc <- bmmsc[keep_rows,]
+```
+
 We should library size normalize and transform the data prior to MAGIC.
 Many people use a log transform, which requires adding a “pseudocount”
 to avoid log(0). We square root instead, which has a similar form but
@@ -135,16 +154,12 @@ bmmsc <- sqrt(bmmsc)
 
 ### Running MAGIC
 
-Running MAGIC is as simple as running the `magic` function. We use
-`rescale_percent=99` to make the output range comparable to the input,
-but this is not strictly necessary for downstream analysis.
+Running MAGIC is as simple as running the `magic` function.
 
 ``` r
 # run MAGIC
-bmmsc_MAGIC <- magic(bmmsc, genes=c("Mpo", "Klf1", "Ifitm1"), rescale_percent=99)
+bmmsc_MAGIC <- magic(bmmsc, genes=c("Mpo", "Klf1", "Ifitm1"))
 ```
-
-### Results
 
 We can plot the data before and after MAGIC to visualize the results.
 
@@ -171,44 +186,57 @@ ggplot(bmmsc_MAGIC) +
 
 ![](bonemarrow_tutorial_files/figure-gfm/plot_magic-1.png)<!-- -->
 
-``` r
-ggsave('BMMSC_data_R_after_magic.png', width=5, height=5)
-```
-
 As you can see, the gene-gene relationships are much clearer after
 MAGIC. These relationships also match the biological progression we
 expect to see - Ifitm1 is a stem cell marker, Klf1 is an erythroid
 marker, and Mpo is a myeloid marker.
 
+The data is a little too smooth - we can decrease `t` from the automatic
+value to reduce the amount of diffusion. We pass the original result to
+the argument `init` to avoid recomputing intermediate
+steps.
+
+``` r
+bmmsc_MAGIC <- magic(bmmsc, genes=c("Mpo", "Klf1", "Ifitm1"), t=8, init=bmmsc_MAGIC)
+ggplot(bmmsc_MAGIC) +
+  geom_point(aes(Mpo, Klf1, colour=Ifitm1)) + 
+  scale_colour_viridis()
+```
+
+![](bonemarrow_tutorial_files/figure-gfm/unnamed-chunk-3-1.png)<!-- -->
+
+``` r
+ggsave('BMMSC_data_R_after_magic.png', width=5, height=5)
+```
+
 We can look at the entire smoothed matrix with `genes='all_genes'`,
 passing the original result to the argument `init` to avoid recomputing
 intermediate steps. Note that this matrix may be large and could take up
-a lot of
-memory.
+a lot of memory.
 
 ``` r
-bmmsc_MAGIC <- magic(bmmsc, genes="all_genes", rescale_percent=99, init=bmmsc_MAGIC)
+bmmsc_MAGIC <- magic(bmmsc, genes="all_genes", init=bmmsc_MAGIC)
 as.data.frame(bmmsc_MAGIC)[1:5, 1:10]
 ```
 
     ##   0610007C21Rik;Apr3 0610007L01Rik 0610007P08Rik;Rad26l 0610007P14Rik
-    ## 1           1.860502      1.690168            1.1373480      1.905561
-    ## 2           2.109082      2.176668            0.9942011      2.040323
-    ## 3           2.156509      2.015408            2.0982907      2.276530
-    ## 4           2.137702      2.262988            1.0380500      2.076257
-    ## 5           2.066830      1.971425            1.9921411      2.203174
-    ##   0610007P22Rik 0610008F07Rik 0610009B22Rik 0610009D07Rik 0610009O20Rik
-    ## 1      1.262215             0      1.416935     0.9999595      1.498086
-    ## 2      1.278548             0      1.295572     1.0363637      1.207875
-    ## 3      1.966309             0      1.844326     1.7560429      2.438793
-    ## 4      1.302293             0      1.320307     1.0774056      1.214317
-    ## 5      1.891680             0      1.723578     1.5698489      2.368597
-    ##   0610010B08Rik;Gm14434;Gm14308
-    ## 1                             0
-    ## 2                             0
-    ## 3                             0
-    ## 4                             0
-    ## 5                             0
+    ## 1          0.1751866     0.5540753           0.06156801     0.4074682
+    ## 2          0.1546742     0.4319843           0.11617584     0.4282041
+    ## 3          0.1687694     0.5702529           0.06386686     0.4172185
+    ## 4          0.1494420     0.4273008           0.11111974     0.4211829
+    ## 5          0.1708924     0.5635437           0.06133188     0.4162455
+    ##   0610007P22Rik 0610009B22Rik 0610009D07Rik 0610009O20Rik
+    ## 1    0.03024783    0.05645037    0.07368982     0.1979285
+    ## 2    0.03774436    0.08081385    0.12355306     0.3909738
+    ## 3    0.02894124    0.05833093    0.07277939     0.2002494
+    ## 4    0.03579443    0.07634111    0.11043661     0.3862620
+    ## 5    0.02948439    0.05587387    0.07075943     0.2007730
+    ##   0610010F05Rik;mKIAA1841;Kiaa1841 0610010K14Rik;Rnasek
+    ## 1                       0.03743578             1.160120
+    ## 2                       0.03603500             1.090403
+    ## 3                       0.03885539             1.150197
+    ## 4                       0.03315765             1.096635
+    ## 5                       0.03766863             1.155895
 
 ### Visualizing MAGIC values on PHATE
 
