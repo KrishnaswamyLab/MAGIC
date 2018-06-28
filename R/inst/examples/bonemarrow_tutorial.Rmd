@@ -77,6 +77,23 @@ bmmsc <- bmmsc[,2:ncol(bmmsc)]
 bmmsc[1:5,1:10]
 ```
 
+First, we need to remove lowly expressed genes and cells with small library size.
+
+```{r}
+# keep genes expressed in at least 10 cells
+keep_cols <- colSums(bmmsc > 0) > 10
+bmmsc <- bmmsc[,keep_cols]
+# look at the distribution of library sizes
+hist(rowSums(bmmsc))
+```
+
+```{r}
+# keep cells with at least 2000 UMIs
+keep_rows <- rowSums(bmmsc) > 2000
+bmmsc <- bmmsc[keep_rows,]
+```
+
+
 We should library size normalize and transform the data prior to MAGIC. Many people use a log transform, which requires adding a "pseudocount" to avoid log(0). We square root instead, which has a similar form but doesn't suffer from instabilities at zero.
 
 ```{r normalize}
