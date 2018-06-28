@@ -36,6 +36,37 @@
 #' For n_jobs below -1, (n.cpus + 1 + n.jobs) are used. Thus for
 #' n_jobs = -2, all CPUs but one are used
 #' @param seed int or `NULL`, random state (default: `NULL`)
+#'
+#' @examples
+#' if (reticulate::py_module_available("phate")) {
+#'
+#' data(magic_testdata)
+#'
+#' # Run MAGIC
+#' data_magic <- magic(magic_testdata, genes=c("VIM", "CDH1", "ZEB1"))
+#' summary(data_magic)
+#' ##       CDH1             VIM             ZEB1
+#' ## Min.   :0.4303   Min.   :3.854   Min.   :0.01111
+#' ## 1st Qu.:0.4444   1st Qu.:3.947   1st Qu.:0.01145
+#' ## Median :0.4462   Median :3.964   Median :0.01153
+#' ## Mean   :0.4461   Mean   :3.965   Mean   :0.01152
+#' ## 3rd Qu.:0.4478   3rd Qu.:3.982   3rd Qu.:0.01160
+#' ## Max.   :0.4585   Max.   :4.127   Max.   :0.01201
+#'
+#' # Plot the result with ggplot2
+#' if (require(ggplot2)) {
+#'   ggplot(data_magic) +
+#'     geom_point(aes(x=VIM, y=CDH1, color=ZEB1))
+#' }
+#'
+#' # Run MAGIC again returning all genes
+#' # We use the last run as initialization
+#' data_magic <- magic(magic_testdata, genes="all_genes", init=data_magic)
+#' # Extract the smoothed data matrix to use in downstream analysis
+#' data_smooth <- as.matrix(data_magic)
+#'
+#' }
+#'
 #' @export
 magic <- function(data,
                   genes=NULL,
@@ -90,12 +121,13 @@ magic <- function(data,
   if (!methods::is(data, "Matrix")) {
     data <- as.matrix(data)
   }
-  if (is.numeric(genes)) {
-    gene_names <- colnames(data)[genes]
-    genes <- as.integer(genes - 1)
-  } else if (!is.null(genes) && is.na(genes)) {
+  print(genes)
+  if (is.null(genes) || is.na(genes)) {
     genes <- NULL
     gene_names <- colnames(data)
+  } else if (is.numeric(genes)) {
+    gene_names <- colnames(data)[genes]
+    genes <- as.integer(genes - 1)
   } else if (length(genes) == 1 && genes == "all_genes") {
     gene_names <- colnames(data)
   } else {
@@ -104,11 +136,10 @@ magic <- function(data,
       warn(paste0("Genes ", genes[!(genes %in% colnames(data))],
                   " not found.", collapse=", "))
     }
-    genes <- as.integer(which(colnames(data) %in% genes))
+    genes <- which(colnames(data) %in% genes)
     gene_names <- colnames(data)[genes]
+    genes <- as.integer(genes - 1)
   }
-  print(genes)
-  print(class(genes))
 
   # store parameters
   params <- list("data" = data, "k" = k, "alpha" = alpha, "t" = t,
@@ -191,17 +222,18 @@ print.magic <- function(x, ...) {
 #' @param object A fitted MAGIC object
 #' @param ... Arguments for summary()
 #' @examples
-#' if (reticulate::py_module_available("phate")) {
+#' if (reticulate::py_module_available("magic")) {
 #'
-#' # data(tree.data)
-#' # We use a smaller tree to make examples run faster
-#' data(tree.data.small)
-#' phate.tree <- phate(tree.data.small$data)
-#' summary(phate.tree)
-#' ## MAGIC embedding
-#' ## k = 5, alpha = NULL, t = 58
-#' ## Data: (3000, 100)
-#' ## Embedding: (3000, 2)
+#' data(magic_testdata)
+#' data_magic <- magic(magic_testdata)
+#' summary(data_magic)
+#' ## ZEB1
+#' ## Min.   :0.01071
+#' ## 1st Qu.:0.01119
+#' ## Median :0.01130
+#' ## Mean   :0.01129
+#' ## 3rd Qu.:0.01140
+#' ## Max.   :0.01201
 #'
 #' }
 #' @rdname summary
@@ -244,13 +276,11 @@ as.data.frame.magic <- function(x, ...) {
 #' @param data A fitted MAGIC object
 #' @param ... Arguments for ggplot()
 #' @examples
-#' if (reticulate::py_module_available("phate") && require(ggplot2)) {
+#' if (reticulate::py_module_available("magic") && require(ggplot2)) {
 #'
-#' # data(tree.data)
-#' # We use a smaller tree to make examples run faster
-#' data(tree.data.small)
-#' phate.tree <- phate(tree.data.small$data)
-#' ggplot(phate.tree, aes(x=PHATE1, y=PHATE2, color=tree.data.small$branches)) +
+#' data(magic_testdata)
+#' data_magic <- magic(magic_testdata, genes=c("VIM", "CDH1", "ZEB1"))
+#' ggplot(data_magic, aes(VIM, CDH1, colour=ZEB1)) +
 #'   geom_point()
 #'
 #' }
