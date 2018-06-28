@@ -182,6 +182,110 @@ class MAGIC(BaseEstimator):
                   'sokalmichener', 'sokalsneath', 'sqeuclidean', 'yule'],
                  knn_dist=self.knn_dist)
 
+    def set_params(self, **params):
+        """Set the parameters on this estimator.
+
+        Any parameters not given as named arguments will be left at their
+        current value.
+
+        Parameters
+        ----------
+
+        k : int, optional, default: 10
+            number of nearest neighbors on which to build kernel
+
+        a : int, optional, default: 10
+            sets decay rate of kernel tails.
+            If None, alpha decaying kernel is not used
+
+        t : int, optional, default: 'auto'
+            power to which the diffusion operator is powered.
+            This sets the level of diffusion. If 'auto', t is selected
+            according to the R squared of the diffused data
+
+        n_pca : int, optional, default: 100
+            Number of principal components to use for calculating
+            neighborhoods. For extremely large datasets, using
+            n_pca < 20 allows neighborhoods to be calculated in
+            roughly log(n_samples) time.
+
+        knn_dist : string, optional, default: 'euclidean'
+            recommended values: 'euclidean', 'cosine', 'precomputed'
+            Any metric from `scipy.spatial.distance` can be used
+            distance metric for building kNN graph. If 'precomputed',
+            `data` should be an n_samples x n_samples distance or
+            affinity matrix
+
+        n_jobs : integer, optional, default: 1
+            The number of jobs to use for the computation.
+            If -1 all CPUs are used. If 1 is given, no parallel computing code
+            is used at all, which is useful for debugging.
+            For n_jobs below -1, (n_cpus + 1 + n_jobs) are used. Thus for
+            n_jobs = -2, all CPUs but one are used
+
+        random_state : integer or numpy.RandomState, optional, default: None
+            The generator used to initialize random PCA
+            If an integer is given, it fixes the seed
+            Defaults to the global `numpy` random number generator
+
+        verbose : `int` or `boolean`, optional (default: 1)
+            If `True` or `> 0`, print status messages
+
+        Returns
+        -------
+        self
+        """
+        reset_kernel = False
+        reset_imputation = False
+        # diff potential parameters
+        if 't' in params and params['t'] != self.t:
+            self.t = params['t']
+            reset_imputation = True
+            del params['t']
+
+        # kernel parameters
+        if 'k' in params and params['k'] != self.k:
+            self.k = params['k']
+            reset_kernel = True
+            del params['k']
+        if 'a' in params and params['a'] != self.a:
+            self.a = params['a']
+            reset_kernel = True
+            del params['a']
+        if 'n_pca' in params and params['n_pca'] != self.n_pca:
+            self.n_pca = params['n_pca']
+            reset_kernel = True
+            del params['n_pca']
+        if 'knn_dist' in params and params['knn_dist'] != self.knn_dist:
+            self.knn_dist = params['knn_dist']
+            reset_kernel = True
+            del params['knn_dist']
+
+        # parameters that don't change the embedding
+        if 'n_jobs' in params:
+            self.n_jobs = params['n_jobs']
+            self._set_graph_params(n_jobs=params['n_jobs'])
+            del params['n_jobs']
+        if 'random_state' in params:
+            self.random_state = params['random_state']
+            self._set_graph_params(random_state=params['random_state'])
+            del params['random_state']
+        if 'verbose' in params:
+            self.verbose = params['verbose']
+            set_logging(self.verbose)
+            self._set_graph_params(verbose=params['verbose'])
+            del params['verbose']
+
+        if reset_kernel:
+            # can't reset the graph kernel without making a new graph
+            self.graph = None
+            reset_imputation = True
+        if reset_imputation:
+            self.X_magic = None
+
+        self._check_params()
+        return self
+
     def fit(self, X):
         """Computes the diffusion operator
 
@@ -480,4 +584,3 @@ class MAGIC(BaseEstimator):
                 plt.show()
 
         return data_imputed
-
