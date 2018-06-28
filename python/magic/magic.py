@@ -2,7 +2,7 @@
 Markov Affinity-based Graph Imputation of Cells (MAGIC)
 """
 
-# author: 
+# author:
 # (C) 2017 Krishnaswamy Lab GPLv2
 
 from __future__ import print_function, division, absolute_import
@@ -16,7 +16,7 @@ import matplotlib.pyplot as plt
 from scipy import sparse, stats
 
 
-from .preprocessing import library_size_normalize as normalize 
+from .preprocessing import library_size_normalize as normalize
 from .utils import check_int, check_positive, check_between, check_in, check_if_not, convert_to_same_format
 from .logging import set_logging, log_start, log_complete, log_info, log_debug
 
@@ -30,7 +30,7 @@ except ImportError:
 class MAGIC(BaseEstimator):
     """MAGIC operator which performs dimensionality reduction.
 
-    Markov Affinity-based Graph Imputation of Cells (MAGIC) is an 
+    Markov Affinity-based Graph Imputation of Cells (MAGIC) is an
     algorithm for denoising and transcript recover of single cells
     applied to single-cell RNA sequencing data.
 
@@ -115,11 +115,11 @@ class MAGIC(BaseEstimator):
     >>> # plt.scatter(tree_phate[:,0], tree_phate[:,1], c=tree_magic[:,0])
     >>> # plt.show()
 
-  
+
     """
 
-    def __init__(self, k=10, a=10, t='auto', n_pca=100, 
-                 knn_dist='euclidean', n_jobs=1, random_state=None, 
+    def __init__(self, k=10, a=10, t='auto', n_pca=100,
+                 knn_dist='euclidean', n_jobs=1, random_state=None,
                  rescale=99, verbose=1):
         self.k = k
         self.a = a
@@ -136,7 +136,6 @@ class MAGIC(BaseEstimator):
         self.verbose = verbose
         set_logging(verbose)
 
-
     @property
     def diff_op(self):
         """The diffusion operator calculated from the data
@@ -147,7 +146,6 @@ class MAGIC(BaseEstimator):
             raise NotFittedError("This MAGIC instance is not fitted yet. Call "
                                  "'fit' with appropriate arguments before "
                                  "using this method.")
-
 
     def _check_params(self):
         """Check MAGIC parameters
@@ -180,8 +178,6 @@ class MAGIC(BaseEstimator):
                   'rogerstanimoto', 'russellrao', 'seuclidean',
                   'sokalmichener', 'sokalsneath', 'sqeuclidean', 'yule'],
                  knn_dist=self.knn_dist)
-        
-
 
     def fit(self, X):
         """Computes the diffusion operator
@@ -267,7 +263,6 @@ class MAGIC(BaseEstimator):
 
         return self
 
-
     def transform(self, X=None, t_max=20, plot_optimal_t=False, ax=None):
         """Computes the position of the cells in the embedding space
 
@@ -317,7 +312,6 @@ class MAGIC(BaseEstimator):
             self.X_magic = convert_to_same_format(self.X_magic, self.X)
             return self.X_magic
 
-
     def fit_transform(self, X, **kwargs):
         """Computes the diffusion operator and the position of the cells in the
         embedding space
@@ -345,7 +339,6 @@ class MAGIC(BaseEstimator):
         log_complete('MAGIC')
         return X_magic
 
-
     def rsquare(self, data, data_prev):
         """
         Returns
@@ -364,7 +357,6 @@ class MAGIC(BaseEstimator):
         else:
             r2 = None
         return r2, data_curr
-
 
     def impute(self, data, t_max=20, plot=False, ax=None):
         """Impute with PCA
@@ -386,7 +378,7 @@ class MAGIC(BaseEstimator):
 
         log_start("imputation")
 
-         # classic magic 
+        # classic magic
         if (t_opt is not None) and (self.diff_op.shape[1] == data_imputed.shape[1]):
             powered_diff_op = np.linalg.matrix_power(self.diff_op, t_opt)
             data_imputed = powered_diff_op.dot(data_imputed)
@@ -404,7 +396,7 @@ class MAGIC(BaseEstimator):
                     if r2 < 0.05 and t_opt is None:
                         t_opt = i + 2
                         log_info("Automatically selected t = {}".format(t_opt))
-        
+
         log_complete("imputation")
 
         if plot:
@@ -446,7 +438,6 @@ class MAGIC(BaseEstimator):
         data_imputed = data.inverse_transform(data_imputed)
         return data_imputed
 
-
     def rescale_data(self, data, target_data):
         if self.rescale == 0:
             return data
@@ -471,5 +462,3 @@ class MAGIC(BaseEstimator):
             data = np.multiply(data, np.tile(max_ratio,
                                              (target_data.shape[0], 1)))
         return data
-
-    
