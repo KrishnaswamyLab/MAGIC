@@ -603,7 +603,8 @@ class MAGIC(BaseEstimator):
             # plot
             x = np.arange(len(r2_vec)) + 1
             ax.plot(x, r2_vec)
-            ax.plot(t_opt, r2_vec[t_opt - 1], 'ro', markersize=10,)
+            if t_opt is not None:
+                ax.plot(t_opt, r2_vec[t_opt - 1], 'ro', markersize=10,)
             ax.plot(x, np.full(len(r2_vec), 0.05), 'k--')
             ax.set_xlabel('t')
             ax.set_ylabel('1 - R^2(data_{t},data_{t-1})')
