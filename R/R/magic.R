@@ -91,9 +91,8 @@ magic <- function(data,
     data <- as.matrix(data)
   }
   if (is.numeric(genes)) {
-    genes <- as.integer(genes)
     gene_names <- colnames(data)[genes]
-    genes <- genes - 1
+    genes <- as.integer(genes - 1)
   } else if (!is.null(genes) && is.na(genes)) {
     genes <- NULL
     gene_names <- colnames(data)
@@ -105,9 +104,11 @@ magic <- function(data,
       warn(paste0("Genes ", genes[!(genes %in% colnames(data))],
                   " not found.", collapse=", "))
     }
-    genes <- colnames(data) %in% genes
+    genes <- as.integer(which(colnames(data) %in% genes))
     gene_names <- colnames(data)[genes]
   }
+  print(genes)
+  print(class(genes))
 
   # store parameters
   params <- list("data" = data, "k" = k, "alpha" = alpha, "t" = t,
