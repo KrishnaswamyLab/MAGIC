@@ -340,6 +340,10 @@ class MAGIC(BaseEstimator):
         elif genes is not None:
             genes = np.array([genes]).flatten()
             if not issubclass(genes.dtype.type, numbers.Integral):
+                if not isinstance(X, pd.DataFrame):
+                    raise ValueError("Gene names can only be given with "
+                                     "pd.DataFrame input. Got {}".format(
+                                         type(X).__name__))
                 # gene names
                 if not np.all(np.isin(genes, X.columns)):
                     warnings.warn("genes {} missing from input data".format(
