@@ -5,8 +5,8 @@
 \title{Perform MAGIC on a data matrix}
 \usage{
 magic(data, genes = NULL, k = 5, alpha = 15, t = "auto", npca = 100,
-  rescale_percent = 0, init = NULL, t.max = 20,
-  knn.dist.method = "euclidean", verbose = 1, n.jobs = 1, seed = NULL)
+  init = NULL, t.max = 20, knn.dist.method = "euclidean", verbose = 1,
+  n.jobs = 1, seed = NULL)
 }
 \arguments{
 \item{data}{input data matrix}
@@ -27,12 +27,6 @@ power to which the diffusion operator is powered
 sets the level of diffusion}
 
 \item{npca}{number of PCA components that should be used; default: 20.}
-
-\item{rescale_percent}{To which percentile should the data be re-scaled.
-Expects an integer between 0 and 100. If 0, no rescaling is done.
-Note: Do not set this higher than 0 if your data has negative values e.g.
-log transformed data.
-Default: 0.}
 
 \item{init}{magic object, optional
 object to use for initialization. Avoids recomputing
@@ -57,4 +51,35 @@ For n_jobs below -1, (n.cpus + 1 + n.jobs) are used. Thus for
 n_jobs = -2, all CPUs but one are used}
 
 \item{seed}{int or `NULL`, random state (default: `NULL`)}
+}
+\examples{
+if (reticulate::py_module_available("phate")) {
+
+data(magic_testdata)
+
+# Run MAGIC
+data_magic <- magic(magic_testdata, genes=c("VIM", "CDH1", "ZEB1"))
+summary(data_magic)
+##       CDH1             VIM             ZEB1
+## Min.   :0.4303   Min.   :3.854   Min.   :0.01111
+## 1st Qu.:0.4444   1st Qu.:3.947   1st Qu.:0.01145
+## Median :0.4462   Median :3.964   Median :0.01153
+## Mean   :0.4461   Mean   :3.965   Mean   :0.01152
+## 3rd Qu.:0.4478   3rd Qu.:3.982   3rd Qu.:0.01160
+## Max.   :0.4585   Max.   :4.127   Max.   :0.01201
+
+# Plot the result with ggplot2
+if (require(ggplot2)) {
+  ggplot(data_magic) +
+    geom_point(aes(x=VIM, y=CDH1, color=ZEB1))
+}
+
+# Run MAGIC again returning all genes
+# We use the last run as initialization
+data_magic <- magic(magic_testdata, genes="all_genes", init=data_magic)
+# Extract the smoothed data matrix to use in downstream analysis
+data_smooth <- as.matrix(data_magic)
+
+}
+
 }

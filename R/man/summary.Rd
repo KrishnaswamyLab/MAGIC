@@ -15,17 +15,18 @@
 Summarize a MAGIC object
 }
 \examples{
-if (reticulate::py_module_available("phate")) {
+if (reticulate::py_module_available("magic")) {
 
-# data(tree.data)
-# We use a smaller tree to make examples run faster
-data(tree.data.small)
-phate.tree <- phate(tree.data.small$data)
-summary(phate.tree)
-## MAGIC embedding
-## k = 5, alpha = NULL, t = 58
-## Data: (3000, 100)
-## Embedding: (3000, 2)
+data(magic_testdata)
+data_magic <- magic(magic_testdata)
+summary(data_magic)
+## ZEB1
+## Min.   :0.01071
+## 1st Qu.:0.01119
+## Median :0.01130
+## Mean   :0.01129
+## 3rd Qu.:0.01140
+## Max.   :0.01201
 
 }
 }

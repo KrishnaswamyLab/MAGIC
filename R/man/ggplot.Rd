@@ -15,13 +15,11 @@
 Passes the smoothed data matrix to ggplot
 }
 \examples{
-if (reticulate::py_module_available("phate") && require(ggplot2)) {
+if (reticulate::py_module_available("magic") && require(ggplot2)) {
 
-# data(tree.data)
-# We use a smaller tree to make examples run faster
-data(tree.data.small)
-phate.tree <- phate(tree.data.small$data)
-ggplot(phate.tree, aes(x=PHATE1, y=PHATE2, color=tree.data.small$branches)) +
+data(magic_testdata)
+data_magic <- magic(magic_testdata, genes=c("VIM", "CDH1", "ZEB1"))
+ggplot(data_magic, aes(VIM, CDH1, colour=ZEB1)) +
   geom_point()
 
 }
