@@ -13,11 +13,6 @@
 #' power to which the diffusion operator is powered
 #' sets the level of diffusion
 #' @param npca number of PCA components that should be used; default: 20.
-#' @param rescale_percent To which percentile should the data be re-scaled.
-#' Expects an integer between 0 and 100. If 0, no rescaling is done.
-#' Note: Do not set this higher than 0 if your data has negative values e.g.
-#' log transformed data.
-#' Default: 0.
 #' @param init magic object, optional
 #' object to use for initialization. Avoids recomputing
 #' intermediate steps if parameters are the same.
@@ -74,7 +69,6 @@ magic <- function(data,
                   alpha = 15,
                   t = 'auto',
                   npca=100,
-                  rescale_percent=0,
                   init=NULL,
                   t.max=20,
                   knn.dist.method='euclidean',
@@ -104,11 +98,6 @@ magic <- function(data,
     t <- as.integer(t)
   } else if (is.null(t) || is.na(t)) {
     t <- 'auto'
-  }
-  if (is.numeric(rescale_percent)) {
-    rescale_percent <- as.double(rescale_percent)
-  } else if (is.null(rescale_percent) || is.na(rescale_percent)) {
-    rescale_percent <- 0
   }
   if (is.numeric(seed)) {
     seed <- as.integer(seed)
@@ -142,8 +131,7 @@ magic <- function(data,
 
   # store parameters
   params <- list("data" = data, "k" = k, "alpha" = alpha, "t" = t,
-                 "npca" = npca, "knn.dist.method" = knn.dist.method,
-                 "rescale_percent" = rescale_percent)
+                 "npca" = npca, "knn.dist.method" = knn.dist.method)
   # use pre-initialized values if given
   operator <- NULL
   if (!is.null(init)) {
@@ -158,8 +146,7 @@ magic <- function(data,
                           knn_dist = knn.dist.method,
                           n_jobs = n.jobs,
                           random_state = seed,
-                          verbose = verbose,
-                          rescale = rescale_percent)
+                          verbose = verbose)
     }
   }
   if (is.null(operator)) {
@@ -170,8 +157,7 @@ magic <- function(data,
                               knn_dist = knn.dist.method,
                               n_jobs = n.jobs,
                               random_state = seed,
-                              verbose = verbose,
-                              rescale = rescale_percent)
+                              verbose = verbose)
   }
   result <- operator$fit_transform(data,
                                    genes = genes,
@@ -201,7 +187,7 @@ magic <- function(data,
 #' ## MAGIC with elements
 #' ## $result : (500, 197)
 #' ## $operator : Python MAGIC operator
-#' ## $params : list with elements (data, k, alpha, t, npca, knn.dist.method, rescale_percent)
+#' ## $params : list with elements (data, k, alpha, t, npca, knn.dist.method)
 #'
 #' }
 #' @rdname print
