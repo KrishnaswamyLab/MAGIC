@@ -2,7 +2,7 @@
 Markov Affinity-based Graph Imputation of Cells (MAGIC)
 """
 
-# author:
+# author: Scott Gigante <scott.gigante@yale.edu>, Daniel Dager <daniel.dager@yale.edu>
 # (C) 2017 Krishnaswamy Lab GPLv2
 
 from __future__ import print_function, division, absolute_import
@@ -123,6 +123,9 @@ class MAGIC(BaseEstimator):
     >>> # plt.scatter(tree_phate[:,0], tree_phate[:,1], c=tree_magic[:,0])
     >>> # plt.show()
 
+    *MAGIC: A diffusion-based imputation method reveals gene-gene interactions
+    in single-cell RNA-sequencing data*
+    'https://www.biorxiv.org/content/early/2017/02/25/111591'
 
     """
 
@@ -422,11 +425,17 @@ class MAGIC(BaseEstimator):
         log_start("imputation")
 
         # classic magic
+        # the diffusion matrix is powered when t has been specified by 
+        # the user, and the dimensions of the diffusion matrix are lesser 
+        # than those of the data matrix. (M^t) * D
         if (t_opt is not None) and (self.diff_op.shape[1] == data_imputed.shape[1]):
             powered_diff_op = np.linalg.matrix_power(self.diff_op, t_opt)
             data_imputed = powered_diff_op.dot(data_imputed)
 
         # fast magic
+        # a while loop is used when the dimensions of the diffusion matrix
+        # are greater than those of the data matrix, or when t is not specified
+        # (so as to allow for the calculation of the optimal t value)
         else:
             i = 0
             while (t_opt is None and i < t_max) or (i < t_opt):
