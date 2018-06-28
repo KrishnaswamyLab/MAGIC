@@ -1,5 +1,5 @@
 ---
-title: "Rmagic Tutorial"
+title: "Rmagic Bone Marrow Tutorial"
 output: 
   github_document: default
   html_document: default
@@ -54,7 +54,7 @@ If you have never used PHATE, you should also install PHATE from the command lin
 pip install --user phate
 ```
 
-### Running MAGIC
+### Loading packages
 
 We load the Rmagic package and a few others for convenience functions.
 
@@ -66,7 +66,9 @@ library(viridis)
 library(phateR)
 ```
 
-The example data is located in the MAGIC Github repository.
+### Loading data
+
+The example data is located in the PHATE Github repository. We can load it directly from the web.
 
 ```{r}
 # load data
@@ -77,14 +79,16 @@ bmmsc <- bmmsc[,2:ncol(bmmsc)]
 bmmsc[1:5,1:10]
 ```
 
-We should normalize the data prior to running MAGIC. For scRNAseq, it is always a good idea to library size normalize and then either log or square root transform the data. Here, we use square root transform.
+We should library size normalize and transform the data prior to MAGIC. Many people use a log transform, which requires adding a "pseudocount" to avoid log(0). We square root instead, which has a similar form but doesn't suffer from instabilities at zero.
 
 ```{r}
-bmmsc <- Rmagic::library.size.normalize(bmmsc)
+bmmsc <- library.size.normalize(bmmsc)
 bmmsc <- sqrt(bmmsc)
 ```
 
-Running MAGIC is as simple as running the `run_magic` function. We use `rescale_percent=99` to make the output range comparable to the input, but this is not strictly necessary for downstream analysis.
+### Running MAGIC
+
+Running MAGIC is as simple as running the `magic` function. We use `rescale_percent=99` to make the output range comparable to the input, but this is not strictly necessary for downstream analysis.
 
 ```{r}
 # run MAGIC
@@ -113,7 +117,7 @@ ggsave('BMMSC_data_R_after_magic.png', width=5, height=5)
 
 As you can see, the gene-gene relationships are much clearer after MAGIC. These relationships also match the biological progression we expect to see - Ifitm1 is a stem cell marker, Klf1 is an erythroid marker, and Mpo is a myeloid marker.
 
-We can look at the entire smoothed matrix with `genes='all_genes'`, passing the original result to the argument `init` to avoid recomputing intermediate steps.
+We can look at the entire smoothed matrix with `genes='all_genes'`, passing the original result to the argument `init` to avoid recomputing intermediate steps. Note that this matrix may be large and could take up a lot of memory.
 
 ```{r}
 bmmsc_MAGIC <- magic(bmmsc, genes="all_genes", rescale_percent=99, init=bmmsc_MAGIC)
