@@ -8,7 +8,7 @@ Description: MAGIC is an interactive tool to impute missing values in single-cel
     data and restore the structure of the data.
 Imports:
     expm,
-    ggplot2
+    ggplot2,
     FNN,
     Matrix,
     rsvd

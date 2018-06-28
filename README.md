@@ -6,13 +6,20 @@ http://www.biorxiv.org/content/early/2017/02/25/111591
 
 MAGIC has been implemented in Python3, Matlab, and R.
 
+<p align="center">
+<img src="https://github.com/KrishnaswamyLab/MAGIC/blob/master/magic.gif"/>
+<br>
+<i>Magic reveals the interaction between Vimentin (VIM), Cadherin-1 (CDH1), and Zinc finger E-box-binding homeobox 1 (ZEB1, encoded by colors).
+</i>
+</p>
+
 ## Python3
 
 #### Installation and dependencies for the Python version
 1. The Python3 version of MAGIC can be installed using:
 
-        $> git clone git://github.com/pkathail/magic.git
-        $> cd magic
+        $> git clone git://github.com/KrishnaswamyLab/magic.git
+        $> cd magic/python
         $> sudo -H pip3 install .
 
 2. MAGIC depends on a number of `python3` packages available on pypi and these dependencies are listed in `setup.py`
@@ -131,3 +138,4 @@ After installing the package, MAGIC can be run by loading the library and callin
 	
 	$> library(Rmagic)
 	$> MAGIC_data <- run_magic(data, t=6, rescale_percent=0.99)
+For a working example, see `R/tests/test_magic.R`. Please unzip the data provided in the `data` folder.

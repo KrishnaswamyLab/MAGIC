@@ -4,15 +4,16 @@
 \alias{run_magic}
 \title{Do the magic!}
 \usage{
-run_magic(data, t_diffusion, lib_size_norm = TRUE, log_transform = FALSE,
-  pseudo_count = 0.1, npca = 20, k = 30, ka = 10, epsilon = 1,
-  rescale_percent = 0)
+run_magic(data, t_diffusion = 0, lib_size_norm = TRUE,
+  log_transform = FALSE, pseudo_count = 0.1, npca = 100, k = 12,
+  ka = 4, epsilon = 1, rescale_percent = 0)
 }
 \arguments{
 \item{data}{the data in some format}
 
 \item{t_diffusion}{diffusion time; suggested to start with 6 and increase it
-up to 12.}
+up to 12. When no t_diffusion is given, a suggested optimal value of t is
+calculated automatically}
 
 \item{lib_size_norm}{Default: TRUE.}
 
@@ -22,7 +23,7 @@ up to 12.}
 
 \item{k}{Number of nearest neighbors to use when running MAGIC. Default: 30.}
 
-\item{ka}{kNN-autotune parameter for running MAGIC; default: 10}
+\item{ka}{kNN-autotune parameter for running MAGIC; default: 4}
 
 \item{epsilon}{a value for the standard deviation of the kernel. Default: 1.
 \code{epsilon = 0} is the uniform kernel.}
