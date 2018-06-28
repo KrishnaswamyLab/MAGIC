@@ -76,7 +76,8 @@ end
 % library size normalization
 if lib_size_norm
     disp 'Library size normalization'
-    libsize  = sum(data,2);
+    libsize = sum(data,2);
+    libsize(libsize == 0) = 1; % avoid division by 0
     data = bsxfun(@rdivide, data, libsize) * median(libsize);
 end
 

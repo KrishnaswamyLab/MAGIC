@@ -18,16 +18,15 @@
 #' Default: 0.
 #'
 #' @export
-#'
 run_magic <- function(data, t_diffusion=0, lib_size_norm=TRUE,
                       log_transform=FALSE,
                       pseudo_count=0.1,
                       npca=100, k=12,
                       ka=4, epsilon=1, rescale_percent=0) {
-
   if (lib_size_norm){
     print('Library size normalization')
     libsize <- rowSums(data)
+    libsize[which(libsize == 0)] = 1 # avoid division by 0
     data <- data / libsize * median(libsize)
   }
 
@@ -64,6 +63,11 @@ run_magic <- function(data, t_diffusion=0, lib_size_norm=TRUE,
 
   print('Symmetrize distances')
   W <- as.matrix(W)
+  W_ncol = ncol(W)
+  if (W_ncol != N){
+    m <- matrix(data=rep(0, (N - W_ncol) * N), nrow=N, ncol=(N - W_ncol))
+    W = cbind(W, m)
+  }
   W <- W + t(W)
 
   if (epsilon > 0){
@@ -84,7 +88,7 @@ run_magic <- function(data, t_diffusion=0, lib_size_norm=TRUE,
 
   print('Diffusing')
   if (t_diffusion == 0) {
-    t_diffusion <- compute_optimal_t(data, W, t_max=12, n_genes=500)
+    t_diffusion <- compute_optimal_t(data, W)
   }
   W_t <- expm::"%^%"(W, t_diffusion)
 
@@ -126,8 +130,13 @@ run_magic <- function(data, t_diffusion=0, lib_size_norm=TRUE,
 #' @param make_plots create a plot of R2 with respect to t
 #' @return the optimal t and a vector of R2 values for all t
 compute_optimal_t <- function(data, diff_op,
-                             t_max=32, n_genes=ncol(data),
+                             t_max=15, n_genes=ncol(data),
                              make_plots=TRUE) {
+  if (n_genes > ncol(data)) {
+    print('n_genes too large, capping n_genes at maximum possible number of genes')
+    n_genes = ncol(data)
+  }
+  n_genes = min(n_genes,500)
   idx_genes <- sample(1:ncol(data), n_genes)
   data_imputed <- data[,idx_genes]
   data_imputed <- data.matrix(data_imputed)

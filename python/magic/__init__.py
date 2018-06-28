@@ -3,4 +3,4 @@ from . import mg
 from . import magic_gui
 from . import MAGIC
 
-__version__ = "0.0"
+__version__ = "0.1"
