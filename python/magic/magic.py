@@ -14,10 +14,18 @@ from sklearn.exceptions import NotFittedError
 import warnings
 import matplotlib.pyplot as plt
 from scipy import sparse, stats
+import pandas as pd
+import numbers
 
 
-from .preprocessing import library_size_normalize as normalize
-from .utils import check_int, check_positive, check_between, check_in, check_if_not, convert_to_same_format
+from .utils import (check_int,
+                    check_positive,
+                    check_between,
+                    check_in,
+                    check_if_not,
+                    convert_to_same_format,
+                    matrix_is_equivalent,
+                    select_cols)
 from .logging import set_logging, log_start, log_complete, log_info, log_debug
 
 try:
@@ -263,7 +271,7 @@ class MAGIC(BaseEstimator):
 
         return self
 
-    def transform(self, X=None, t_max=20, plot_optimal_t=False, ax=None):
+    def transform(self, X=None, genes=None, t_max=20, plot_optimal_t=False, ax=None):
         """Computes the position of the cells in the embedding space
 
         Parameters
@@ -297,20 +305,55 @@ class MAGIC(BaseEstimator):
             raise NotFittedError("This MAGIC instance is not fitted yet. Call "
                                  "'fit' with appropriate arguments before "
                                  "using this method.")
-        elif X is not None and np.sum(X != self.X) > 0:
+        if genes is None and isinstance(X, (pd.SparseDataFrame,
+                                            sparse.sp_matrix)) and \
+                np.prod(X.shape) > 5000 * 20000:
+            warnings.warn("Returning imputed values for all genes on a ({} x "
+                          "{}) matrix will require approximately {}GB of "
+                          "memory. Suppress this warning with "
+                          "`genes='all_genes'`".format(
+                              X.shape[0], X.shape[1],
+                              np.prod(X.shape) * 8 / (1024**3)),
+                          UserWarning)
+        if genes == "all_genes":
+            genes = None
+        elif genes is not None:
+            genes = np.array([genes]).flatten()
+            if not issubclass(genes.dtype.type, numbers.Integral):
+                # gene names
+                if not np.all(np.isin(genes, X.columns)):
+                    warnings.warn("genes {} missing from input data".format(
+                        genes[~np.isin(genes, X.columns)]))
+                genes = np.argwhere(np.isin(genes, X.columns)).reshape(-1)
+
+        store_result = True
+        if X is not None and np.sum(X != self.X) > 0:
+            store_result = False
+            graph = graphtools.base.Data(X, n_pca=self.n_pca)
             warnings.warn(UserWarning, "Running MAGIC.transform on different "
                           "data to that which was used for MAGIC.fit may not "
                           "produce sensible output, unless it comes from the "
                           "same manifold.")
-            X_magic = self.impute(X)
-            X_magic = convert_to_same_format(X_magic, X)
-            return X_magic
         else:
-            self.X_magic = self.impute(self.graph, t_max=t_max,
-                                       plot=plot_optimal_t, ax=ax)
-            self.X_magic = self.rescale_data(self.X_magic, self.graph.data)
-            self.X_magic = convert_to_same_format(self.X_magic, self.X)
-            return self.X_magic
+            X = self.X
+            graph = self.graph
+            store_result = True
+
+        if store_result and hasattr(self, "X_magic"):
+            X_magic = self.X_magic
+        else:
+            X_magic = self.impute(graph, t_max=t_max,
+                                  plot=plot_optimal_t, ax=ax)
+            if store_result:
+                self.X_magic = X_magic
+
+        # return selected genes
+        X_magic = graph.inverse_transform(X_magic, columns=genes)
+        # rescale
+        X_magic = self.rescale_data(X_magic, select_cols(graph.data, genes))
+        # convert back to pandas dataframe, if necessary
+        X_magic = convert_to_same_format(X_magic, X, columns=genes)
+        return X_magic
 
     def fit_transform(self, X, **kwargs):
         """Computes the diffusion operator and the position of the cells in the
@@ -435,7 +478,6 @@ class MAGIC(BaseEstimator):
             if show:
                 plt.show()
 
-        data_imputed = data.inverse_transform(data_imputed)
         return data_imputed
 
     def rescale_data(self, data, target_data):
