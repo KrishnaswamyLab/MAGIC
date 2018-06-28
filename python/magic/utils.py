@@ -50,7 +50,7 @@ def check_if_not(x, *checks, **params):
     ValueError : unacceptable choice of parameters
     """
     for p in params:
-        if params[p] is not x:
+        if params[p] is not x and params[p] != x:
             [check(p=params[p]) for check in checks]
 
 
