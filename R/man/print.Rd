@@ -23,7 +23,7 @@ print(data_magic)
 ## MAGIC with elements
 ## $result : (500, 197)
 ## $operator : Python MAGIC operator
-## $params : list with elements (data, k, alpha, t, npca, knn.dist.method, rescale_percent)
+## $params : list with elements (data, k, alpha, t, npca, knn.dist.method)
 
 }
 }
