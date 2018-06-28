@@ -143,6 +143,7 @@ class MAGIC(BaseEstimator):
 
         self.graph = None
         self.X = None
+        self.X_magic = None
         self._check_params()
         self.verbose = verbose
         set_logging(verbose)
@@ -260,6 +261,8 @@ class MAGIC(BaseEstimator):
         self.X = X
 
         if self.graph is None:
+            # reset X_magic in case it was previously set
+            self.X_magic = None
             log_start("graph and diffusion operator")
             self.graph = graphtools.Graph(
                 X,
@@ -274,7 +277,8 @@ class MAGIC(BaseEstimator):
 
         return self
 
-    def transform(self, X=None, genes=None, t_max=20, plot_optimal_t=False, ax=None):
+    def transform(self, X=None, genes=None, t_max=20,
+                  plot_optimal_t=False, ax=None):
         """Computes the position of the cells in the embedding space
 
         Parameters
@@ -342,7 +346,7 @@ class MAGIC(BaseEstimator):
             graph = self.graph
             store_result = True
 
-        if store_result and hasattr(self, "X_magic"):
+        if store_result and self.X_magic is not None:
             X_magic = self.X_magic
         else:
             X_magic = self.impute(graph, t_max=t_max,
@@ -425,12 +429,13 @@ class MAGIC(BaseEstimator):
         log_start("imputation")
 
         # classic magic
-        # the diffusion matrix is powered when t has been specified by 
-        # the user, and the dimensions of the diffusion matrix are lesser 
+        # the diffusion matrix is powered when t has been specified by
+        # the user, and the dimensions of the diffusion matrix are lesser
         # than those of the data matrix. (M^t) * D
-        if (t_opt is not None) and (self.diff_op.shape[1] == data_imputed.shape[1]):
-            powered_diff_op = np.linalg.matrix_power(self.diff_op, t_opt)
-            data_imputed = powered_diff_op.dot(data_imputed)
+        if (t_opt is not None) and \
+                (self.diff_op.shape[1] == data_imputed.shape[1]):
+            diff_op_t = np.linalg.matrix_power(self.diff_op, t_opt)
+            data_imputed = diff_op_t.dot(data_imputed)
 
         # fast magic
         # a while loop is used when the dimensions of the diffusion matrix
