@@ -487,7 +487,8 @@ class MAGIC(BaseEstimator):
         log_complete('MAGIC')
         return X_magic
 
-    def rsquare(self, data, data_prev):
+    def rsquare(self, data, data_prev=None, weights=None,
+                subsample_genes=None):
         """
         Returns
         -------
@@ -496,17 +497,20 @@ class MAGIC(BaseEstimator):
 
         data_curr : transformed data for next time
         """
-        data_curr = np.divide(data, np.broadcast_to(
-            data.sum(axis=0), data.shape)).reshape(-1)
-        data_curr = data_curr - data_curr.min()
+        if subsample_genes is not None:
+            data = data[:, subsample_genes]
+        if weights is None:
+            weights = np.ones(data.shape[1]) / data.shape[1]
         if data_prev is not None:
-            r = stats.linregress(data_prev, data_curr).rvalue
+            r = [stats.linregress(data_prev[:, i], data[:, i]).rvalue
+                 for i in range(data.shape[1])]
+            r = np.sum(weights * np.array(r))
             r2 = 1 - r**2
         else:
             r2 = None
-        return r2, data_curr
+        return r2, data
 
-    def impute(self, data, t_max=20, plot=False, ax=None):
+    def impute(self, data, t_max=20, plot=False, ax=None, max_genes_compute_t=500):
         """Impute with PCA
 
         Parameters
@@ -517,8 +521,21 @@ class MAGIC(BaseEstimator):
             data = graphtools.base.Data(data, n_pca=self.n_pca)
         data_imputed = data.data_nu
 
+        if data_imputed.shape[1] > max_genes_compute_t:
+            subsample_genes = np.random.choice(data_imputed.shape[1],
+                                               max_genes_compute_t,
+                                               replace=False)
+        else:
+            subsample_genes = None
+        if hasattr(data, "data_pca"):
+            weights = data.data_pca.explained_variance_ratio_
+        else:
+            weights = None
         if self.t == 'auto':
-            _, data_prev = self.rsquare(data_imputed, data_prev=None)
+            _, data_prev = self.rsquare(
+                data_imputed, data_prev=None,
+                weights=weights,
+                subsample_genes=subsample_genes)
             r2_vec = []
             t_opt = None
         else:
@@ -531,7 +548,7 @@ class MAGIC(BaseEstimator):
         # the user, and the dimensions of the diffusion matrix are lesser
         # than those of the data matrix. (M^t) * D
         if (t_opt is not None) and \
-                (self.diff_op.shape[1] == data_imputed.shape[1]):
+                (self.diff_op.shape[1] < data_imputed.shape[1]):
             diff_op_t = np.linalg.matrix_power(self.diff_op, t_opt)
             data_imputed = diff_op_t.dot(data_imputed)
 
@@ -545,7 +562,10 @@ class MAGIC(BaseEstimator):
                 i += 1
                 data_imputed = self.diff_op.dot(data_imputed)
                 if self.t == 'auto':
-                    r2, data_prev = self.rsquare(data_imputed, data_prev)
+                    r2, data_prev = self.rsquare(
+                        data_imputed, data_prev,
+                        weights=weights,
+                        subsample_genes=subsample_genes)
                     r2_vec.append(r2)
                     log_debug("{}: {}".format(i, r2_vec))
                     if r2 < 0.05 and t_opt is None:
@@ -566,7 +586,10 @@ class MAGIC(BaseEstimator):
                 while i < t_max:
                     i += 1
                     data_overimputed = self.diff_op.dot(data_overimputed)
-                    r2, data_prev = self.rsquare(data_overimputed, data_prev)
+                    r2, data_prev = self.rsquare(
+                        data_overimputed, data_prev,
+                        weights=weights,
+                        subsample_genes=subsample_genes)
                     r2_vec.append(r2)
 
             # create axis
