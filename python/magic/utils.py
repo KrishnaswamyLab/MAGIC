@@ -1,8 +1,7 @@
 import numbers
-try:
-    import pandas as pd
-except ImportError:
-    pass
+import numpy as np
+import pandas as pd
+from scipy import sparse
 
 
 def check_positive(**params):
@@ -51,7 +50,7 @@ def check_if_not(x, *checks, **params):
     ValueError : unacceptable choice of parameters
     """
     for p in params:
-        if params[p] is not x:
+        if params[p] is not x and params[p] != x:
             [check(p=params[p]) for check in checks]
 
 
@@ -100,7 +99,15 @@ def check_between(v_min, v_max, **params):
                              "got {}".format(p, v_min, v_max, params[p]))
 
 
-def convert_to_same_format(data, target_data):
+def matrix_is_equivalent(X, Y):
+    """
+    Checks matrix equivalence with numpy, scipy and pandas
+    """
+    return isinstance(X, Y.__class__) and X.shape == Y.shape and \
+        np.sum((X != Y).sum()) == 0
+
+
+def convert_to_same_format(data, target_data, columns=None):
     try:
         if isinstance(target_data, pd.SparseDataFrame):
             data = pd.SparseDataFrame(data)
@@ -109,7 +116,10 @@ def convert_to_same_format(data, target_data):
         else:
             # nothing to do
             return data
-        data.columns = target_data.columns
+        target_columns = target_data.columns
+        if columns is not None:
+            target_columns = target_columns[columns]
+        data.columns = target_columns
         data.index = target_data.index
     except NameError:
         # pandas not installed
