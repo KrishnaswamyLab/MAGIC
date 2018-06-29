@@ -12,6 +12,25 @@ MAGIC has been implemented in Python, Matlab, and R.
 </i>
 </p>
 
+### Table of Contents
+
+      * [Python](#python)
+         * [Installation](#installation)
+            * [Installation with pip](#installation-with-pip)
+            * [Installation from GitHub](#installation-from-github)
+         * [Usage](#usage)
+            * [Quick Start](#quick-start)
+            * [Tutorials](#tutorials)
+      * [Matlab](#matlab)
+            * [Instructions for the Matlab version](#instructions-for-the-matlab-version)
+      * [R](#r)
+         * [Installation](#installation-1)
+            * [Installation with devtools and <code>pip</code>](#installation-with-devtools-and-pip)
+            * [Installation from GitHub](#installation-from-github-1)
+         * [Usage](#usage-1)
+            * [Quick Start](#quick-start-1)
+            * [Tutorials](#tutorials-1)
+
 ## Python
 
 ### Installation
@@ -32,7 +51,7 @@ To clone the repository and install manually, run the following from a terminal:
 
 ### Usage
 
-##### Example data
+#### Quick Start
 
 The following code runs MAGIC on test data located in the MAGIC repository.
 
@@ -46,7 +65,8 @@ The following code runs MAGIC on test data located in the MAGIC repository.
 		plt.show()
 		magic.plot.animate_magic(X, gene_x='VIM', gene_y='CDH1', gene_color='ZEB1', operator=magic_operator)
 
-##### Interactive command line
+#### Tutorials
+
 We have included two tutorial notebooks on MAGIC usage and results visualization for single cell RNA-seq data.
 
 EMT data notebook: http://nbviewer.jupyter.org/github/KrishnaswamyLab/magic/blob/develop/python/tutorial_notebooks/Magic_single_cell_RNAseq_EMT_data.ipynb
@@ -89,7 +109,9 @@ To clone the repository and install manually, run the following from a terminal:
         cd ../Rmagic
         R CMD INSTALL .
 
-#### Usage
+### Usage
+
+#### Quick Start
 
 After installing the package, MAGIC can be run by loading the library and calling `magic()`:
 
@@ -100,4 +122,6 @@ After installing the package, MAGIC can be run by loading the library and callin
 		ggplot(MAGIC_data) +
 		  geom_point(aes(x=VIM, y=CDH1, color=ZEB1))
 
-For a working example, see the Rmarkdown tutorials at https://github.com/KrishnaswamyLab/MAGIC/blob/R_magic2/R/inst/examples/bonemarrow_tutorial.md and https://github.com/KrishnaswamyLab/MAGIC/blob/R_magic2/R/inst/examples/EMT_tutorial.md or in `R/inst/examples`.
+#### Tutorials
+
+For a working example, see the Rmarkdown tutorials at https://github.com/KrishnaswamyLab/MAGIC/blob/master/R/inst/examples/bonemarrow_tutorial.md and https://github.com/KrishnaswamyLab/MAGIC/blob/master/R/inst/examples/EMT_tutorial.md or in `R/inst/examples`.
