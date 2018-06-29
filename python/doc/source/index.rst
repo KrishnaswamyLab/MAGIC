@@ -50,6 +50,7 @@ To run MAGIC on your dataset, create a MAGIC operator and run `fit_transform`. H
         X_magic = magic_operator.fit_transform(X, genes=['VIM', 'CDH1', 'ZEB1'])
         plt.scatter(X_magic['VIM'], X_magic['CDH1'], c=X_magic['ZEB1'], s=1, cmap='inferno')
         plt.show()
+        magic.plot.animate_magic(X, gene_x='VIM', gene_y='CDH1', gene_color='ZEB1', operator=magic_operator)
 
 .. autoclass:: magic.MAGIC
     :members:

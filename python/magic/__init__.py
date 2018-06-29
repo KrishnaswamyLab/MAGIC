@@ -5,3 +5,4 @@ from .version import __version__
 
 import magic.io
 import magic.preprocessing
+import magic.plot
