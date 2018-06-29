@@ -85,6 +85,8 @@ title 'After MAGIC'
 figure;
 c = data(:, ismember(lower(gene_names), lower(plot_genes{4})));
 Y = svdpca(pc, 3, 'random'); % original PCs are not mean centered so doing proper PCA here
+% alternative is to do proper PCA on data:
+%Y = svdpca(data, 3, 'random');
 scatter3(Y(:,1), Y(:,2), Y(:,3), ms, c, 'filled');
 colormap(parula);
 axis tight
@@ -100,6 +102,9 @@ title 'Before MAGIC'
 figure;
 c = M_imputed(:,4);
 Y = svdpca(pc_t, 3, 'random'); % original PCs are not mean centered so doing proper PCA here
+% alternative is to go to full imputed data and then do proper PCA:
+%data_imputed = pc_t * U'; % project full data
+%Y = svdpca(data_imputed, 3, 'random');
 scatter3(Y(:,1), Y(:,2), Y(:,3), ms, c, 'filled');
 colormap(parula);
 axis tight

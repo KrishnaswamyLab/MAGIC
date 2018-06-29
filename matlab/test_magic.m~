@@ -81,17 +81,38 @@ ylabel(h,plot_genes{4});
 view(v);
 title 'After MAGIC'
 
-%% plot PCA before vs after MAGIC
+%% plot PCA before MAGIC
 figure;
-subplot(1,2,1);
-scatter3(pc(:,1), pc(:,2), pc(:,3), ms, c, 'filled');
+c = data(:, ismember(lower(gene_names), lower(plot_genes{4})));
+Y = svdpca(pc, 3, 'random'); % original PCs are not mean centered so doing proper PCA here
+% alternative is to do proper PCA on data:
+%Y = svdpca(data, 3, 'random');
+scatter3(Y(:,1), Y(:,2), Y(:,3), ms, c, 'filled');
 colormap(parula);
 axis tight
-xlabel(plot_genes{1});
-ylabel(plot_genes{2});
-zlabel(plot_genes{3});
-%h = colorbar;
+xlabel 'PC1'
+ylabel 'PC2'
+zlabel 'PC3'
+h = colorbar;
 ylabel(h,plot_genes{4});
-view(v);
+view([-50 22]);
 title 'Before MAGIC'
+
+%% plot PCA after MAGIC
+figure;
+c = M_imputed(:,4);
+Y = svdpca(pc_t, 3, 'random'); % original PCs are not mean centered so doing proper PCA here
+% alternative is to go to full imputed data and then do propPCA:
+%data_imputed = pc_t * U'; % project full data
+%Y = svdpca(data_imputed, 3, 'random');
+scatter3(Y(:,1), Y(:,2), Y(:,3), ms, c, 'filled');
+colormap(parula);
+axis tight
+xlabel 'PC1'
+ylabel 'PC2'
+zlabel 'PC3'
+h = colorbar;
+ylabel(h,plot_genes{4});
+view([-50 22]);
+title 'After MAGIC'
 
