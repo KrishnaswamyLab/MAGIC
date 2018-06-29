@@ -76,10 +76,10 @@ library(ggplot2)
 library(viridis)
 #> Loading required package: viridisLite
 library(phateR)
-#>
+#> 
 #> Attaching package: 'phateR'
 #> The following object is masked from 'package:Rmagic':
-#>
+#> 
 #>     library.size.normalize
 ```
 
@@ -144,13 +144,13 @@ result to the argument `init` to avoid recomputing intermediate
 steps.
 
 ``` r
-data_MAGIC <- magic(magic_testdata, genes=c("VIM", "CDH1", "ZEB1"), t=4, init=data_MAGIC)
+data_MAGIC <- magic(magic_testdata, genes=c("VIM", "CDH1", "ZEB1"), t=6, init=data_MAGIC)
 ggplot(data_MAGIC) +
   geom_point(aes(VIM, CDH1, colour=ZEB1)) +
   scale_colour_viridis(option="B")
 ```
 
-<img src="man/figures/README-unnamed-chunk-1-1.png" width="100%" />
+<img src="man/figures/README-plot_reduced_t-1.png" width="100%" />
 
 We can look at the entire smoothed matrix with `genes='all_genes'`,
 passing the original result to the argument `init` to avoid recomputing
@@ -159,20 +159,20 @@ a lot of
 memory.
 
 ``` r
-data_MAGIC <- magic(magic_testdata, genes="all_genes", t=4, init=data_MAGIC)
+data_MAGIC <- magic(magic_testdata, genes="all_genes", t=6, init=data_MAGIC)
 as.data.frame(data_MAGIC)[1:5, 1:10]
 #>        A1BG-AS1      AAMDC      AAMP     AARSD1     ABCA12      ABCG2
-#> 6564 0.02318932 0.06636833 0.1814952 0.01998665 0.03509270 0.01091799
-#> 3835 0.02305522 0.06726339 0.1597559 0.01630487 0.02857813 0.01335037
-#> 6318 0.02640804 0.06546350 0.1934657 0.01469336 0.03087314 0.01564654
-#> 3284 0.02287164 0.06194795 0.1637859 0.01656443 0.02939938 0.01340856
-#> 1171 0.02824691 0.06262350 0.1767155 0.01483140 0.03406291 0.01458588
-#>          ABHD13   AC007773.2   AC011998.4  AC013470.6
-#> 6564 0.06926381 0.0007282491 0.0012694154 0.003669113
-#> 3835 0.06487983 0.0007331720 0.0016187119 0.002646376
-#> 6318 0.07547549 0.0012984700 0.0020315661 0.005617329
-#> 3284 0.06620499 0.0007615835 0.0007540187 0.001993851
-#> 1171 0.07200313 0.0012521371 0.0025994098 0.005028384
+#> 6564 0.02547428 0.06396845 0.1732406 0.01662639 0.03165963 0.01321600
+#> 3835 0.02530630 0.06340049 0.1644346 0.01595464 0.02956863 0.01387038
+#> 6318 0.02675641 0.06392424 0.1769904 0.01533683 0.03143977 0.01468506
+#> 3284 0.02492706 0.06235185 0.1650386 0.01619631 0.02940383 0.01365444
+#> 1171 0.02741414 0.06310647 0.1727671 0.01539614 0.03207575 0.01466226
+#>          ABHD13   AC007773.2  AC011998.4  AC013470.6
+#> 6564 0.07026219 0.0010481534 0.001706211 0.003337107
+#> 3835 0.06842053 0.0010290600 0.001740188 0.002713894
+#> 6318 0.07229419 0.0012075717 0.002015567 0.004129593
+#> 3284 0.06950077 0.0009517399 0.001459601 0.002545323
+#> 1171 0.07084005 0.0012504564 0.002197020 0.003821794
 ```
 
 ### Visualizing MAGIC values on PCA
