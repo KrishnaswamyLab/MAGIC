@@ -15,7 +15,9 @@ Imports:
     stats,
     reticulate (>= 1.4)
 Suggests:
-	ggplot2
+	ggplot2,
+	readr,
+	phateR
 License: MIT + file LICENSE
 LazyData: true
 RoxygenNote: 6.0.1
