@@ -16,11 +16,9 @@ knitr::opts_chunk$set(echo = TRUE)
 * MAGIC imputes missing data values on sparse data sets, restoring the structure of the data
 * It also proves dimensionality reduction and gene expression visualizations
 * MAGIC can be performed on a variety of datasets
-* Here, we show the effectiveness of MAGIC on epithelial-to-mesenchymal transition (EMT) data
+* Here, we show the effectiveness of MAGIC on erythroid and myeloid cells developing in mouse bone marrow.
 
-To use MAGIC, cite:
-MAGIC: A diffusion-based imputation method reveals gene-gene interactions in single-cell RNA-sequencing data
-Biorxiv (preprint) February 2017. DOI: doi.org/10.1101/111591
+Markov Affinity-based Graph Imputation of Cells (MAGIC) is an algorithm for denoising and transcript recover of single cells applied to single-cell RNA sequencing data, as described in Van Dijk D *et al.* (2018), *Recovering Gene Interactions from Single-Cell Data Using Data Diffusion*, Cell <https://www.cell.com/cell/abstract/S0092-8674(18)30724-4>.
 
 ### Installation
 
@@ -33,7 +31,7 @@ if (!require(devtools)) install.packages(devtools)
 if (!require(Rmagic)) devtools::install_github("KrishnaswamyLab/magic/R")
 ```
 
-In a terminal, run the following command to install the Pythonn repository.
+In a terminal, run the following command to install the Python repository.
 
 ```{bash install_python_magic, eval=FALSE}
 pip install --user git+git://github.com/KrishnaswamyLab/MAGIC.git#subdirectory=python
@@ -84,7 +82,9 @@ First, we need to remove lowly expressed genes and cells with small library size
 keep_cols <- colSums(bmmsc > 0) > 10
 bmmsc <- bmmsc[,keep_cols]
 # look at the distribution of library sizes
-hist(rowSums(bmmsc))
+ggplot() +
+  geom_histogram(aes(x=rowSums(bmmsc)), bins=50) +
+  geom_vline(xintercept = 2000, color='red')
 ```
 
 ```{r}
@@ -132,7 +132,7 @@ As you can see, the gene-gene relationships are much clearer after MAGIC. These 
 The data is a little too smooth - we can decrease `t` from the automatic value to reduce the amount of diffusion. We pass the original result to the argument `init` to avoid recomputing intermediate steps.
 
 ```{r}
-bmmsc_MAGIC <- magic(bmmsc, genes=c("Mpo", "Klf1", "Ifitm1"), t=6, init=bmmsc_MAGIC)
+bmmsc_MAGIC <- magic(bmmsc, genes=c("Mpo", "Klf1", "Ifitm1"), t=4, init=bmmsc_MAGIC)
 ggplot(bmmsc_MAGIC) +
   geom_point(aes(Mpo, Klf1, colour=Ifitm1)) + 
   scale_colour_viridis()
@@ -143,21 +143,34 @@ ggsave('BMMSC_data_R_after_magic.png', width=5, height=5)
 We can look at the entire smoothed matrix with `genes='all_genes'`, passing the original result to the argument `init` to avoid recomputing intermediate steps. Note that this matrix may be large and could take up a lot of memory.
 
 ```{r run_magic_full_matrix}
-bmmsc_MAGIC <- magic(bmmsc, genes="all_genes", init=bmmsc_MAGIC)
+bmmsc_MAGIC <- magic(bmmsc, genes="all_genes", t=4, init=bmmsc_MAGIC)
 as.data.frame(bmmsc_MAGIC)[1:5, 1:10]
+```
+
+### Visualizing MAGIC values on PCA
+
+We can visualize the results of MAGIC on PCA as follows.
+
+```{r run_pca}
+bmmsc_MAGIC_PCA <- as.data.frame(prcomp(bmmsc_MAGIC)$x)
+ggplot(bmmsc_MAGIC_PCA) +
+  geom_point(aes(x=PC1, y=PC2, color=bmmsc_MAGIC$result$Klf1)) +
+  scale_color_viridis(option="B") +
+  labs(color="Klf1")
+ggsave('BMMSC_data_R_pca_colored_by_magic.png', width=5, height=5)
 ```
 
 
 ### Visualizing MAGIC values on PHATE
 
 We can visualize the results of MAGIC on PHATE as follows.
-mKIAA1317;Kctd16
+
 ```{r run_phate}
 bmmsc_PHATE <- phate(bmmsc)
 ggplot(bmmsc_PHATE) +
   geom_point(aes(x=PHATE1, y=PHATE2, color=bmmsc_MAGIC$result$Klf1)) +
-  scale_color_viridis() +
-  labs(color="Mpo")
+  scale_color_viridis(option="B") +
+  labs(color="Klf1")
 ggsave('BMMSC_data_R_phate_colored_by_magic.png', width=5, height=5)
 ```
 
