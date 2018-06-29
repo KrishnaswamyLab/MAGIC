@@ -4,7 +4,7 @@
 %[data, gene_names, gene_ids, cells] = load_10x(sample_dir);
 
 %% load EMT data
-file = 'EMT.csv'; % unzip EMT.csv.zip
+file = 'EMT.csv'; % unzip EMT.csv.zip (gunzip)
 data = importdata(file);
 gene_names = data.colheaders;
 data = data.data;
