@@ -42,13 +42,14 @@ Quick Start
 
 To run MAGIC on your dataset, create a MAGIC operator and run `fit_transform`. Here we show an example with a small, artificial dataset located in the MAGIC repository::
 
-    import magic
-    import phate
-    import pandas as pd
-    X = pd.read_csv("MAGIC/data/test_data.csv")
-    magic_operator = magic.MAGIC()
-    X_magic = magic_operator.fit_transform(X, genes=['VIM', 'CDH1', 'ZEB1'])
-    phate.plot.scatter2d(X_magic[['VIM', 'CDH1']], c=X_magic['ZEB1'])
+        import magic
+        import pandas as pd
+        import matplotlib.pyplot as plt
+        X = pd.read_csv("MAGIC/data/test_data.csv")
+        magic_operator = magic.MAGIC()
+        X_magic = magic_operator.fit_transform(X, genes=['VIM', 'CDH1', 'ZEB1'])
+        plt.scatter(X_magic['VIM'], X_magic['CDH1'], c=X_magic['ZEB1'], s=1, cmap='inferno')
+        plt.show()
 
 .. autoclass:: magic.MAGIC
     :members:
