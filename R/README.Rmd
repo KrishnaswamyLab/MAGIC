@@ -27,6 +27,9 @@ Markov Affinity-based Graph Imputation of Cells (MAGIC) is an algorithm for deno
 * It also proves dimensionality reduction and gene expression visualizations
 * MAGIC can be performed on a variety of datasets
 * Here, we show the usage of MAGIC on a toy dataset
+* You can view further examples of MAGIC on real data in our notebooks under `inst/examples`:
+    * https://github.com/KrishnaswamyLab/MAGIC/blob/master/R/inst/examples/EMT_tutorial.md
+    * https://github.com/KrishnaswamyLab/MAGIC/blob/master/R/inst/examples/bonemarrow_tutorial.md
 
 ### Installation
 
@@ -50,7 +53,6 @@ We'll install a couple more tools for this tutorial.
 ```{r install_extras, eval=FALSE}
 if (!require(viridis)) install.packages("viridis")
 if (!require(ggplot2)) install.packages("ggplot2")
-if (!require(readr)) install.packages("readr")
 if (!require(phateR)) install.packages("phateR")
 ```
 
@@ -67,7 +69,6 @@ We load the Rmagic package and a few others for convenience functions.
 ```{r load_packages}
 library(Rmagic)
 library(ggplot2)
-library(readr)
 library(viridis)
 library(phateR)
 ```
@@ -78,8 +79,8 @@ The example data is located in the MAGIC Github repository.
 
 ```{r load_data}
 # load data
-data <- read_csv("../data/test_data.csv")
-data[1:5,1:10]
+data(magic_testdata)
+magic_testdata[1:5,1:10]
 ```
 
 ### Running MAGIC
@@ -88,13 +89,13 @@ Running MAGIC is as simple as running the `magic` function.
 
 ```{r run_magic}
 # run MAGIC
-data_MAGIC <- magic(data, genes=c("VIM", "CDH1", "ZEB1"))
+data_MAGIC <- magic(magic_testdata, genes=c("VIM", "CDH1", "ZEB1"))
 ```
 
 We can plot the data before and after MAGIC to visualize the results.
 
 ```{r plot_raw}
-ggplot(data) +
+ggplot(magic_testdata) +
   geom_point(aes(VIM, CDH1, colour=ZEB1)) +
   scale_colour_viridis(option="B")
 ```
@@ -112,7 +113,7 @@ As you can see, the gene-gene relationships are much clearer after MAGIC.
 The data is sometimes a little too smooth - we can decrease `t` from the automatic value to reduce the amount of diffusion. We pass the original result to the argument `init` to avoid recomputing intermediate steps.
 
 ```{r}
-data_MAGIC <- magic(data, genes=c("VIM", "CDH1", "ZEB1"), t=4, init=data_MAGIC)
+data_MAGIC <- magic(magic_testdata, genes=c("VIM", "CDH1", "ZEB1"), t=4, init=data_MAGIC)
 ggplot(data_MAGIC) +
   geom_point(aes(VIM, CDH1, colour=ZEB1)) +
   scale_colour_viridis(option="B")
@@ -122,7 +123,7 @@ ggplot(data_MAGIC) +
 We can look at the entire smoothed matrix with `genes='all_genes'`, passing the original result to the argument `init` to avoid recomputing intermediate steps. Note that this matrix may be large and could take up a lot of memory.
 
 ```{r run_magic_full_matrix}
-data_MAGIC <- magic(data, genes="all_genes", t=4, init=data_MAGIC)
+data_MAGIC <- magic(magic_testdata, genes="all_genes", t=4, init=data_MAGIC)
 as.data.frame(data_MAGIC)[1:5, 1:10]
 ```
 
@@ -144,7 +145,7 @@ ggplot(data_MAGIC_PCA) +
 We can visualize the results of MAGIC on PHATE as follows. We set `t` and `k` manually, because this toy dataset is really too small to make sense with PHATE; however, the default values work well for single-cell genomic data.
 
 ```{r run_phate}
-data_PHATE <- phate(data, k=3, t=15)
+data_PHATE <- phate(magic_testdata, k=3, t=15)
 ggplot(data_PHATE) +
   geom_point(aes(x=PHATE1, y=PHATE2, color=data_MAGIC$result$VIM)) +
   scale_color_viridis(option="B") +
