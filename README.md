@@ -69,9 +69,9 @@ The following code runs MAGIC on test data located in the MAGIC repository.
 
 We have included two tutorial notebooks on MAGIC usage and results visualization for single cell RNA-seq data.
 
-EMT data notebook: http://nbviewer.jupyter.org/github/KrishnaswamyLab/magic/blob/develop/python/tutorial_notebooks/Magic_single_cell_RNAseq_EMT_data.ipynb
+EMT data notebook: http://nbviewer.jupyter.org/github/KrishnaswamyLab/MAGIC/blob/develop/python/tutorial_notebooks/Magic_single_cell_RNAseq_EMT_data.ipynb
 
-Bone Marrow data notebook: http://nbviewer.jupyter.org/github/KrishnaswamyLab/magic/blob/develop/python/tutorial_notebooks/Magic_single_cell_RNAseq_bone_marrow_data.ipynb
+Bone Marrow data notebook: http://nbviewer.jupyter.org/github/KrishnaswamyLab/MAGIC/blob/develop/python/tutorial_notebooks/Magic_single_cell_RNAseq_bone_marrow_data.ipynb
 
 ## Matlab
 
@@ -91,7 +91,7 @@ You can install `Rmagic` with `devtools` by running the following in R:
 
         if (!require(devtools)) install.packages("devtools")
         library(devtools)
-        install_github("KrishnaswamyLab/magic/Rmagicmagic")
+        install_github("KrishnaswamyLab/magic/Rmagic")
 
 You then need to install MAGIC in Python with `pip` by running the following from a terminal:
 
