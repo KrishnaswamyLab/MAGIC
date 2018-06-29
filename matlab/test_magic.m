@@ -4,7 +4,7 @@
 %[data, gene_names, gene_ids, cells] = load_10x(sample_dir);
 
 %% load EMT data
-file = 'EMT.csv'; % unzip EMT.csv.zip (gunzip)
+file = '../data/HMLE_TGFb_day_8_10.csv'; %% gunzip ../data/HMLE_TGFb_day_8_10.csv.gz
 data = importdata(file);
 gene_names = data.colheaders;
 data = data.data;
@@ -13,11 +13,11 @@ data = data.data;
 libsize = sum(data,2);
 data = bsxfun(@rdivide, data, libsize) * median(libsize);
 
-%% log transform
+%% log transform -- usually one would log transform the data. Here we don't do it.
 %data = log(data + 0.1);
 
 %% MAGIC
-[pc_t, U] = run_magic(data, 'npca', 100, 'k', 15, 'a', 15, 'make_plot_opt_t', true);
+[pc_t, U, pc] = run_magic(data, 'npca', 100, 'k', 15, 'a', 15, 'make_plot_opt_t', true);
 
 %% project genes
 plot_genes = {'Cdh1', 'Vim', 'Fn1', 'Zeb1'};
@@ -79,5 +79,35 @@ zlabel(plot_genes{3});
 %h = colorbar;
 ylabel(h,plot_genes{4});
 view(v);
+title 'After MAGIC'
+
+%% plot PCA before MAGIC
+figure;
+c = data(:, ismember(lower(gene_names), lower(plot_genes{4})));
+Y = svdpca(pc, 3, 'random'); % original PCs are not mean centered so doing proper PCA here
+scatter3(Y(:,1), Y(:,2), Y(:,3), ms, c, 'filled');
+colormap(parula);
+axis tight
+xlabel 'PC1'
+ylabel 'PC2'
+zlabel 'PC3'
+h = colorbar;
+ylabel(h,plot_genes{4});
+view([-50 22]);
+title 'Before MAGIC'
+
+%% plot PCA after MAGIC
+figure;
+c = M_imputed(:,4);
+Y = svdpca(pc_t, 3, 'random'); % original PCs are not mean centered so doing proper PCA here
+scatter3(Y(:,1), Y(:,2), Y(:,3), ms, c, 'filled');
+colormap(parula);
+axis tight
+xlabel 'PC1'
+ylabel 'PC2'
+zlabel 'PC3'
+h = colorbar;
+ylabel(h,plot_genes{4});
+view([-50 22]);
 title 'After MAGIC'
 
