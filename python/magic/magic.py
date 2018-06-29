@@ -13,7 +13,7 @@ from sklearn.base import BaseEstimator
 from sklearn.exceptions import NotFittedError
 import warnings
 import matplotlib.pyplot as plt
-from scipy import sparse, stats
+from scipy import sparse, spatial
 import pandas as pd
 import numbers
 
@@ -39,7 +39,8 @@ class MAGIC(BaseEstimator):
 
     Markov Affinity-based Graph Imputation of Cells (MAGIC) is an
     algorithm for denoising and transcript recover of single cells
-    applied to single-cell RNA sequencing data.
+    applied to single-cell RNA sequencing data, as described in
+    van Dijk et al, 2018 [1]_.
 
     Parameters
     ----------
@@ -98,28 +99,30 @@ class MAGIC(BaseEstimator):
 
     Examples
     --------
-    >>> # TODO: better example data
     >>> import magic
-    >>> tree_data, tree_clusters = phate.tree.gen_dla(n_dim=100,
-                                                      n_branch=20,
-                                                      branch_length=100)
-    >>> tree_data.shape
-    (2000, 100)
-    >>> magic_operator = magic.MAGIC(k=5, a=20, t=150)
-    >>> tree_magic = phate_operator.fit_transform(tree_data)
-    >>> tree_magic.shape
-    (2000, 100)
-    >>> import phate
-    >>> import matplotlib.pyplot as plt
-    >>> phate_operator = phate.PHATE(knn_dist='precomputed')
-    >>> tree_phate = phate_operator.fit_transform(magic_operator.graph.kernel)
-    >>> # plt.scatter(tree_phate[:,0], tree_phate[:,1], c=tree_magic[:,0])
-    >>> # plt.show()
+    >>> import pandas as pd
+    >>> X = pd.read_csv("../../data/test_data.csv")
+    >>> X.shape
+    (500, 197)
+    >>> magic_operator = magic.MAGIC()
+    >>> X_magic = magic_operator.fit_transform(X, genes=['VIM', 'CDH1', 'ZEB1'])
+    >>> X_magic.shape
+    (500, 3)
+    >>> magic_operator.set_params(t=7)
+    MAGIC(a=15, k=5, knn_dist='euclidean', n_jobs=1, n_pca=100, random_state=None,
+       t=7, verbose=1)
+    >>> X_magic = magic_operator.transform(genes=['VIM', 'CDH1', 'ZEB1'])
+    >>> X_magic.shape
+    (500, 3)
+    >>> X_magic = magic_operator.transform(genes="all_genes")
+    >>> X_magic.shape
+    (500, 197)
 
-    *MAGIC: A diffusion-based imputation method reveals gene-gene interactions
-    in single-cell RNA-sequencing data*
-    'https://www.biorxiv.org/content/early/2017/02/25/111591'
-
+    References
+    ----------
+    .. [1] Van Dijk D *et al.* (2018),
+        *Recovering Gene Interactions from Single-Cell Data Using Data Diffusion*,
+        `Cell <https://www.cell.com/cell/abstract/S0092-8674(18)30724-4>`_.
     """
 
     def __init__(self, k=5, a=15, t='auto', n_pca=100,
@@ -378,24 +381,29 @@ class MAGIC(BaseEstimator):
 
     def transform(self, X=None, genes=None, t_max=20,
                   plot_optimal_t=False, ax=None):
-        """Computes the position of the cells in the embedding space
+        """Computes the values of genes after diffusion
 
         Parameters
         ----------
         X : array, optional, shape=[n_samples, n_features]
             input data with `n_samples` samples and `n_dimensions`
-            dimensions. Not required, since PHATE does not currently embed
-            cells not given in the input matrix to `PHATE.fit()`.
+            dimensions. Not required, since MAGIC does not embed
+            cells not given in the input matrix to `MAGIC.fit()`.
             Accepted data types: `numpy.ndarray`,
-            `scipy.sparse.spmatrix`, `pd.DataFrame`, `anndata.AnnData`. If
-            `knn_dist` is 'precomputed', `data` should be a n_samples x
-            n_samples distance or affinity matrix
+            `scipy.sparse.spmatrix`, `pd.DataFrame`, `anndata.AnnData`.
+
+        genes : list or "all_genes", optional (default: None)
+            List of genes, either as integer indices or column names
+            if input data is a pandas DataFrame. If "all_genes", the entire
+            smoothed matrix is returned. If None, the entire matrix is also
+            returned, but a warning may be raised if the resultant matrix
+            is very large.
 
         t_max : int, optional, default: 20
             maximum t to test if `t` is set to 'auto'
 
         plot_optimal_t : boolean, optional, default: False
-            If true and `t` is set to 'auto', plot the R squared used to
+            If true and `t` is set to 'auto', plot the disparity used to
             select t
 
         ax : matplotlib.axes.Axes, optional
@@ -404,13 +412,34 @@ class MAGIC(BaseEstimator):
 
         Returns
         -------
-        embedding : array, shape=[n_samples, n_dimensions]
-        The cells embedded in a lower dimensional space using PHATE
+        X_magic : array, shape=[n_samples, n_genes]
+            The gene expression values after diffusion
         """
+        try:
+            if isinstance(X, anndata.AnnData):
+                X = X.X
+        except NameError:
+            # anndata not installed
+            pass
+
         if self.graph is None:
             raise NotFittedError("This MAGIC instance is not fitted yet. Call "
                                  "'fit' with appropriate arguments before "
                                  "using this method.")
+
+        store_result = True
+        if X is not None and not matrix_is_equivalent(X, self.X):
+            store_result = False
+            graph = graphtools.base.Data(X, n_pca=self.n_pca)
+            warnings.warn(UserWarning, "Running MAGIC.transform on different "
+                          "data to that which was used for MAGIC.fit may not "
+                          "produce sensible output, unless it comes from the "
+                          "same manifold.")
+        else:
+            X = self.X
+            graph = self.graph
+            store_result = True
+
         if genes is None and isinstance(X, (pd.SparseDataFrame,
                                             sparse.spmatrix)) and \
                 np.prod(X.shape) > 5000 * 20000:
@@ -427,23 +456,15 @@ class MAGIC(BaseEstimator):
             genes = np.array([genes]).flatten()
             if not issubclass(genes.dtype.type, numbers.Integral):
                 # gene names
+                if not isinstance(X, pd.DataFrame):
+                    raise ValueError(
+                        "Non-integer gene names only valid with pd.DataFrame "
+                        "input. X is a {}, genes = {}".format(type(X).__name__,
+                                                              genes))
                 if not np.all(np.isin(genes, X.columns)):
                     warnings.warn("genes {} missing from input data".format(
                         genes[~np.isin(genes, X.columns)]))
                 genes = np.argwhere(np.isin(genes, X.columns)).reshape(-1)
-
-        store_result = True
-        if X is not None and not matrix_is_equivalent(X, self.X):
-            store_result = False
-            graph = graphtools.base.Data(X, n_pca=self.n_pca)
-            warnings.warn(UserWarning, "Running MAGIC.transform on different "
-                          "data to that which was used for MAGIC.fit may not "
-                          "produce sensible output, unless it comes from the "
-                          "same manifold.")
-        else:
-            X = self.X
-            graph = self.graph
-            store_result = True
 
         if store_result and self.X_magic is not None:
             X_magic = self.X_magic
@@ -477,8 +498,8 @@ class MAGIC(BaseEstimator):
 
         Returns
         -------
-        embedding : array, shape=[n_samples, n_dimensions]
-            The cells embedded in a lower dimensional space using PHATE
+        X_magic : array, shape=[n_samples, n_genes]
+            The gene expression values after diffusion
         """
         log_start('MAGIC')
         self.fit(X)
@@ -486,36 +507,66 @@ class MAGIC(BaseEstimator):
         log_complete('MAGIC')
         return X_magic
 
-    def rsquare(self, data, data_prev=None, weights=None,
-                subsample_genes=None):
-        """
+    def calculate_error(self, data, data_prev=None, weights=None,
+                        subsample_genes=None):
+        """Calculates difference before and after diffusion
+
+        Parameters
+        ----------
+        data : array-like
+            current data matrix
+        data_prev : array-like, optional (default: None)
+            previous data matrix. If None, `data` is simply prepared for
+            comparison and no error is returned
+        weights : list-like, optional (default: None)
+            weightings for dimensions of data. If None, dimensions are equally
+            weighted
+        subsample_genes : like-like, optional (default: None)
+            genes to select in subsampling. If None, no subsampling is
+            performed
+
         Returns
         -------
-
-        r2 : R squared value
-
-        data_curr : transformed data for next time
+        error : float
+            Procrustes disparity value
+        data_curr : array-like
+            transformed data to use for the next comparison
         """
         if subsample_genes is not None:
             data = data[:, subsample_genes]
         if weights is None:
             weights = np.ones(data.shape[1]) / data.shape[1]
         if data_prev is not None:
-            r = [stats.linregress(data_prev[:, i], data[:, i]).rvalue
-                 for i in range(data.shape[1])]
-            r = np.sum(weights * np.array(r))
-            r2 = 1 - r**2
+            _, _, error = spatial.procrustes(data_prev, data)
         else:
-            r2 = None
-        return r2, data
+            error = None
+        return error, data
 
     def impute(self, data, t_max=20, plot=False, ax=None,
-               max_genes_compute_t=500):
-        """Impute with PCA
+               max_genes_compute_t=500, threshold=0.001):
+        """Peform MAGIC imputation
 
         Parameters
         ----------
         data : graphtools.Graph, graphtools.Data or array-like
+            Input data
+        t_max : int, optional (default: 20)
+            Maximum value of t to consider for optimal t selection
+        plot : bool, optional (default: False)
+            Plot the optimal t selection graph
+        ax : matplotlib.Axes, optional (default: None)
+            Axis on which to plot. If None, a new axis is created
+        max_genes_compute_t : int, optional (default: 500)
+            Above this number, genes will be subsampled for
+            optimal t selection
+        threshold : float, optional (default: 0.001)
+            Threshold after which Procrustes disparity is considered
+            to have converged for optimal t selection
+
+        Returns
+        -------
+        X_magic : array-like, shape=[n_samples, n_pca]
+            Imputed data
         """
         if not isinstance(data, graphtools.base.Data):
             data = graphtools.base.Data(data, n_pca=self.n_pca)
@@ -528,15 +579,15 @@ class MAGIC(BaseEstimator):
         else:
             subsample_genes = None
         if hasattr(data, "data_pca"):
-            weights = data.data_pca.explained_variance_ratio_
+            weights = None  # data.data_pca.explained_variance_ratio_
         else:
             weights = None
         if self.t == 'auto':
-            _, data_prev = self.rsquare(
+            _, data_prev = self.calculate_error(
                 data_imputed, data_prev=None,
                 weights=weights,
                 subsample_genes=subsample_genes)
-            r2_vec = []
+            error_vec = []
             t_opt = None
         else:
             t_opt = self.t
@@ -563,14 +614,14 @@ class MAGIC(BaseEstimator):
                 i += 1
                 data_imputed = self.diff_op.dot(data_imputed)
                 if self.t == 'auto':
-                    r2, data_prev = self.rsquare(
+                    error, data_prev = self.calculate_error(
                         data_imputed, data_prev,
                         weights=weights,
                         subsample_genes=subsample_genes)
-                    r2_vec.append(r2)
-                    log_debug("{}: {}".format(i, r2_vec))
-                    if r2 < 0.05 and t_opt is None:
-                        t_opt = i + 2
+                    error_vec.append(error)
+                    log_debug("{}: {}".format(i, error_vec))
+                    if error < threshold and t_opt is None:
+                        t_opt = i + 1
                         log_info("Automatically selected t = {}".format(t_opt))
 
         log_complete("imputation")
@@ -587,11 +638,11 @@ class MAGIC(BaseEstimator):
                 while i < t_max:
                     i += 1
                     data_overimputed = self.diff_op.dot(data_overimputed)
-                    r2, data_prev = self.rsquare(
+                    error, data_prev = self.calculate_error(
                         data_overimputed, data_prev,
                         weights=weights,
                         subsample_genes=subsample_genes)
-                    r2_vec.append(r2)
+                    error_vec.append(error)
 
             # create axis
             if ax is None:
@@ -601,18 +652,17 @@ class MAGIC(BaseEstimator):
                 show = False
 
             # plot
-            x = np.arange(len(r2_vec)) + 1
-            ax.plot(x, r2_vec)
+            x = np.arange(len(error_vec)) + 1
+            ax.plot(x, error_vec)
             if t_opt is not None:
-                ax.plot(t_opt, r2_vec[t_opt - 1], 'ro', markersize=10,)
-            ax.plot(x, np.full(len(r2_vec), 0.05), 'k--')
+                ax.plot(t_opt, error_vec[t_opt - 1], 'ro', markersize=10,)
+            ax.plot(x, np.full(len(error_vec), threshold), 'k--')
             ax.set_xlabel('t')
-            ax.set_ylabel('1 - R^2(data_{t},data_{t-1})')
-            ax.set_xlim([1, len(r2_vec)])
-            ax.set_ylim([0, 1])
+            ax.set_ylabel('disparity(data_{t}, data_{t-1})')
+            ax.set_xlim([1, len(error_vec)])
             plt.tight_layout()
             log_complete("optimal t plot")
             if show:
-                plt.show()
+                plt.show(block=False)
 
         return data_imputed
