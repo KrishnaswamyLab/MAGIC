@@ -1,6 +1,8 @@
 Rmagic EMT Tutorial
 ================
 
+true
+
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
 ## MAGIC (Markov Affinity-Based Graph Imputation of Cells)
@@ -76,11 +78,11 @@ library(viridis)
 library(phateR)
 ```
 
-    ##
+    ## 
     ## Attaching package: 'phateR'
 
     ## The following object is masked from 'package:Rmagic':
-    ##
+    ## 
     ##     library.size.normalize
 
 ### Loading data
@@ -113,42 +115,54 @@ data[1:5,1:10]
     ## 5         0           0     0          0     0         0     0           0
     ## # ... with 2 more variables: A4GALT <int>, AAAS <int>
 
-First, we need to remove lowly expressed genes and cells with small
-library size.
+First, we need to remove lowly expressed genes.
 
 ``` r
 # keep genes expressed in at least 10 cells
 keep_cols <- colSums(data > 0) > 10
 data <- data[,keep_cols]
+```
+
+Ordinarily, we would remove cells with small library sizes. In this
+dataset, it has already been done; however, if you wanted to do that,
+you could do it with the code below.
+
+``` r
 # look at the distribution of library sizes
 ggplot() +
   geom_histogram(aes(x=rowSums(data)), bins=50) +
-  geom_vline(xintercept = 3000, color='red')
+  geom_vline(xintercept = 1000, color='red')
 ```
 
-![](emt_tutorial_files/figure-gfm/unnamed-chunk-1-1.png)<!-- -->
+![](emt_tutorial_files/figure-gfm/libsize_histogram-1.png)<!-- -->
 
 ``` r
-# keep cells with at least 3000 UMIs and at most 15000
-keep_rows <- rowSums(data) > 3000 & rowSums(data) < 15000
-data <- data[keep_rows,]
+if (FALSE) {
+  # keep cells with at least 1000 UMIs and at most 15000
+  keep_rows <- rowSums(data) > 1000 & rowSums(data) < 15000
+  data <- data[keep_rows,]
+}
 ```
 
-We should library size normalize and transform the data prior to MAGIC.
-Many people use a log transform, which requires adding a “pseudocount”
-to avoid log(0). We square root instead, which has a similar form but
-doesn’t suffer from instabilities at zero.
+We should library size normalize the data prior to MAGIC. Often we also
+transform the data with either log or square root. The log transform is
+commonly used, which requires adding a “pseudocount” to avoid log(0). We
+normally square root instead, which has a similar form but doesn’t
+suffer from instabilities at zero. For this dataset, though, it is not
+necessary as the distribution of gene expression is not too extreme.
 
 ``` r
 data <- library.size.normalize(data)
-data <- sqrt(data)
+if (FALSE) {
+  data <- sqrt(data)
+}
 ```
 
 ### Running MAGIC
 
 Running MAGIC is as simple as running the `magic` function. Because this
-dataset is rather large, we can increase `k` from the default of 5 up to
-15.
+dataset is rather large, we can increase `k` from the default of 10 up
+to 15.
 
 ``` r
 # run MAGIC
@@ -194,18 +208,18 @@ data_MAGIC <- magic(data, k=15, genes="all_genes", init=data_MAGIC)
 as.data.frame(data_MAGIC)[1:5, 1:10]
 ```
 
-    ##          A1BG   A1BG-AS1       A2ML1     A4GALT      AAAS      AACS
-    ## 1 0.001652799 0.03181386 0.008611862 0.01352016 0.1310461 0.2214583
-    ## 2 0.001712522 0.03251830 0.010301061 0.01520513 0.1290344 0.2226633
-    ## 3 0.001666287 0.03232608 0.010190187 0.01487386 0.1291938 0.2224736
-    ## 4 0.001909803 0.03766258 0.029331208 0.02878727 0.1084993 0.2373691
-    ## 5 0.001706013 0.03219870 0.009911144 0.01484650 0.1293207 0.2219350
+    ##          A1BG   A1BG-AS1       A2ML1      A4GALT      AAAS      AACS
+    ## 1 0.001854893 0.02881591 0.008900173 0.012437242 0.1272436 0.2203742
+    ## 2 0.001133693 0.03286448 0.011011072 0.006169585 0.1264281 0.2170346
+    ## 3 0.002097424 0.02698868 0.008464190 0.013413017 0.1277215 0.2207171
+    ## 4 0.003076367 0.03379555 0.019677135 0.017580554 0.1052129 0.2326787
+    ## 5 0.001704564 0.02785588 0.007650259 0.010583328 0.1302630 0.2196815
     ##        AADAT     AAED1     AAGAB      AAK1
-    ## 1 0.03053407 0.1472675 0.2744654 0.5680616
-    ## 2 0.02966139 0.1476464 0.2729096 0.5690817
-    ## 3 0.02996176 0.1469537 0.2727705 0.5709182
-    ## 4 0.02529005 0.1420828 0.2591433 0.6070924
-    ## 5 0.02984316 0.1473383 0.2727566 0.5681089
+    ## 1 0.03026436 0.1445250 0.2745069 0.6526160
+    ## 2 0.02708794 0.1486098 0.2743147 0.6408745
+    ## 3 0.03088562 0.1448863 0.2745518 0.6522863
+    ## 4 0.02384704 0.1466735 0.2638890 0.6601329
+    ## 5 0.03078958 0.1448066 0.2767862 0.6450917
 
 ### Visualizing MAGIC values on PCA
 
@@ -226,22 +240,4 @@ ggplot(data_MAGIC_PCA) +
 
 ``` r
 ggsave('EMT_data_R_pca_colored_by_magic.png', width=5, height=5)
-```
-
-### Visualizing MAGIC values on PHATE
-
-We can visualize the results of MAGIC on PHATE as follows.
-
-``` r
-data_PHATE <- phate(data, k=15)
-ggplot(data_PHATE) +
-  geom_point(aes(x=PHATE1, y=PHATE2, color=data_MAGIC$result$VIM)) +
-  scale_color_viridis(option="B") +
-  labs(color="VIM")
-```
-
-![](emt_tutorial_files/figure-gfm/run_phate-1.png)<!-- -->
-
-``` r
-ggsave('EMT_data_R_phate_colored_by_magic.png', width=5, height=5)
 ```

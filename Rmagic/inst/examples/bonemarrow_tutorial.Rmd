@@ -2,7 +2,7 @@
 title: "Rmagic Bone Marrow Tutorial"
 output:
   github_document: default
-  html_document: default
+toc: true
 ---
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
@@ -84,12 +84,12 @@ bmmsc <- bmmsc[,keep_cols]
 # look at the distribution of library sizes
 ggplot() +
   geom_histogram(aes(x=rowSums(bmmsc)), bins=50) +
-  geom_vline(xintercept = 2000, color='red')
+  geom_vline(xintercept = 1000, color='red')
 ```
 
 ```{r}
-# keep cells with at least 2000 UMIs
-keep_rows <- rowSums(bmmsc) > 2000
+# keep cells with at least 1000 UMIs
+keep_rows <- rowSums(bmmsc) > 1000
 bmmsc <- bmmsc[keep_rows,]
 ```
 
@@ -115,7 +115,7 @@ We can plot the data before and after MAGIC to visualize the results.
 ```{r plot_raw}
 ggplot(bmmsc) +
   geom_point(aes(Mpo, Klf1, colour=Ifitm1)) +
-  scale_colour_viridis()
+  scale_colour_viridis(option="B")
 ggsave('BMMSC_data_R_before_magic.png', width=5, height=5)
 ```
 
@@ -124,7 +124,7 @@ The data suffers from dropout to the point that we cannot infer anything about t
 ```{r plot_magic}
 ggplot(bmmsc_MAGIC) +
   geom_point(aes(Mpo, Klf1, colour=Ifitm1)) +
-  scale_colour_viridis()
+  scale_colour_viridis(option="B")
 ```
 
 As you can see, the gene-gene relationships are much clearer after MAGIC. These relationships also match the biological progression we expect to see - Ifitm1 is a stem cell marker, Klf1 is an erythroid marker, and Mpo is a myeloid marker.
@@ -135,7 +135,7 @@ The data is a little too smooth - we can decrease `t` from the automatic value t
 bmmsc_MAGIC <- magic(bmmsc, genes=c("Mpo", "Klf1", "Ifitm1"), t=4, init=bmmsc_MAGIC)
 ggplot(bmmsc_MAGIC) +
   geom_point(aes(Mpo, Klf1, colour=Ifitm1)) +
-  scale_colour_viridis()
+  scale_colour_viridis(option="B")
 ggsave('BMMSC_data_R_after_magic.png', width=5, height=5)
 ```
 
@@ -166,7 +166,7 @@ ggsave('BMMSC_data_R_pca_colored_by_magic.png', width=5, height=5)
 We can visualize the results of MAGIC on PHATE as follows.
 
 ```{r run_phate}
-bmmsc_PHATE <- phate(bmmsc)
+bmmsc_PHATE <- phate(bmmsc, k=4, a=100, t=20)
 ggplot(bmmsc_PHATE) +
   geom_point(aes(x=PHATE1, y=PHATE2, color=bmmsc_MAGIC$result$Klf1)) +
   scale_color_viridis(option="B") +
