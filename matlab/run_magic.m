@@ -73,8 +73,8 @@ end
 
 % PCA
 disp 'doing PCA'
-[U,~,~] = randPCA(data', npca);
-pc = data * U;
+[U,~,~] = randPCA(data', npca); % this is svd
+pc = data * U; % this is PCA without mean centering to be able to handle sparse data
 
 % compute kernel
 disp 'computing kernel'
