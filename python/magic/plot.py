@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 from matplotlib import rc, animation
+import numbers
 
 from .magic import MAGIC
 from .utils import in_ipynb
@@ -20,6 +21,9 @@ def _validate_gene(gene, data):
                     gene))
         if gene not in data.columns:
             raise ValueError("gene {} not found".format(gene))
+    elif gene is not None and not isinstance(gene, numbers.Integral):
+        raise TypeError(
+            "Expected int or str. Got {}".format(type(gene).__name__))
     return gene
 
 
@@ -88,6 +92,8 @@ def animate_magic(data, gene_x, gene_y, gene_color=None,
 
     if operator is None:
         operator = MAGIC(verbose=verbose, **kwargs).fit(data)
+    else:
+        operator.set_params(verbose=verbose, **kwargs)
     gene_x = _validate_gene(gene_x, data)
     gene_y = _validate_gene(gene_y, data)
     gene_color = _validate_gene(gene_color, data)
