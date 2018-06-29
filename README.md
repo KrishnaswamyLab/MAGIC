@@ -1,10 +1,9 @@
 Markov Affinity-based Graph Imputation of Cells (MAGIC)
 -------------------------------------------------------
-van Dijk, David, et al. "MAGIC: A diffusion-based imputation method reveals gene-gene interactions in single-cell RNA-sequencing data." BioRxiv (2017): 111591.
 
-http://www.biorxiv.org/content/early/2017/02/25/111591
+Markov Affinity-based Graph Imputation of Cells (MAGIC) is an algorithm for denoising and transcript recover of single cells applied to single-cell RNA sequencing data, as described in Van Dijk D *et al.* (2018), *Recovering Gene Interactions from Single-Cell Data Using Data Diffusion*, Cell <https://www.cell.com/cell/abstract/S0092-8674(18)30724-4>.
 
-MAGIC has been implemented in Python3, Matlab, and R.
+MAGIC has been implemented in Python, Matlab, and R.
 
 <p align="center">
 <img src="https://github.com/KrishnaswamyLab/MAGIC/blob/master/magic.gif"/>
@@ -45,6 +44,7 @@ The following code runs MAGIC on test data located in the MAGIC repository.
 		X_magic = magic_operator.fit_transform(X, genes=['VIM', 'CDH1', 'ZEB1'])
 		plt.scatter(X_magic['VIM'], X_magic['CDH1'], c=X_magic['ZEB1'], s=1, cmap='inferno')
 		plt.show()
+		magic.plot.animate_magic(X, gene_x='VIM', gene_y='CDH1', gene_color='ZEB1', operator=magic_operator)
 
 ##### Interactive command line
 We have included two tutorial notebooks on MAGIC usage and results visualization for single cell RNA-seq data.
@@ -91,12 +91,12 @@ To clone the repository and install manually, run the following from a terminal:
 
 #### Usage
 
-After installing the package, MAGIC can be run by loading the library and calling `run_magic()`:
+After installing the package, MAGIC can be run by loading the library and calling `magic()`:
 
 		library(Rmagic)
-		data(magic_testdata)
-		MAGIC_data <- magic(magic_testdata, genes=c("VIM", "CDH1", "ZEB1"), rescale_percent=99)
 		library(ggplot2)
+		data(magic_testdata)
+		MAGIC_data <- magic(magic_testdata, genes=c("VIM", "CDH1", "ZEB1"))
 		ggplot(MAGIC_data) +
 		  geom_point(aes(x=VIM, y=CDH1, color=ZEB1))
 
