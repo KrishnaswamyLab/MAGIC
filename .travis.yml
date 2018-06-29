@@ -33,6 +33,7 @@ install:
   - python3 setup.py install --user
   - cd ../Rmagic
   - R CMD INSTALL .
+  - cd ..
 
 script:
   - cd Rmagic
@@ -41,5 +42,6 @@ script:
   - cd ../python
   - python2 setup.py test
   - python3 setup.py test
+  - cd ..
 
 warnings_are_errors: true
