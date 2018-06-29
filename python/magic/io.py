@@ -53,7 +53,6 @@ def with_tables(fun):
 
 def _parse_header(header, n_expected, header_type="gene_names"):
     """
-
     Parameters
     ----------
     header : `str` filename, array-like or `None`
@@ -178,14 +177,31 @@ def _read_csv_sparse(filename, chunksize=1000000, fill_value=0.0, **kwargs):
 def load_csv(filename, cell_axis='row', delimiter=',',
              gene_names=True, cell_names=True,
              sparse=False, **kwargs):
-    """
+    """Load a csv file
+
+    Parameters
+    ----------
+    filename : str
+        The name of the csv file to be loaded
+    cell_axis : {'row', 'column'}, optional (default: 'row')
+        If your data has genes on the rows and cells on the columns, use
+        cell_axis='column'
+    delimiter : str, optional (default: ',')
+        Use '\\t' for tab separated values (tsv)
     gene_names : `bool`, `str`, array-like, or `None` (default: True)
         If `True`, we assume gene names are in the first row/column. Otherwise
         expects a filename or an array containing a list of gene symbols or ids
-
     cell_names : `bool`, `str`, array-like, or `None` (default: True)
         If `True`, we assume cell names are in the first row/column. Otherwise
         expects a filename or an array containing a list of cell barcodes.
+    sparse : bool, optional (default: False)
+        If True, loads the data as a pd.SparseDataFrame. This uses less memory
+        but more CPU.
+    **kwargs : optional arguments for `pd.read_csv`.
+
+    Returns
+    -------
+    data : pd.DataFrame
     """
     if cell_axis not in ['row', 'column', 'col']:
         raise ValueError(
@@ -235,14 +251,31 @@ def load_csv(filename, cell_axis='row', delimiter=',',
 def load_tsv(filename, cell_axis='row', delimiter='\t',
              gene_names=True, cell_names=True,
              sparse=False, **kwargs):
-    """
+    """Load a csv file
+
+    Parameters
+    ----------
+    filename : str
+        The name of the csv file to be loaded
+    cell_axis : {'row', 'column'}, optional (default: 'row')
+        If your data has genes on the rows and cells on the columns, use
+        cell_axis='column'
+    delimiter : str, optional (default: '\\t')
+        Use ',' for comma separated values (csv)
     gene_names : `bool`, `str`, array-like, or `None` (default: True)
         If `True`, we assume gene names are in the first row/column. Otherwise
         expects a filename or an array containing a list of gene symbols or ids
-
     cell_names : `bool`, `str`, array-like, or `None` (default: True)
         If `True`, we assume cell names are in the first row/column. Otherwise
         expects a filename or an array containing a list of cell barcodes.
+    sparse : bool, optional (default: False)
+        If True, loads the data as a pd.SparseDataFrame. This uses less memory
+        but more CPU.
+    **kwargs : optional arguments for `pd.read_csv`.
+
+    Returns
+    -------
+    data : pd.DataFrame
     """
     return load_csv(filename, cell_axis=cell_axis, delimiter=delimiter,
                     gene_names=gene_names, cell_names=cell_names,
@@ -250,16 +283,38 @@ def load_tsv(filename, cell_axis='row', delimiter='\t',
 
 
 @with_fcsparser
-def load_fcs(fcs_file, gene_names=True, cell_names=True,
+def load_fcs(filename, gene_names=True, cell_names=True,
              sparse=None,
              metadata_channels=['Time', 'Event_length', 'DNA1', 'DNA2',
                                 'Cisplatin', 'beadDist', 'bead1']):
+    """Load a fcs file
+
+    Parameters
+    ----------
+    filename : str
+        The name of the fcs file to be loaded
+    gene_names : `bool`, `str`, array-like, or `None` (default: True)
+        If `True`, we assume gene names are contained in the file. Otherwise
+        expects a filename or an array containing a list of gene symbols or ids
+    cell_names : `bool`, `str`, array-like, or `None` (default: True)
+        If `True`, we assume cell names are contained in the file. Otherwise
+        expects a filename or an array containing a list of cell barcodes.
+    sparse : bool, optional (default: None)
+        If True, loads the data as a pd.SparseDataFrame. This uses less memory
+        but more CPU.
+    metadata_channels : list-like, optional (default: ['Time', 'Event_length', 'DNA1', 'DNA2', 'Cisplatin', 'beadDist', 'bead1'])
+        Channels to be excluded from the data
+
+    Returns
+    -------
+    data : pd.DataFrame
+    """
     if cell_names is True:
         cell_names = None
     if gene_names is True:
         gene_names = None
     # Parse the fcs file
-    meta, data = fcsparser.parse(fcs_file)
+    meta, data = fcsparser.parse(filename)
     metadata_channels = data.columns.intersection(metadata_channels)
     data_channels = data.columns.difference(metadata_channels)
     metadata = data[metadata_channels]
@@ -271,14 +326,26 @@ def load_fcs(fcs_file, gene_names=True, cell_names=True,
 
 def load_mtx(mtx_file, cell_axis='row',
              gene_names=None, cell_names=None, sparse=None):
-    """
+    """Load a mtx file
+
     Parameters
     ----------
+    filename : str
+        The name of the mtx file to be loaded
+    cell_axis : {'row', 'column'}, optional (default: 'row')
+        If your data has genes on the rows and cells on the columns, use
+        cell_axis='column'
+    gene_names : `str`, array-like, or `None` (default: None)
+        Expects a filename or an array containing a list of gene symbols or ids
+    cell_names : `str`, array-like, or `None` (default: None)
+        Expects a filename or an array containing a list of cell barcodes.
+    sparse : bool, optional (default: None)
+        If True, loads the data as a pd.SparseDataFrame. This uses less memory
+        but more CPU.
 
-    cell_axis : {'row', 'column'}
-        Axis on which cells are placed. cell_axis='row' implies that the csv
-        file has `n_cells` row and `n_genes` columns. `cell_axis='column'`
-        implies that the csv file has `n_cells` columns and `n_genes` rows.
+    Returns
+    -------
+    data : pd.DataFrame
     """
     if cell_axis not in ['row', 'column', 'col']:
         raise ValueError(
@@ -353,12 +420,15 @@ def load_10X(data_dir, sparse=True, gene_labels='symbol',
     data_dir: string
         path to input data directory
         expects 'matrix.mtx', 'genes.tsv', 'barcodes.tsv' to be present and
-        will raise and error otherwise
+        will raise an error otherwise
     sparse: boolean
         If True, a sparse Pandas DataFrame is returned.
     gene_labels: string, {'id', 'symbol', 'both'} optional, default: 'symbol'
         Whether the columns of the dataframe should contain gene ids or gene
         symbols. If 'both', returns symbols followed by ids in parentheses.
+    allow_duplicates : bool, optional (default: None)
+        Whether or not to allow duplicate gene names. If None, duplicates are
+        allowed for dense input but not for sparse input.
 
     Returns
     -------
@@ -401,6 +471,30 @@ def load_10X(data_dir, sparse=True, gene_labels='symbol',
 
 def load_10X_zip(filename, sparse=True, gene_labels='symbol',
                  allow_duplicates=None):
+    """Basic IO for zipped 10X data produced from the 10X Cellranger pipeline.
+
+    Runs `load_10X` after unzipping the data contained in `filename`
+
+    Parameters
+    ----------
+    filename: string
+        path to zipped input data directory
+        expects 'matrix.mtx', 'genes.tsv', 'barcodes.tsv' to be present and
+        will raise an error otherwise
+    sparse: boolean
+        If True, a sparse Pandas DataFrame is returned.
+    gene_labels: string, {'id', 'symbol', 'both'} optional, default: 'symbol'
+        Whether the columns of the dataframe should contain gene ids or gene
+        symbols. If 'both', returns symbols followed by ids in parentheses.
+    allow_duplicates : bool, optional (default: None)
+        Whether or not to allow duplicate gene names. If None, duplicates are
+        allowed for dense input but not for sparse input.
+
+    Returns
+    -------
+    data: pandas.DataFrame shape = (n_cell, n_genes)
+        imported data matrix
+    """
     tmpdir = tempfile.mkdtemp()
     with zipfile.ZipFile(filename) as handle:
         files = handle.namelist()
@@ -430,6 +524,30 @@ def load_10X_zip(filename, sparse=True, gene_labels='symbol',
 @with_tables
 def load_10x_HDF5(filename, genome, sparse=True, gene_labels='symbol',
                   allow_duplicates=None):
+    """Basic IO for HDF5 10X data produced from the 10X Cellranger pipeline.
+
+    Equivalent to `load_10X` but for HDF5 format.
+
+    Parameters
+    ----------
+    filename: string
+        path to HDF5 input data
+    genome : str
+        Name of the genome to which CellRanger ran analysis
+    sparse: boolean
+        If True, a sparse Pandas DataFrame is returned.
+    gene_labels: string, {'id', 'symbol', 'both'} optional, default: 'symbol'
+        Whether the columns of the dataframe should contain gene ids or gene
+        symbols. If 'both', returns symbols followed by ids in parentheses.
+    allow_duplicates : bool, optional (default: None)
+        Whether or not to allow duplicate gene names. If None, duplicates are
+        allowed for dense input but not for sparse input.
+
+    Returns
+    -------
+    data: pandas.DataFrame shape = (n_cell, n_genes)
+        imported data matrix
+    """
     with tables.open_file(filename, 'r') as f:
         try:
             group = f.get_node(f.root, genome)
