@@ -1,0 +1,46 @@
+# R for travis: see documentation at https://docs.travis-ci.com/user/languages/r
+
+language: r
+sudo: required
+cache: packages
+
+os:
+  - linux
+  - osx
+
+r:
+  - oldrel
+  - release
+  - devel
+
+cache: packages
+
+env:
+  global:
+    - PATH="$HOME/miniconda/bin:$PATH"
+    - RETICULATE_PYTHON="$HOME/miniconda/bin/python"
+
+before_install:
+  - chmod +x travis_setup.sh
+  - ./travis_setup.sh
+  - pip install --user phate
+  - cd python
+  - python setup.py install --user
+  - cd ..
+
+script:
+  - cd Rmagic
+  - R CMD build .
+  - travis_wait 30 R CMD check *tar.gz
+  - cd ../python
+  - python setup.py test
+
+r_packages:
+  - Matrix
+  - ggplot2
+  - reticulate
+  - devtools
+  - readr
+  - phateR
+
+warnings_are_errors: true

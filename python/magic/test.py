@@ -2,35 +2,28 @@
 
 
 from __future__ import print_function, division
-import doctest
 import magic
 import pandas as pd
 import numpy as np
 
 
-scdata = pd.read_csv("../data/HMLE_TGFb_day_8_10.csv")
-scdata_norm = magic.preprocessing.library_size_normalize(scdata)
-assert scdata.shape == scdata_norm
-
-fast_magic_operator = magic.MAGIC(t='auto', a=20, k=10)
-classic_magic_operator = magic.MAGIC(t=10, a=20, k=10, n_pca=None)
-
-fast_magic = fast_magic_operator.fit_transform(scdata_norm)
-assert scdata_norm.shape == fast_magic.shape
-
-classic_magic = classic_magic_operator.fit_transform(scdata_norm)
-assert scdata_norm.shape == classic_magic.shape 
-
-
-
-def test_magic():
-    doctest.testmod()
-
-
 def test_scdata():
+    scdata = pd.read_csv("../data/test_data.csv")
+    scdata_norm = magic.preprocessing.library_size_normalize(scdata)
+    assert scdata.shape == scdata_norm.shape
 
-    return 0
+    fast_magic_operator = magic.MAGIC(t='auto', a=20, k=10)
+
+    str_gene_magic = fast_magic_operator.fit_transform(
+        scdata_norm, genes=['VIM', 'ZEB1'])
+    int_gene_magic = fast_magic_operator.fit_transform(
+        scdata_norm, genes=[-2, -1])
+    assert str_gene_magic.shape[0] == scdata_norm.shape[0]
+    assert np.all(str_gene_magic == int_gene_magic)
+
+    fast_magic = fast_magic_operator.fit_transform(scdata_norm)
+    assert scdata_norm.shape == fast_magic.shape
 
 
 if __name__ == "main":
-    test_magic()
+    test_scdata()
