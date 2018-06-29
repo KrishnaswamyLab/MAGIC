@@ -17,11 +17,11 @@ data = bsxfun(@rdivide, data, libsize) * median(libsize);
 %data = log(data + 0.1);
 
 %% MAGIC
-[pc_t, U] = run_magic(data, 'npca', 100, 'k', 15, 'a', 15);
+[pc_t, U] = run_magic(data, 'npca', 100, 'k', 15, 'a', 15, 'make_plot_opt_t', true);
 
 %% project genes
 plot_genes = {'Cdh1', 'Vim', 'Fn1', 'Zeb1'};
-[M_imputed, genes_found] = project_genes(plot_genes, pc_t, U, gene_names);
+[M_imputed, genes_found] = project_genes(plot_genes, gene_names, pc_t, U);
 
 %% plot
 ms = 20;
