@@ -4,7 +4,7 @@
 \alias{magic}
 \title{Perform MAGIC on a data matrix}
 \usage{
-magic(data, genes = NULL, k = 5, alpha = 15, t = "auto", npca = 100,
+magic(data, genes = NULL, k = 10, alpha = 15, t = "auto", npca = 100,
   init = NULL, t.max = 20, knn.dist.method = "euclidean", verbose = 1,
   n.jobs = 1, seed = NULL)
 }
@@ -15,7 +15,7 @@ magic(data, genes = NULL, k = 5, alpha = 15, t = "auto", npca = 100,
 vector of column names or column indices for which to return smoothed data
 If 'all_genes' or NULL, the entire smoothed matrix is returned}
 
-\item{k}{int, optional, default: 5
+\item{k}{int, optional, default: 10
 number of nearest neighbors on which to build kernel}
 
 \item{alpha}{int, optional, default: 15
