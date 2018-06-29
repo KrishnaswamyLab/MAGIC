@@ -45,7 +45,7 @@ class MAGIC(BaseEstimator):
     Parameters
     ----------
 
-    k : int, optional, default: 5
+    k : int, optional, default: 10
         number of nearest neighbors on which to build kernel
 
     a : int, optional, default: 15
@@ -129,7 +129,7 @@ class MAGIC(BaseEstimator):
         `Cell <https://www.cell.com/cell/abstract/S0092-8674(18)30724-4>`_.
     """
 
-    def __init__(self, k=5, a=15, t='auto', n_pca=100,
+    def __init__(self, k=10, a=15, t='auto', n_pca=100,
                  knn_dist='euclidean', n_jobs=1, random_state=None,
                  verbose=1):
         self.k = k
@@ -204,7 +204,7 @@ class MAGIC(BaseEstimator):
         Parameters
         ----------
 
-        k : int, optional, default: 5
+        k : int, optional, default: 10
             number of nearest neighbors on which to build kernel
 
         a : int, optional, default: 15

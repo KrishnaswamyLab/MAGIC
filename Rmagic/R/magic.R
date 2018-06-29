@@ -4,7 +4,7 @@
 #' @param genes character or integer vector, default: NULL
 #' vector of column names or column indices for which to return smoothed data
 #' If 'all_genes' or NULL, the entire smoothed matrix is returned
-#' @param k int, optional, default: 5
+#' @param k int, optional, default: 10
 #' number of nearest neighbors on which to build kernel
 #' @param alpha int, optional, default: 15
 #' sets decay rate of kernel tails.
@@ -65,7 +65,7 @@
 #' @export
 magic <- function(data,
                   genes=NULL,
-                  k = 5,
+                  k = 10,
                   alpha = 15,
                   t = 'auto',
                   npca=100,
