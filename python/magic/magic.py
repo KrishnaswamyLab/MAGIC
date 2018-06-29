@@ -381,24 +381,29 @@ class MAGIC(BaseEstimator):
 
     def transform(self, X=None, genes=None, t_max=20,
                   plot_optimal_t=False, ax=None):
-        """Computes the position of the cells in the embedding space
+        """Computes the values of genes after diffusion
 
         Parameters
         ----------
         X : array, optional, shape=[n_samples, n_features]
             input data with `n_samples` samples and `n_dimensions`
-            dimensions. Not required, since PHATE does not currently embed
-            cells not given in the input matrix to `PHATE.fit()`.
+            dimensions. Not required, since MAGIC does not embed
+            cells not given in the input matrix to `MAGIC.fit()`.
             Accepted data types: `numpy.ndarray`,
-            `scipy.sparse.spmatrix`, `pd.DataFrame`, `anndata.AnnData`. If
-            `knn_dist` is 'precomputed', `data` should be a n_samples x
-            n_samples distance or affinity matrix
+            `scipy.sparse.spmatrix`, `pd.DataFrame`, `anndata.AnnData`.
+
+        genes : list or "all_genes", optional (default: None)
+            List of genes, either as integer indices or column names
+            if input data is a pandas DataFrame. If "all_genes", the entire
+            smoothed matrix is returned. If None, the entire matrix is also
+            returned, but a warning may be raised if the resultant matrix
+            is very large.
 
         t_max : int, optional, default: 20
             maximum t to test if `t` is set to 'auto'
 
         plot_optimal_t : boolean, optional, default: False
-            If true and `t` is set to 'auto', plot the R squared used to
+            If true and `t` is set to 'auto', plot the disparity used to
             select t
 
         ax : matplotlib.axes.Axes, optional
@@ -407,9 +412,16 @@ class MAGIC(BaseEstimator):
 
         Returns
         -------
-        embedding : array, shape=[n_samples, n_dimensions]
-        The cells embedded in a lower dimensional space using PHATE
+        X_magic : array, shape=[n_samples, n_genes]
+            The gene expression values after diffusion
         """
+        try:
+            if isinstance(X, anndata.AnnData):
+                X = X.X
+        except NameError:
+            # anndata not installed
+            pass
+
         if self.graph is None:
             raise NotFittedError("This MAGIC instance is not fitted yet. Call "
                                  "'fit' with appropriate arguments before "
@@ -486,8 +498,8 @@ class MAGIC(BaseEstimator):
 
         Returns
         -------
-        embedding : array, shape=[n_samples, n_dimensions]
-            The cells embedded in a lower dimensional space using PHATE
+        X_magic : array, shape=[n_samples, n_genes]
+            The gene expression values after diffusion
         """
         log_start('MAGIC')
         self.fit(X)
@@ -497,13 +509,27 @@ class MAGIC(BaseEstimator):
 
     def calculate_error(self, data, data_prev=None, weights=None,
                         subsample_genes=None):
-        """
+        """Calculates difference before and after diffusion
+
+        Parameters
+        ----------
+        data : array-like
+            current data matrix
+        data_prev : array-like, optional (default: None)
+            previous data matrix. If None, `data` is simply prepared for
+            comparison and no error is returned
+        weights : list-like, optional (default: None)
+            weightings for dimensions of data. If None, dimensions are equally
+            weighted
+        subsample_genes : like-like, optional (default: None)
+            genes to select in subsampling. If None, no subsampling is performed
+
         Returns
         -------
-
-        error : Procrustes disparity value
-
-        data_curr : transformed data for next time
+        error : float
+            Procrustes disparity value
+        data_curr : array-like
+            transformed data to use for the next comparison
         """
         if subsample_genes is not None:
             data = data[:, subsample_genes]
@@ -517,11 +543,29 @@ class MAGIC(BaseEstimator):
 
     def impute(self, data, t_max=20, plot=False, ax=None,
                max_genes_compute_t=500, threshold=0.001):
-        """Impute with PCA
+        """Peform MAGIC imputation
 
         Parameters
         ----------
         data : graphtools.Graph, graphtools.Data or array-like
+            Input data
+        t_max : int, optional (default: 20)
+            Maximum value of t to consider for optimal t selection
+        plot : bool, optional (default: False)
+            Plot the optimal t selection graph
+        ax : matplotlib.Axes, optional (default: None)
+            Axis on which to plot. If None, a new axis is created
+        max_genes_compute_t : int, optional (default: 500)
+            Above this number, genes will be subsampled for
+            optimal t selection
+        threshold : float, optional (default: 0.001)
+            Threshold after which Procrustes disparity is considered
+            to have converged for optimal t selection
+
+        Returns
+        -------
+        X_magic : array-like, shape=[n_samples, n_pca]
+            Imputed data
         """
         if not isinstance(data, graphtools.base.Data):
             data = graphtools.base.Data(data, n_pca=self.n_pca)
