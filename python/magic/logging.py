@@ -6,6 +6,8 @@ import time
 import sys
 
 
+from .utils import in_ipynb
+
 __logger_name__ = "MAGIC"
 
 
@@ -16,10 +18,9 @@ class RSafeStdErr(object):
     """
 
     def __init__(self):
-        try:
-            __IPYTHON__
+        if in_ipynb():
             self.write = self.write_ipython
-        except NameError:
+        else:
             self.write = self.write_r_safe
 
     def write_ipython(self, msg):
