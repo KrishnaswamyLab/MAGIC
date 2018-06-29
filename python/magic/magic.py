@@ -429,9 +429,13 @@ class MAGIC(BaseEstimator):
             pass
 
         if self.graph is None:
-            raise NotFittedError("This MAGIC instance is not fitted yet. Call "
-                                 "'fit' with appropriate arguments before "
-                                 "using this method.")
+            if self.X is not None:
+                self.fit(self.X)
+            else:
+                raise NotFittedError(
+                    "This MAGIC instance is not fitted yet. Call "
+                    "'fit' with appropriate arguments before "
+                    "using this method.")
 
         store_result = True
         if X is not None and not matrix_is_equivalent(X, self.X):
