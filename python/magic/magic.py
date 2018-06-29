@@ -11,6 +11,7 @@ import numpy as np
 import graphtools
 from sklearn.base import BaseEstimator
 from sklearn.exceptions import NotFittedError
+from sklearn.decomposition import PCA
 import warnings
 import matplotlib.pyplot as plt
 from scipy import sparse, spatial
@@ -396,10 +397,11 @@ class MAGIC(BaseEstimator):
             Accepted data types: `numpy.ndarray`,
             `scipy.sparse.spmatrix`, `pd.DataFrame`, `anndata.AnnData`.
 
-        genes : list or "all_genes", optional (default: None)
+        genes : list or {"all_genes", "pca_only"}, optional (default: None)
             List of genes, either as integer indices or column names
             if input data is a pandas DataFrame. If "all_genes", the entire
-            smoothed matrix is returned. If None, the entire matrix is also
+            smoothed matrix is returned. If "pca_only", PCA on the smoothed
+            data is returned. If None, the entire matrix is also
             returned, but a warning may be raised if the resultant matrix
             is very large.
 
@@ -456,6 +458,10 @@ class MAGIC(BaseEstimator):
                           UserWarning)
         if isinstance(genes, str) and genes == "all_genes":
             genes = None
+        elif isinstance(genes, str) and genes == "pca_only":
+            if not hasattr(self.graph, "data_pca"):
+                raise RuntimeError("Cannot return PCA as PCA is not"
+                                   " performed.")
         elif genes is not None:
             genes = np.array([genes]).flatten()
             if not issubclass(genes.dtype.type, numbers.Integral):
@@ -479,8 +485,13 @@ class MAGIC(BaseEstimator):
                 self.X_magic = X_magic
 
         # return selected genes
-        X_magic = graph.inverse_transform(X_magic, columns=genes)
-        # convert back to pandas dataframe, if necessary
+        if genes == "pca_only":
+            if sparse.issparse(self.graph.data):
+                X_magic = PCA().fit_transform(X_magic)
+            genes = ["PC{}".format(i + 1) for i in range(X_magic.shape[1])]
+        else:
+            X_magic = graph.inverse_transform(X_magic, columns=genes)
+            # convert back to pandas dataframe, if necessary
         X_magic = convert_to_same_format(X_magic, X, columns=genes)
         return X_magic
 
