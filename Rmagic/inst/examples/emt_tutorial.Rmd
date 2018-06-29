@@ -1,6 +1,7 @@
 ---
 title: "Rmagic EMT Tutorial"
 output: github_document
+toc: true
 ---
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
@@ -72,34 +73,43 @@ data <- read_csv("../../../data/HMLE_TGFb_day_8_10.csv.gz")
 data[1:5,1:10]
 ```
 
-First, we need to remove lowly expressed genes and cells with small library size.
+First, we need to remove lowly expressed genes.
 
-```{r}
+```{r remove_rare_genes}
 # keep genes expressed in at least 10 cells
 keep_cols <- colSums(data > 0) > 10
 data <- data[,keep_cols]
+```
+
+Ordinarily, we would remove cells with small library sizes. In this dataset, it has already been done; however, if you wanted to do that, you could do it with the code below.
+
+```{r libsize_histogram}
 # look at the distribution of library sizes
 ggplot() +
   geom_histogram(aes(x=rowSums(data)), bins=50) +
-  geom_vline(xintercept = 3000, color='red')
+  geom_vline(xintercept = 1000, color='red')
 ```
 
-```{r}
-# keep cells with at least 1000 UMIs and at most 15000
-keep_rows <- rowSums(data) > 1000 & rowSums(data) < 15000
-data <- data[keep_rows,]
+```{r filter_libsize}
+if (FALSE) {
+  # keep cells with at least 1000 UMIs and at most 15000
+  keep_rows <- rowSums(data) > 1000 & rowSums(data) < 15000
+  data <- data[keep_rows,]
+}
 ```
 
-We should library size normalize and transform the data prior to MAGIC. Many people use a log transform, which requires adding a "pseudocount" to avoid log(0). We square root instead, which has a similar form but doesn't suffer from instabilities at zero.
+We should library size normalize the data prior to MAGIC. Often we also transform the data with either log or square root. The log transform is commonly used, which requires adding a "pseudocount" to avoid log(0). We normally square root instead, which has a similar form but doesn't suffer from instabilities at zero. For this dataset, though, it is not necessary as the distribution of gene expression is not too extreme.
 
 ```{r normalize}
 data <- library.size.normalize(data)
-data <- sqrt(data)
+if (FALSE) {
+  data <- sqrt(data)
+}
 ```
 
 ### Running MAGIC
 
-Running MAGIC is as simple as running the `magic` function. Because this dataset is rather large, we can increase `k` from the default of 5 up to 15.
+Running MAGIC is as simple as running the `magic` function. Because this dataset is rather large, we can increase `k` from the default of 10 up to 15.
 
 ```{r run_magic}
 # run MAGIC
@@ -146,17 +156,3 @@ ggplot(data_MAGIC_PCA) +
   labs(color="VIM")
 ggsave('EMT_data_R_pca_colored_by_magic.png', width=5, height=5)
 ```
-
-### Visualizing MAGIC values on PHATE
-
-We can visualize the results of MAGIC on PHATE as follows.
-
-```{r run_phate}
-data_PHATE <- phate(data, k=15)
-ggplot(data_PHATE) +
-  geom_point(aes(x=PHATE1, y=PHATE2, color=data_MAGIC$result$VIM)) +
-  scale_color_viridis(option="B") +
-  labs(color="VIM")
-ggsave('EMT_data_R_phate_colored_by_magic.png', width=5, height=5)
-```
-

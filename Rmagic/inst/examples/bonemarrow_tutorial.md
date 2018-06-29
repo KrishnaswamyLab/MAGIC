@@ -1,6 +1,8 @@
 Rmagic Bone Marrow Tutorial
 ================
 
+true
+
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
 ## MAGIC (Markov Affinity-Based Graph Imputation of Cells)
@@ -64,29 +66,23 @@ library(Rmagic)
 
     ## Loading required package: Matrix
 
-    ## Warning: package 'Matrix' was built under R version 3.4.4
-
 ``` r
 library(ggplot2)
 library(readr)
 library(viridis)
 ```
 
-    ## Warning: package 'viridis' was built under R version 3.4.4
-
     ## Loading required package: viridisLite
-
-    ## Warning: package 'viridisLite' was built under R version 3.4.4
 
 ``` r
 library(phateR)
 ```
 
-    ##
+    ## 
     ## Attaching package: 'phateR'
 
     ## The following object is masked from 'package:Rmagic':
-    ##
+    ## 
     ##     library.size.normalize
 
 ### Loading data
@@ -115,7 +111,7 @@ bmmsc[1:5,1:10]
 ```
 
     ## # A tibble: 5 x 10
-    ##   `0610007C21Rik;Apr~ `0610007L01Rik` `0610007P08Rik;Rad2~ `0610007P14Rik`
+    ##   `0610007C21Rik;Apr… `0610007L01Rik` `0610007P08Rik;Rad2… `0610007P14Rik`
     ##                 <int>           <int>                <int>           <int>
     ## 1                   0               0                    0               0
     ## 2                   0               0                    0               1
@@ -136,14 +132,14 @@ bmmsc <- bmmsc[,keep_cols]
 # look at the distribution of library sizes
 ggplot() +
   geom_histogram(aes(x=rowSums(bmmsc)), bins=50) +
-  geom_vline(xintercept = 2000, color='red')
+  geom_vline(xintercept = 1000, color='red')
 ```
 
 ![](bonemarrow_tutorial_files/figure-gfm/unnamed-chunk-1-1.png)<!-- -->
 
 ``` r
-# keep cells with at least 2000 UMIs
-keep_rows <- rowSums(bmmsc) > 2000
+# keep cells with at least 1000 UMIs
+keep_rows <- rowSums(bmmsc) > 1000
 bmmsc <- bmmsc[keep_rows,]
 ```
 
@@ -171,7 +167,7 @@ We can plot the data before and after MAGIC to visualize the results.
 ``` r
 ggplot(bmmsc) +
   geom_point(aes(Mpo, Klf1, colour=Ifitm1)) +
-  scale_colour_viridis()
+  scale_colour_viridis(option="B")
 ```
 
 ![](bonemarrow_tutorial_files/figure-gfm/plot_raw-1.png)<!-- -->
@@ -186,7 +182,7 @@ about the gene-gene relationships.
 ``` r
 ggplot(bmmsc_MAGIC) +
   geom_point(aes(Mpo, Klf1, colour=Ifitm1)) +
-  scale_colour_viridis()
+  scale_colour_viridis(option="B")
 ```
 
 ![](bonemarrow_tutorial_files/figure-gfm/plot_magic-1.png)<!-- -->
@@ -205,7 +201,7 @@ steps.
 bmmsc_MAGIC <- magic(bmmsc, genes=c("Mpo", "Klf1", "Ifitm1"), t=4, init=bmmsc_MAGIC)
 ggplot(bmmsc_MAGIC) +
   geom_point(aes(Mpo, Klf1, colour=Ifitm1)) +
-  scale_colour_viridis()
+  scale_colour_viridis(option="B")
 ```
 
 ![](bonemarrow_tutorial_files/figure-gfm/unnamed-chunk-3-1.png)<!-- -->
@@ -225,23 +221,23 @@ as.data.frame(bmmsc_MAGIC)[1:5, 1:10]
 ```
 
     ##   0610007C21Rik;Apr3 0610007L01Rik 0610007P08Rik;Rad26l 0610007P14Rik
-    ## 1          0.1792195     0.5550954           0.06092393     0.3891946
-    ## 2          0.1273133     0.4096786           0.13282092     0.4268516
-    ## 3          0.1518990     0.6057446           0.07514413     0.4341140
-    ## 4          0.1186488     0.4098970           0.12670578     0.4156248
-    ## 5          0.1650279     0.5837784           0.06048088     0.4183659
+    ## 1          0.1518517     0.4808969           0.05179379     0.3415315
+    ## 2          0.1230258     0.3904692           0.12708682     0.3880762
+    ## 3          0.1344016     0.5496261           0.06617484     0.3745274
+    ## 4          0.1132422     0.3812295           0.11713295     0.3683106
+    ## 5          0.1417958     0.4637729           0.04572850     0.3465252
     ##   0610007P22Rik 0610009B22Rik 0610009D07Rik 0610009O20Rik
-    ## 1    0.02933742    0.05873117    0.07909602     0.1881641
-    ## 2    0.04131681    0.08353999    0.12061873     0.3906472
-    ## 3    0.02539456    0.06417888    0.05789454     0.1947493
-    ## 4    0.03749442    0.07662827    0.10214198     0.3869261
-    ## 5    0.02955924    0.05542874    0.05948475     0.1912546
+    ## 1    0.02452145    0.05066031    0.06728059     0.1611080
+    ## 2    0.04026323    0.07548813    0.11778619     0.3763095
+    ## 3    0.02323954    0.05561339    0.05379475     0.1802045
+    ## 4    0.03597300    0.06506830    0.08923059     0.3736334
+    ## 5    0.02303185    0.05190157    0.05275807     0.1621462
     ##   0610010F05Rik;mKIAA1841;Kiaa1841 0610010K14Rik;Rnasek
-    ## 1                       0.03648628             1.174787
-    ## 2                       0.03764984             1.084359
-    ## 3                       0.04473963             1.136657
-    ## 4                       0.03436419             1.098742
-    ## 5                       0.03893060             1.150368
+    ## 1                       0.03023858            1.0447754
+    ## 2                       0.03823837            0.9875507
+    ## 3                       0.04074101            1.0408079
+    ## 4                       0.03201622            1.0149211
+    ## 5                       0.02737464            0.9940195
 
 ### Visualizing MAGIC values on PCA
 
@@ -257,12 +253,16 @@ ggplot(bmmsc_MAGIC_PCA) +
 
 ![](bonemarrow_tutorial_files/figure-gfm/run_pca-1.png)<!-- -->
 
+``` r
+ggsave('BMMSC_data_R_pca_colored_by_magic.png', width=5, height=5)
+```
+
 ### Visualizing MAGIC values on PHATE
 
 We can visualize the results of MAGIC on PHATE as follows.
 
 ``` r
-bmmsc_PHATE <- phate(bmmsc)
+bmmsc_PHATE <- phate(bmmsc, k=4, a=100, t=20)
 ggplot(bmmsc_PHATE) +
   geom_point(aes(x=PHATE1, y=PHATE2, color=bmmsc_MAGIC$result$Klf1)) +
   scale_color_viridis(option="B") +
