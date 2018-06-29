@@ -24,9 +24,12 @@ before_install:
   - chmod +x travis_setup.sh
   - ./travis_setup.sh
   - pip install --user phate
+
+install:
   - cd python
   - python setup.py install --user
-  - cd ..
+  - cd ../Rmagic
+  - R CMD INSTALL .
 
 script:
   - cd Rmagic
