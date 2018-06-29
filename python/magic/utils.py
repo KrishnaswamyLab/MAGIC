@@ -107,26 +107,6 @@ def matrix_is_equivalent(X, Y):
         np.sum((X != Y).sum()) == 0
 
 
-def select_cols(data, idx):
-    if isinstance(data, pd.DataFrame):
-        try:
-            data = data.loc[:, idx]
-        except KeyError:
-            if isinstance(idx, numbers.Integral) or \
-                    issubclass(np.array(idx).dtype.type, numbers.Integral):
-                data = data.loc[:, np.array(data.columns)[idx]]
-            else:
-                raise
-    else:
-        if isinstance(data, (sparse.coo_matrix,
-                             sparse.bsr_matrix,
-                             sparse.lil_matrix,
-                             sparse.dia_matrix)):
-            data = data.tocsr()
-        data = data[:, idx]
-    return data
-
-
 def convert_to_same_format(data, target_data, columns=None):
     try:
         if isinstance(target_data, pd.SparseDataFrame):
