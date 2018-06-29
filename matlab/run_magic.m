@@ -1,16 +1,16 @@
-function [pc_t, U, pc] = run_magic(data, varargin)
+function [pc_imputed, U, pc] = run_magic(data, varargin)
 % run_magic  Run MAGIC for imputing and denoising of single-cell data
-%   [pc_t, U, pc] = run_magic(data, varargin) runs MAGIC on data (rows:
+%   [pc_imputed, U, pc] = run_magic(data, varargin) runs MAGIC on data (rows:
 %   cells, columns: genes) with default parameter settings and returns the
 %   imputed data in a compressed format.
 %
 %   The compressed format consists of loadings (U) and imputed principal
-%   components (pc_t). To obtain gene values form this compressedf format
-%   either run project_genes.m or manually project (pc_t * U') either all
-%   genes or a subset (pc_t * U(idx,:)'). Also returned are the original
+%   components (pc_imputed). To obtain gene values form this compressedf format
+%   either run project_genes.m or manually project (pc_imputed * U') either all
+%   genes or a subset (pc_imputed * U(idx,:)'). Also returned are the original
 %   principal components (pc);
 %
-%   Since pc_t and U are both narrow matrices the imputed data can be
+%   Since pc_imputed and U are both narrow matrices the imputed data can be
 %   stored in a memory efficient way, without having to store the dense
 %   matrix.
 %
@@ -86,13 +86,13 @@ P = bsxfun(@rdivide, K, sum(K,2));
 % optimal t
 if isempty(t)
     disp 'imputing using optimal t'
-    pc_t = compute_optimal_t(pc, P, 'make_plot', make_plot_opt_t);
+    pc_imputed = compute_optimal_t(pc, P, 'make_plot', make_plot_opt_t);
 else
     disp 'imputing using provided t'
-    pc_t = pc;
+    pc_imputed = pc;
     for I=1:t
         disp(['t = ' num2str(I)]);
-        pc_t = P * pc_t;
+        pc_imputed = P * pc_imputed;
     end
 end
 
