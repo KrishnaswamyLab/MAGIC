@@ -1,17 +1,21 @@
 Package: Rmagic
 Type: Package
 Title: Markov Affinity-based Graph Imputation of Cells
-Version: 0.1.0
-Author: person("David van Dijk", "MSKCC", email = "davidvandijk@gmail.com", role = c("aut"))
-Maintainer: David van Dijk <davidvandijk@gmail.com>
+Version: 1.0.0
+Author: c(person("David van Dijk", "MSKCC", email = "davidvandijk@gmail.com", role = c("aut")),
+		  person(given = 'Scott', family = 'Gigante', email = 'scott.gigante@yale.edu', role = 'cre', comment = c(ORCID = '0000-0002-4544-2764')))
+Maintainer: Scott Gigante <scott.gigante@yale.edu>
 Description: MAGIC is an interactive tool to impute missing values in single-cell
     data and restore the structure of the data.
+Depends:
+    R (>= 3.3),
+    Matrix (>= 1.2-0)
 Imports:
-    expm,
-    ggplot2
-    FNN,
-    Matrix,
-    rsvd
+    methods,
+    stats,
+    reticulate (>= 1.4)
+Suggests:
+	ggplot2
 License: MIT + file LICENSE
 LazyData: true
 RoxygenNote: 6.0.1
