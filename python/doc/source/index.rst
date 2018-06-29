@@ -24,6 +24,15 @@ MAGIC - Markov Affinity-based Graph Imputation of Cells
 
 MAGIC is a tool that shares information across similar cells, via data diffusion, to denoise the cell count matrix and fill in missing transcripts. To see how MAGIC can be applied to single-cell RNA-seq, elucidating the epithelial-to-mesenchymal transition, read our `publication in Cell`_.
 
+.. raw:: html
+
+    <p align="center">
+    <img src="https://github.com/KrishnaswamyLab/MAGIC/blob/master/magic.gif"/>
+    <br>
+    <i>Magic reveals the interaction between Vimentin (VIM), Cadherin-1 (CDH1), and Zinc finger E-box-binding homeobox 1 (ZEB1, encoded by colors).
+    </i>
+    </p>
+
 `David van Dijk, et al. Recovering Gene Interactions from Single-Cell Data Using Data Diffusion. 2018. Cell.`__
 
 .. _`publication in Cell`: https://www.cell.com/cell/abstract/S0092-8674(18)30724-4
