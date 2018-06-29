@@ -4,44 +4,29 @@ function [pc_t, U, pc] = run_magic(data, varargin)
 %   cells, columns: genes) with default parameter settings and returns the
 %   imputed data in a compressed format.
 %
-%   The compressed format consists of loadings (U) and imputed principal
-%   components (pc_t). To obtain gene values form this compressedf format
-%   either run project_genes.m or manually project (pc_t * U') either all
-%   genes or a subset (pc_t * U(idx,:)'). Also returned are the original
-%   principal components (pc);
-%
-%   Since pc_t and U are both narrow matrices the imputed data can be
-%   stored in a memory efficient way, without having to store the dense
-%   matrix.
-%
 %   Supplied data can be a sparse matrix, in which case MAGIC will be more
 %   memory efficient.
 %
-%   [...] = phate(data, 'PARAM1',val1, 'PARAM2',val2, ...) allows you to
+%   Y = phate(data, 'PARAM1',val1, 'PARAM2',val2, ...) allows you to
 %   specify optional parameter name/value pairs that control further details
 %   of PHATE.  Parameters are:
 %
-%   'npca' - number of PCA components to do MAGIC on. Defaults to 100.
+%   'ndim' - number of (output) embedding dimensions. Common values are 2
+%   or 3. Defaults to 2.
 %
 %   'k' - number of nearest neighbors for bandwidth of adaptive alpha
 %   decaying kernel or, when a=[], number of nearest neighbors of the knn
 %   graph. For the unweighted kernel we recommend k to be a bit larger,
-%   e.g. 10 or 15. Defaults to 10.
+%   e.g. 10 or 15. Defaults to 5.
 %
 %   'a' - alpha of alpha decaying kernel. when a=[] knn (unweighted) kernel
 %   is used. Defaults to 15.
 %
 %   't' - number of diffusion steps. Defaults to [] wich autmatically picks
 %   the optimal t.
-%
-%   'distfun' - Distance function used to compute kernel. Defaults to
-%   'euclidean'.
-%
-%   'make_plot_opt_t' - Boolean flag for plotting the optimal t analysis.
-%   Defaults to true.
 
 npca = 100;
-k = 10;
+k = 15;
 a = 15;
 t = [];
 distfun = 'euclidean';
