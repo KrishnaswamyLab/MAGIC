@@ -91,7 +91,7 @@ You can install `Rmagic` with `devtools` by running the following in R:
 
         if (!require(devtools)) install.packages("devtools")
         library(devtools)
-        install_github("KrishnaswamyLab/magic/R")
+        install_github("KrishnaswamyLab/magic/Rmagicmagic")
 
 You then need to install MAGIC in Python with `pip` by running the following from a terminal:
 
@@ -124,4 +124,4 @@ After installing the package, MAGIC can be run by loading the library and callin
 
 #### Tutorials
 
-For a working example, see the Rmarkdown tutorials at https://github.com/KrishnaswamyLab/MAGIC/blob/master/R/inst/examples/bonemarrow_tutorial.md and https://github.com/KrishnaswamyLab/MAGIC/blob/master/R/inst/examples/EMT_tutorial.md or in `R/inst/examples`.
+For a working example, see the Rmarkdown tutorials at https://github.com/KrishnaswamyLab/MAGIC/blob/master/Rmagic/inst/examples/bonemarrow_tutorial.md and https://github.com/KrishnaswamyLab/MAGIC/blob/master/Rmagic/inst/examples/EMT_tutorial.md or in `R/inst/examples`.
