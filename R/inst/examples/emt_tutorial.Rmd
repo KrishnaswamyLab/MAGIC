@@ -85,10 +85,11 @@ ggplot() +
 ```
 
 ```{r}
-# keep cells with at least 3000 UMIs and at most 15000
-keep_rows <- rowSums(data) > 3000 & rowSums(data) < 15000
+# keep cells with at least 1000 UMIs and at most 15000
+keep_rows <- rowSums(data) > 1000 & rowSums(data) < 15000
 data <- data[keep_rows,]
 ```
+
 We should library size normalize and transform the data prior to MAGIC. Many people use a log transform, which requires adding a "pseudocount" to avoid log(0). We square root instead, which has a similar form but doesn't suffer from instabilities at zero.
 
 ```{r normalize}
@@ -98,11 +99,11 @@ data <- sqrt(data)
 
 ### Running MAGIC
 
-Running MAGIC is as simple as running the `magic` function.
+Running MAGIC is as simple as running the `magic` function. Because this dataset is rather large, we can increase `k` from the default of 5 up to 15.
 
 ```{r run_magic}
 # run MAGIC
-data_MAGIC <- magic(data, genes=c("VIM", "CDH1", "ZEB1"))
+data_MAGIC <- magic(data, k=15, genes=c("VIM", "CDH1", "ZEB1"))
 ```
 
 ### Results
@@ -112,21 +113,21 @@ We can plot the data before and after MAGIC to visualize the results.
 ```{r plot_raw}
 ggplot(data) +
   geom_point(aes(VIM, CDH1, colour=ZEB1)) + 
-  scale_colour_viridis()
+  scale_colour_viridis(option="B")
 ggsave('EMT_data_R_before_magic.png', width=5, height=5)
 ```
 
 ```{r plot_magic}
 ggplot(data_MAGIC) +
   geom_point(aes(VIM, CDH1, colour=ZEB1)) + 
-  scale_colour_viridis()
+  scale_colour_viridis(option="B")
 ggsave('EMT_data_R_after_magic.png', width=5, height=5)
 ```
 
 As you can see, the gene-gene relationships are much clearer after MAGIC. We can look at the entire smoothed matrix with `genes='all_genes'`, passing the original result to the argument `init` to avoid recomputing intermediate steps. Note that this matrix may be large and could take up a lot of memory.
 
 ```{r run_magic_full_matrix}
-data_MAGIC <- magic(data, genes="all_genes", init=data_MAGIC)
+data_MAGIC <- magic(data, k=15, genes="all_genes", init=data_MAGIC)
 as.data.frame(data_MAGIC)[1:5, 1:10]
 ```
 
@@ -135,7 +136,10 @@ as.data.frame(data_MAGIC)[1:5, 1:10]
 We can visualize the results of MAGIC on PCA as follows.
 
 ```{r run_pca}
-data_MAGIC_PCA <- as.data.frame(prcomp(data_MAGIC)$x)
+gt <- reticulate::import("graphtools")
+dat <- gt$base$Data(as.matrix(data_MAGIC$result), n_pca=2L)
+data_MAGIC_PCA <- as.data.frame(dat$data_nu) # as.data.frame(prcomp(data_MAGIC)$x)
+colnames(data_MAGIC_PCA) <- c("PC1", "PC2")
 ggplot(data_MAGIC_PCA) +
   geom_point(aes(x=PC1, y=PC2, color=data_MAGIC$result$VIM)) +
   scale_color_viridis(option="B") +
@@ -148,7 +152,7 @@ ggsave('EMT_data_R_pca_colored_by_magic.png', width=5, height=5)
 We can visualize the results of MAGIC on PHATE as follows.
 
 ```{r run_phate}
-data_PHATE <- phate(data)
+data_PHATE <- phate(data, k=15)
 ggplot(data_PHATE) +
   geom_point(aes(x=PHATE1, y=PHATE2, color=data_MAGIC$result$VIM)) +
   scale_color_viridis(option="B") +

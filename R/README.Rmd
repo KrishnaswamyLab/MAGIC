@@ -112,8 +112,8 @@ As you can see, the gene-gene relationships are much clearer after MAGIC.
 
 The data is sometimes a little too smooth - we can decrease `t` from the automatic value to reduce the amount of diffusion. We pass the original result to the argument `init` to avoid recomputing intermediate steps.
 
-```{r}
-data_MAGIC <- magic(magic_testdata, genes=c("VIM", "CDH1", "ZEB1"), t=4, init=data_MAGIC)
+```{r plot_reduced_t}
+data_MAGIC <- magic(magic_testdata, genes=c("VIM", "CDH1", "ZEB1"), t=6, init=data_MAGIC)
 ggplot(data_MAGIC) +
   geom_point(aes(VIM, CDH1, colour=ZEB1)) +
   scale_colour_viridis(option="B")
@@ -123,7 +123,7 @@ ggplot(data_MAGIC) +
 We can look at the entire smoothed matrix with `genes='all_genes'`, passing the original result to the argument `init` to avoid recomputing intermediate steps. Note that this matrix may be large and could take up a lot of memory.
 
 ```{r run_magic_full_matrix}
-data_MAGIC <- magic(magic_testdata, genes="all_genes", t=4, init=data_MAGIC)
+data_MAGIC <- magic(magic_testdata, genes="all_genes", t=6, init=data_MAGIC)
 as.data.frame(data_MAGIC)[1:5, 1:10]
 ```
 
