@@ -120,7 +120,7 @@ def convert_to_same_format(data, target_data, columns=None):
         try:
             if columns is not None:
                 target_columns = target_columns[columns]
-        except KeyError:
+        except (KeyError, IndexError):
             target_columns = columns
         data.columns = target_columns
         data.index = target_data.index
