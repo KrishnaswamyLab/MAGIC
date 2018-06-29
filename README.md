@@ -33,6 +33,18 @@ To clone the repository and install manually, run the following from a terminal:
 
 ### Usage
 
+##### Example data
+
+The following code runs MAGIC on test data located in the MAGIC repository.
+
+        import magic
+        import phate
+        import pandas as pd
+        X = pd.read_csv("MAGIC/data/test_data.csv")
+        magic_operator = magic.MAGIC()
+        X_magic = magic_operator.fit_transform(X, genes=['VIM', 'CDH1', 'ZEB1'])
+        phate.plot.scatter2d(X_magic[['VIM', 'CDH1']], c=X_magic['ZEB1'])
+
 ##### Interactive command line
 We have included two tutorial notebooks on MAGIC usage and results visualization for single cell RNA-seq data.
 
