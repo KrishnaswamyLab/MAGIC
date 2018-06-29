@@ -17,11 +17,11 @@ data = bsxfun(@rdivide, data, libsize) * median(libsize);
 %data = log(data + 0.1);
 
 %% MAGIC
-[pc_t, U, pc] = run_magic(data, 'npca', 100, 'k', 15, 'a', 15, 'make_plot_opt_t', true);
+[pc_imputed, U, pc] = run_magic(data, 'npca', 100, 'k', 15, 'a', 15, 'make_plot_opt_t', true);
 
 %% project genes
 plot_genes = {'Cdh1', 'Vim', 'Fn1', 'Zeb1'};
-[M_imputed, genes_found] = project_genes(plot_genes, gene_names, pc_t, U);
+[M_imputed, genes_found] = project_genes(plot_genes, gene_names, pc_imputed, U);
 
 %% plot
 ms = 20;
@@ -101,9 +101,9 @@ title 'Before MAGIC'
 %% plot PCA after MAGIC
 figure;
 c = M_imputed(:,4);
-Y = svdpca(pc_t, 3, 'random'); % original PCs are not mean centered so doing proper PCA here
+Y = svdpca(pc_imputed, 3, 'random'); % original PCs are not mean centered so doing proper PCA here
 % alternative is to go to full imputed data and then do proper PCA:
-%data_imputed = pc_t * U'; % project full data
+%data_imputed = pc_imputed * U'; % project full data
 %Y = svdpca(data_imputed, 3, 'random');
 scatter3(Y(:,1), Y(:,2), Y(:,3), ms, c, 'filled');
 colormap(parula);
