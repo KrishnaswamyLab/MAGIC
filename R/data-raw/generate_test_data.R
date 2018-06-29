@@ -11,4 +11,5 @@ select_cols <- c(colnames(magic_testdata)[ceiling(runif(200) * nrow(magic_testda
 magic_testdata <- magic_testdata[,colnames(magic_testdata) %in% select_cols]
 select_rows <- ceiling(runif(500) * nrow(magic_testdata))
 magic_testdata <- magic_testdata[select_rows,]
+write_csv(magic_testdata, "../../data/test_data.csv")
 usethis::use_data(magic_testdata)
