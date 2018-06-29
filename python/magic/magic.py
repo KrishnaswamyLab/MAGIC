@@ -453,7 +453,7 @@ class MAGIC(BaseEstimator):
                               X.shape[0], X.shape[1],
                               np.prod(X.shape) * 8 / (1024**3)),
                           UserWarning)
-        if genes == "all_genes":
+        if isinstance(genes, str) and genes == "all_genes":
             genes = None
         elif genes is not None:
             genes = np.array([genes]).flatten()
