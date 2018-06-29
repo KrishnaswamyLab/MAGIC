@@ -24,6 +24,7 @@ before_install:
   - chmod +x travis_setup.sh
   - ./travis_setup.sh
   - pip install --user phate
+  - R -e "install.packages(c('reticulate', 'devtools', 'readr', 'phateR', 'Matrix', 'ggplot2'))"
 
 install:
   - cd python
@@ -37,13 +38,5 @@ script:
   - travis_wait 30 R CMD check *tar.gz
   - cd ../python
   - python setup.py test
-
-r_packages:
-  - Matrix
-  - ggplot2
-  - reticulate
-  - devtools
-  - readr
-  - phateR
 
 warnings_are_errors: true
