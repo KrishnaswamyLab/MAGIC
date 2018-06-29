@@ -39,7 +39,8 @@ class MAGIC(BaseEstimator):
 
     Markov Affinity-based Graph Imputation of Cells (MAGIC) is an
     algorithm for denoising and transcript recover of single cells
-    applied to single-cell RNA sequencing data.
+    applied to single-cell RNA sequencing data, as described in
+    van Dijk et al, 2018 [1]_.
 
     Parameters
     ----------
@@ -98,28 +99,30 @@ class MAGIC(BaseEstimator):
 
     Examples
     --------
-    >>> # TODO: better example data
     >>> import magic
-    >>> tree_data, tree_clusters = phate.tree.gen_dla(n_dim=100,
-                                                      n_branch=20,
-                                                      branch_length=100)
-    >>> tree_data.shape
-    (2000, 100)
-    >>> magic_operator = magic.MAGIC(k=5, a=20, t=150)
-    >>> tree_magic = phate_operator.fit_transform(tree_data)
-    >>> tree_magic.shape
-    (2000, 100)
-    >>> import phate
-    >>> import matplotlib.pyplot as plt
-    >>> phate_operator = phate.PHATE(knn_dist='precomputed')
-    >>> tree_phate = phate_operator.fit_transform(magic_operator.graph.kernel)
-    >>> # plt.scatter(tree_phate[:,0], tree_phate[:,1], c=tree_magic[:,0])
-    >>> # plt.show()
+    >>> import pandas as pd
+    >>> X = pd.read_csv("../../data/test_data.csv")
+    >>> X.shape
+    (500, 197)
+    >>> magic_operator = magic.MAGIC()
+    >>> X_magic = magic_operator.fit_transform(X, genes=['VIM', 'CDH1', 'ZEB1'])
+    >>> X_magic.shape
+    (500, 3)
+    >>> magic_operator.set_params(t=7)
+    MAGIC(a=15, k=5, knn_dist='euclidean', n_jobs=1, n_pca=100, random_state=None,
+       t=7, verbose=1)
+    >>> X_magic = magic_operator.transform(genes=['VIM', 'CDH1', 'ZEB1'])
+    >>> X_magic.shape
+    (500, 3)
+    >>> X_magic = magic_operator.transform(genes="all_genes")
+    >>> X_magic.shape
+    (500, 197)
 
-    *MAGIC: A diffusion-based imputation method reveals gene-gene interactions
-    in single-cell RNA-sequencing data*
-    'https://www.biorxiv.org/content/early/2017/02/25/111591'
-
+    References
+    ----------
+    .. [1] Van Dijk D *et al.* (2018),
+        *Recovering Gene Interactions from Single-Cell Data Using Data Diffusion*,
+        `Cell <https://www.cell.com/cell/abstract/S0092-8674(18)30724-4>`_.
     """
 
     def __init__(self, k=5, a=15, t='auto', n_pca=100,
@@ -411,6 +414,20 @@ class MAGIC(BaseEstimator):
             raise NotFittedError("This MAGIC instance is not fitted yet. Call "
                                  "'fit' with appropriate arguments before "
                                  "using this method.")
+
+        store_result = True
+        if X is not None and not matrix_is_equivalent(X, self.X):
+            store_result = False
+            graph = graphtools.base.Data(X, n_pca=self.n_pca)
+            warnings.warn(UserWarning, "Running MAGIC.transform on different "
+                          "data to that which was used for MAGIC.fit may not "
+                          "produce sensible output, unless it comes from the "
+                          "same manifold.")
+        else:
+            X = self.X
+            graph = self.graph
+            store_result = True
+
         if genes is None and isinstance(X, (pd.SparseDataFrame,
                                             sparse.spmatrix)) and \
                 np.prod(X.shape) > 5000 * 20000:
@@ -427,23 +444,15 @@ class MAGIC(BaseEstimator):
             genes = np.array([genes]).flatten()
             if not issubclass(genes.dtype.type, numbers.Integral):
                 # gene names
+                if not isinstance(X, pd.DataFrame):
+                    raise ValueError(
+                        "Non-integer gene names only valid with pd.DataFrame "
+                        "input. X is a {}, genes = {}".format(type(X).__name__,
+                                                              genes))
                 if not np.all(np.isin(genes, X.columns)):
                     warnings.warn("genes {} missing from input data".format(
                         genes[~np.isin(genes, X.columns)]))
                 genes = np.argwhere(np.isin(genes, X.columns)).reshape(-1)
-
-        store_result = True
-        if X is not None and not matrix_is_equivalent(X, self.X):
-            store_result = False
-            graph = graphtools.base.Data(X, n_pca=self.n_pca)
-            warnings.warn(UserWarning, "Running MAGIC.transform on different "
-                          "data to that which was used for MAGIC.fit may not "
-                          "produce sensible output, unless it comes from the "
-                          "same manifold.")
-        else:
-            X = self.X
-            graph = self.graph
-            store_result = True
 
         if store_result and self.X_magic is not None:
             X_magic = self.X_magic
