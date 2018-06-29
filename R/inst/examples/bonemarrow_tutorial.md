@@ -10,12 +10,15 @@ Rmagic Bone Marrow Tutorial
   - It also proves dimensionality reduction and gene expression
     visualizations
   - MAGIC can be performed on a variety of datasets
-  - Here, we show the effectiveness of MAGIC on
-    epithelial-to-mesenchymal transition (EMT) data
+  - Here, we show the effectiveness of MAGIC on erythroid and myeloid
+    cells developing in mouse bone marrow.
 
-To use MAGIC, cite: MAGIC: A diffusion-based imputation method reveals
-gene-gene interactions in single-cell RNA-sequencing data Biorxiv
-(preprint) February 2017. DOI: doi.org/10.1101/111591
+Markov Affinity-based Graph Imputation of Cells (MAGIC) is an algorithm
+for denoising and transcript recover of single cells applied to
+single-cell RNA sequencing data, as described in Van Dijk D *et al.*
+(2018), *Recovering Gene Interactions from Single-Cell Data Using Data
+Diffusion*, Cell
+<https://www.cell.com/cell/abstract/S0092-8674(18)30724-4>.
 
 ### Installation
 
@@ -28,7 +31,7 @@ if (!require(devtools)) install.packages(devtools)
 if (!require(Rmagic)) devtools::install_github("KrishnaswamyLab/magic/R")
 ```
 
-In a terminal, run the following command to install the Pythonn
+In a terminal, run the following command to install the Python
 repository.
 
 ``` bash
@@ -131,7 +134,9 @@ library size.
 keep_cols <- colSums(bmmsc > 0) > 10
 bmmsc <- bmmsc[,keep_cols]
 # look at the distribution of library sizes
-hist(rowSums(bmmsc))
+ggplot() +
+  geom_histogram(aes(x=rowSums(bmmsc)), bins=50) +
+  geom_vline(xintercept = 2000, color='red')
 ```
 
 ![](bonemarrow_tutorial_files/figure-gfm/unnamed-chunk-1-1.png)<!-- -->
@@ -197,7 +202,7 @@ the argument `init` to avoid recomputing intermediate
 steps.
 
 ``` r
-bmmsc_MAGIC <- magic(bmmsc, genes=c("Mpo", "Klf1", "Ifitm1"), t=8, init=bmmsc_MAGIC)
+bmmsc_MAGIC <- magic(bmmsc, genes=c("Mpo", "Klf1", "Ifitm1"), t=4, init=bmmsc_MAGIC)
 ggplot(bmmsc_MAGIC) +
   geom_point(aes(Mpo, Klf1, colour=Ifitm1)) + 
   scale_colour_viridis()
@@ -215,40 +220,53 @@ intermediate steps. Note that this matrix may be large and could take up
 a lot of memory.
 
 ``` r
-bmmsc_MAGIC <- magic(bmmsc, genes="all_genes", init=bmmsc_MAGIC)
+bmmsc_MAGIC <- magic(bmmsc, genes="all_genes", t=4, init=bmmsc_MAGIC)
 as.data.frame(bmmsc_MAGIC)[1:5, 1:10]
 ```
 
     ##   0610007C21Rik;Apr3 0610007L01Rik 0610007P08Rik;Rad26l 0610007P14Rik
-    ## 1          0.1751866     0.5540753           0.06156801     0.4074682
-    ## 2          0.1546742     0.4319843           0.11617584     0.4282041
-    ## 3          0.1687694     0.5702529           0.06386686     0.4172185
-    ## 4          0.1494420     0.4273008           0.11111974     0.4211829
-    ## 5          0.1708924     0.5635437           0.06133188     0.4162455
+    ## 1          0.1792195     0.5550954           0.06092393     0.3891946
+    ## 2          0.1273133     0.4096786           0.13282092     0.4268516
+    ## 3          0.1518990     0.6057446           0.07514413     0.4341140
+    ## 4          0.1186488     0.4098970           0.12670578     0.4156248
+    ## 5          0.1650279     0.5837784           0.06048088     0.4183659
     ##   0610007P22Rik 0610009B22Rik 0610009D07Rik 0610009O20Rik
-    ## 1    0.03024783    0.05645037    0.07368982     0.1979285
-    ## 2    0.03774436    0.08081385    0.12355306     0.3909738
-    ## 3    0.02894124    0.05833093    0.07277939     0.2002494
-    ## 4    0.03579443    0.07634111    0.11043661     0.3862620
-    ## 5    0.02948439    0.05587387    0.07075943     0.2007730
+    ## 1    0.02933742    0.05873117    0.07909602     0.1881641
+    ## 2    0.04131681    0.08353999    0.12061873     0.3906472
+    ## 3    0.02539456    0.06417888    0.05789454     0.1947493
+    ## 4    0.03749442    0.07662827    0.10214198     0.3869261
+    ## 5    0.02955924    0.05542874    0.05948475     0.1912546
     ##   0610010F05Rik;mKIAA1841;Kiaa1841 0610010K14Rik;Rnasek
-    ## 1                       0.03743578             1.160120
-    ## 2                       0.03603500             1.090403
-    ## 3                       0.03885539             1.150197
-    ## 4                       0.03315765             1.096635
-    ## 5                       0.03766863             1.155895
+    ## 1                       0.03648628             1.174787
+    ## 2                       0.03764984             1.084359
+    ## 3                       0.04473963             1.136657
+    ## 4                       0.03436419             1.098742
+    ## 5                       0.03893060             1.150368
+
+### Visualizing MAGIC values on PCA
+
+We can visualize the results of MAGIC on PCA as follows.
+
+``` r
+bmmsc_MAGIC_PCA <- as.data.frame(prcomp(bmmsc_MAGIC)$x)
+ggplot(bmmsc_MAGIC_PCA) +
+  geom_point(aes(x=PC1, y=PC2, color=bmmsc_MAGIC$result$Klf1)) +
+  scale_color_viridis(option="B") +
+  labs(color="Klf1")
+```
+
+![](bonemarrow_tutorial_files/figure-gfm/run_pca-1.png)<!-- -->
 
 ### Visualizing MAGIC values on PHATE
 
 We can visualize the results of MAGIC on PHATE as follows.
-mKIAA1317;Kctd16
 
 ``` r
 bmmsc_PHATE <- phate(bmmsc)
 ggplot(bmmsc_PHATE) +
   geom_point(aes(x=PHATE1, y=PHATE2, color=bmmsc_MAGIC$result$Klf1)) +
-  scale_color_viridis() +
-  labs(color="Mpo")
+  scale_color_viridis(option="B") +
+  labs(color="Klf1")
 ```
 
 ![](bonemarrow_tutorial_files/figure-gfm/run_phate-1.png)<!-- -->
