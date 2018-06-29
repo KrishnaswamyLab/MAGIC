@@ -2,7 +2,7 @@ function [data_opt_t, t_opt]  = compute_optimal_t(data, DiffOp, varargin)
 
 t_max = 32;
 make_plot = true;
-th = 0.001;
+th = 1e-3;
 data_opt_t = [];
 
 if ~isempty(varargin)
@@ -12,6 +12,9 @@ if ~isempty(varargin)
         end
         if strcmp(varargin{j}, 'make_plot')
             make_plot = varargin{j+1};
+        end
+        if strcmp(varargin{j}, 'th')
+            th = varargin{j+1};
         end
     end
 end
