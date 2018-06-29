@@ -5,11 +5,7 @@ from __future__ import print_function, division
 from sklearn.preprocessing import normalize
 import numpy as np
 from scipy import sparse
-
-try:
-    import pandas as pd
-except ImportError:
-    pass
+import pandas as pd
 
 
 def library_size_normalize(data, verbose=False):
@@ -32,12 +28,15 @@ def library_size_normalize(data, verbose=False):
     if verbose:
         print("Normalizing library sizes for %s cells" % (data.shape[0]))
 
-    try:
-        if isinstance(data, pd.SparseDataFrame) or \
-                pd.api.types.is_sparse(data):
-            data = data.to_coo()
-    except NameError:
-        pass
+    # pandas support
+    columns, index = None, None
+    if isinstance(data, pd.SparseDataFrame) or \
+            pd.api.types.is_sparse(data):
+        columns, index = data.columns, data.index
+        data = data.to_coo()
+    elif isinstance(data, pd.DataFrame):
+        columns, index = data.columns, data.index
+
     median_transcript_count = np.median(np.array(data.sum(axis=1)))
     if sparse.issparse(data) and data.nnz >= 2**31:
         # check we can access elements by index
@@ -70,4 +69,12 @@ def library_size_normalize(data, verbose=False):
     # axis = 1 independently normalizes each sample
 
     data_norm = data_norm * median_transcript_count
+    if columns is not None:
+        # pandas dataframe
+        if sparse.issparse(data_norm):
+            data_norm = pd.SparseDataFrame(data_norm, default_fill_value=0)
+        else:
+            data_norm = pd.DataFrame(data_norm)
+        data_norm.columns = columns
+        data_norm.index = index
     return data_norm

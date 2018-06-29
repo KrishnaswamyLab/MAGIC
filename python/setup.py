@@ -3,12 +3,12 @@ import sys
 from setuptools import setup
 
 install_requires = [
-    'numpy>=1.10.0',
-    'pandas>=0.18.0',
-    'scipy>=0.14.0',
+    'numpy>=1.14.0',
+    'pandas>=0.21.0',
+    'scipy>=1.1.0',
     'matplotlib',
-    'seaborn',
-    'scikit-learn',
+    'scikit-learn>=0.19.1',
+    'graphtools>=0.1.8'
 ]
 
 test_requires = [
