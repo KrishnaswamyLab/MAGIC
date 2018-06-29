@@ -29,8 +29,8 @@ Diffusion*, Cell
   - You can view further examples of MAGIC on real data in our notebooks
     under
         `inst/examples`:
-      - <https://github.com/KrishnaswamyLab/MAGIC/blob/master/R/inst/examples/EMT_tutorial.md>
-      - <https://github.com/KrishnaswamyLab/MAGIC/blob/master/R/inst/examples/bonemarrow_tutorial.md>
+      - <https://github.com/KrishnaswamyLab/MAGIC/blob/master/Rmagic/inst/examples/EMT_tutorial.md>
+      - <https://github.com/KrishnaswamyLab/MAGIC/blob/master/Rmagic/inst/examples/bonemarrow_tutorial.md>
 
 ### Installation
 
@@ -40,7 +40,7 @@ In R, run these commands to install MAGIC and all dependencies:
 
 ``` r
 if (!require(devtools)) install.packages(devtools)
-if (!require(Rmagic)) devtools::install_github("KrishnaswamyLab/magic/R")
+if (!require(Rmagic)) devtools::install_github("KrishnaswamyLab/magic/Rmagic")
 ```
 
 In a terminal, run the following command to install the Python
@@ -76,10 +76,10 @@ library(ggplot2)
 library(viridis)
 #> Loading required package: viridisLite
 library(phateR)
-#> 
+#>
 #> Attaching package: 'phateR'
 #> The following object is masked from 'package:Rmagic':
-#> 
+#>
 #>     library.size.normalize
 ```
 

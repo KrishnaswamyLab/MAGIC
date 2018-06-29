@@ -28,7 +28,7 @@ In R, run these commands to install MAGIC and all dependencies:
 
 ``` r
 if (!require(devtools)) install.packages(devtools)
-if (!require(Rmagic)) devtools::install_github("KrishnaswamyLab/magic/R")
+if (!require(Rmagic)) devtools::install_github("KrishnaswamyLab/magic/Rmagic")
 ```
 
 In a terminal, run the following command to install the Python
@@ -76,11 +76,11 @@ library(viridis)
 library(phateR)
 ```
 
-    ## 
+    ##
     ## Attaching package: 'phateR'
 
     ## The following object is masked from 'package:Rmagic':
-    ## 
+    ##
     ##     library.size.normalize
 
 ### Loading data
@@ -161,7 +161,7 @@ We can plot the data before and after MAGIC to visualize the results.
 
 ``` r
 ggplot(data) +
-  geom_point(aes(VIM, CDH1, colour=ZEB1)) + 
+  geom_point(aes(VIM, CDH1, colour=ZEB1)) +
   scale_colour_viridis(option="B")
 ```
 
@@ -173,7 +173,7 @@ ggsave('EMT_data_R_before_magic.png', width=5, height=5)
 
 ``` r
 ggplot(data_MAGIC) +
-  geom_point(aes(VIM, CDH1, colour=ZEB1)) + 
+  geom_point(aes(VIM, CDH1, colour=ZEB1)) +
   scale_colour_viridis(option="B")
 ```
 

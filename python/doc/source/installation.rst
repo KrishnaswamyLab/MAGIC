@@ -42,7 +42,7 @@ Install `Rmagic` from CRAN by running the following code in R::
 
         if (!require(devtools)) install.packages("devtools")
         library(devtools)
-        install_github("KrishnaswamyLab/magic/R")
+        install_github("KrishnaswamyLab/magic/Rmagic")
 
 Install `magic` in Python by running the following code from a terminal::
 

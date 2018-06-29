@@ -28,7 +28,7 @@ In R, run these commands to install MAGIC and all dependencies:
 
 ``` r
 if (!require(devtools)) install.packages(devtools)
-if (!require(Rmagic)) devtools::install_github("KrishnaswamyLab/magic/R")
+if (!require(Rmagic)) devtools::install_github("KrishnaswamyLab/magic/Rmagic")
 ```
 
 In a terminal, run the following command to install the Python
@@ -82,11 +82,11 @@ library(viridis)
 library(phateR)
 ```
 
-    ## 
+    ##
     ## Attaching package: 'phateR'
 
     ## The following object is masked from 'package:Rmagic':
-    ## 
+    ##
     ##     library.size.normalize
 
 ### Loading data
@@ -170,7 +170,7 @@ We can plot the data before and after MAGIC to visualize the results.
 
 ``` r
 ggplot(bmmsc) +
-  geom_point(aes(Mpo, Klf1, colour=Ifitm1)) + 
+  geom_point(aes(Mpo, Klf1, colour=Ifitm1)) +
   scale_colour_viridis()
 ```
 
@@ -185,7 +185,7 @@ about the gene-gene relationships.
 
 ``` r
 ggplot(bmmsc_MAGIC) +
-  geom_point(aes(Mpo, Klf1, colour=Ifitm1)) + 
+  geom_point(aes(Mpo, Klf1, colour=Ifitm1)) +
   scale_colour_viridis()
 ```
 
@@ -204,7 +204,7 @@ steps.
 ``` r
 bmmsc_MAGIC <- magic(bmmsc, genes=c("Mpo", "Klf1", "Ifitm1"), t=4, init=bmmsc_MAGIC)
 ggplot(bmmsc_MAGIC) +
-  geom_point(aes(Mpo, Klf1, colour=Ifitm1)) + 
+  geom_point(aes(Mpo, Klf1, colour=Ifitm1)) +
   scale_colour_viridis()
 ```
 
