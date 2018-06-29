@@ -21,7 +21,13 @@ def test_scdata():
     assert str_gene_magic.shape[0] == scdata_norm.shape[0]
     assert np.all(str_gene_magic == int_gene_magic)
 
-    fast_magic = fast_magic_operator.fit_transform(scdata_norm)
+    pca_magic = fast_magic_operator.fit_transform(
+        scdata_norm, genes="pca_only")
+    assert pca_magic.shape[0] == scdata_norm.shape[0]
+    assert pca_magic.shape[1] == fast_magic_operator.n_pca
+
+    fast_magic = fast_magic_operator.fit_transform(scdata_norm,
+                                                   genes="all_genes")
     assert scdata_norm.shape == fast_magic.shape
 
 
