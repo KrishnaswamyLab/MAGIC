@@ -28,7 +28,7 @@ def animate_magic(data, gene_x, gene_y, gene_color=None,
                   operator=None,
                   filename=None,
                   ax=None, figsize=None, s=1, cmap='inferno',
-                  interval=80, dpi=100, ipython_html="jshtml",
+                  interval=200, dpi=100, ipython_html="jshtml",
                   verbose=False,
                   **kwargs):
     """Animate a gene-gene relationship with increased diffusion
