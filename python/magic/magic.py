@@ -464,7 +464,7 @@ class MAGIC(BaseEstimator):
                 if not np.all(np.isin(genes, X.columns)):
                     warnings.warn("genes {} missing from input data".format(
                         genes[~np.isin(genes, X.columns)]))
-                genes = np.argwhere(np.isin(genes, X.columns)).reshape(-1)
+                genes = np.argwhere(np.isin(X.columns, genes)).reshape(-1)
 
         if store_result and self.X_magic is not None:
             X_magic = self.X_magic
