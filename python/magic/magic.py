@@ -13,7 +13,7 @@ from sklearn.base import BaseEstimator
 from sklearn.exceptions import NotFittedError
 import warnings
 import matplotlib.pyplot as plt
-from scipy import sparse, stats
+from scipy import sparse, spatial
 import pandas as pd
 import numbers
 
@@ -486,13 +486,13 @@ class MAGIC(BaseEstimator):
         log_complete('MAGIC')
         return X_magic
 
-    def rsquare(self, data, data_prev=None, weights=None,
-                subsample_genes=None):
+    def calculate_error(self, data, data_prev=None, weights=None,
+                        subsample_genes=None):
         """
         Returns
         -------
 
-        r2 : R squared value
+        error : Procrustes disparity value
 
         data_curr : transformed data for next time
         """
@@ -501,16 +501,13 @@ class MAGIC(BaseEstimator):
         if weights is None:
             weights = np.ones(data.shape[1]) / data.shape[1]
         if data_prev is not None:
-            r = [stats.linregress(data_prev[:, i], data[:, i]).rvalue
-                 for i in range(data.shape[1])]
-            r = np.sum(weights * np.array(r))
-            r2 = 1 - r**2
+            _, _, error = spatial.procrustes(data_prev, data)
         else:
-            r2 = None
-        return r2, data
+            error = None
+        return error, data
 
     def impute(self, data, t_max=20, plot=False, ax=None,
-               max_genes_compute_t=500):
+               max_genes_compute_t=500, threshold=0.001):
         """Impute with PCA
 
         Parameters
@@ -528,15 +525,15 @@ class MAGIC(BaseEstimator):
         else:
             subsample_genes = None
         if hasattr(data, "data_pca"):
-            weights = data.data_pca.explained_variance_ratio_
+            weights = None  # data.data_pca.explained_variance_ratio_
         else:
             weights = None
         if self.t == 'auto':
-            _, data_prev = self.rsquare(
+            _, data_prev = self.calculate_error(
                 data_imputed, data_prev=None,
                 weights=weights,
                 subsample_genes=subsample_genes)
-            r2_vec = []
+            error_vec = []
             t_opt = None
         else:
             t_opt = self.t
@@ -563,14 +560,14 @@ class MAGIC(BaseEstimator):
                 i += 1
                 data_imputed = self.diff_op.dot(data_imputed)
                 if self.t == 'auto':
-                    r2, data_prev = self.rsquare(
+                    error, data_prev = self.calculate_error(
                         data_imputed, data_prev,
                         weights=weights,
                         subsample_genes=subsample_genes)
-                    r2_vec.append(r2)
-                    log_debug("{}: {}".format(i, r2_vec))
-                    if r2 < 0.05 and t_opt is None:
-                        t_opt = i + 2
+                    error_vec.append(error)
+                    log_debug("{}: {}".format(i, error_vec))
+                    if error < threshold and t_opt is None:
+                        t_opt = i + 1
                         log_info("Automatically selected t = {}".format(t_opt))
 
         log_complete("imputation")
@@ -587,11 +584,11 @@ class MAGIC(BaseEstimator):
                 while i < t_max:
                     i += 1
                     data_overimputed = self.diff_op.dot(data_overimputed)
-                    r2, data_prev = self.rsquare(
+                    error, data_prev = self.calculate_error(
                         data_overimputed, data_prev,
                         weights=weights,
                         subsample_genes=subsample_genes)
-                    r2_vec.append(r2)
+                    error_vec.append(error)
 
             # create axis
             if ax is None:
@@ -601,18 +598,17 @@ class MAGIC(BaseEstimator):
                 show = False
 
             # plot
-            x = np.arange(len(r2_vec)) + 1
-            ax.plot(x, r2_vec)
+            x = np.arange(len(error_vec)) + 1
+            ax.plot(x, error_vec)
             if t_opt is not None:
-                ax.plot(t_opt, r2_vec[t_opt - 1], 'ro', markersize=10,)
-            ax.plot(x, np.full(len(r2_vec), 0.05), 'k--')
+                ax.plot(t_opt, error_vec[t_opt - 1], 'ro', markersize=10,)
+            ax.plot(x, np.full(len(error_vec), threshold), 'k--')
             ax.set_xlabel('t')
-            ax.set_ylabel('1 - R^2(data_{t},data_{t-1})')
-            ax.set_xlim([1, len(r2_vec)])
-            ax.set_ylim([0, 1])
+            ax.set_ylabel('disparity(data_{t}, data_{t-1})')
+            ax.set_xlim([1, len(error_vec)])
             plt.tight_layout()
             log_complete("optimal t plot")
             if show:
-                plt.show()
+                plt.show(block=False)
 
         return data_imputed
