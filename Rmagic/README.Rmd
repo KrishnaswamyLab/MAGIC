@@ -28,8 +28,8 @@ Markov Affinity-based Graph Imputation of Cells (MAGIC) is an algorithm for deno
 * MAGIC can be performed on a variety of datasets
 * Here, we show the usage of MAGIC on a toy dataset
 * You can view further examples of MAGIC on real data in our notebooks under `inst/examples`:
-    * https://github.com/KrishnaswamyLab/MAGIC/blob/master/R/inst/examples/EMT_tutorial.md
-    * https://github.com/KrishnaswamyLab/MAGIC/blob/master/R/inst/examples/bonemarrow_tutorial.md
+    * https://github.com/KrishnaswamyLab/MAGIC/blob/master/Rmagic/inst/examples/EMT_tutorial.md
+    * https://github.com/KrishnaswamyLab/MAGIC/blob/master/Rmagic/inst/examples/bonemarrow_tutorial.md
 
 ### Installation
 
@@ -39,7 +39,7 @@ In R, run these commands to install MAGIC and all dependencies:
 
 ```{r install_Rmagic, eval=FALSE}
 if (!require(devtools)) install.packages(devtools)
-if (!require(Rmagic)) devtools::install_github("KrishnaswamyLab/magic/R")
+if (!require(Rmagic)) devtools::install_github("KrishnaswamyLab/magic/Rmagic")
 ```
 
 In a terminal, run the following command to install the Python repository.
@@ -108,7 +108,7 @@ ggplot(data_MAGIC) +
   scale_colour_viridis(option="B")
 ```
 
-As you can see, the gene-gene relationships are much clearer after MAGIC. 
+As you can see, the gene-gene relationships are much clearer after MAGIC.
 
 The data is sometimes a little too smooth - we can decrease `t` from the automatic value to reduce the amount of diffusion. We pass the original result to the argument `init` to avoid recomputing intermediate steps.
 
