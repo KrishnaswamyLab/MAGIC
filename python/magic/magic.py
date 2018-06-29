@@ -101,6 +101,7 @@ class MAGIC(BaseEstimator):
     --------
     >>> import magic
     >>> import pandas as pd
+    >>> import matplotlib.pyplot as plt
     >>> X = pd.read_csv("../../data/test_data.csv")
     >>> X.shape
     (500, 197)
@@ -117,6 +118,8 @@ class MAGIC(BaseEstimator):
     >>> X_magic = magic_operator.transform(genes="all_genes")
     >>> X_magic.shape
     (500, 197)
+    >>> plt.scatter(X_magic['VIM'], X_magic['CDH1'], c=X_magic['ZEB1'], s=1, cmap='inferno')
+    >>> plt.show()
 
     References
     ----------
