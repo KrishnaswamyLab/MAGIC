@@ -121,8 +121,8 @@ magic <- function(data,
   } else {
     # character vector
     if (!all(genes %in% colnames(data))) {
-      warn(paste0("Genes ", genes[!(genes %in% colnames(data))],
-                  " not found.", collapse=", "))
+      warning(paste0("Genes ", genes[!(genes %in% colnames(data))],
+                     " not found.", collapse=", "))
     }
     genes <- which(colnames(data) %in% genes)
     gene_names <- colnames(data)[genes]
