@@ -45,15 +45,15 @@ MAGIC has been implemented in Python, Matlab, and R.
 
 To install with `pip`, run the following from a terminal:
 
-        pip install --user git+git://github.com/KrishnaswamyLab/MAGIC.git#subdirectory=python
+    pip install --user git+git://github.com/KrishnaswamyLab/MAGIC.git#subdirectory=python
 
 #### Installation from GitHub
 
 To clone the repository and install manually, run the following from a terminal:
 
-        git clone git://github.com/KrishnaswamyLab/MAGIC.git
-        cd MAGIC/python
-        python setup.py install --user
+    git clone git://github.com/KrishnaswamyLab/MAGIC.git
+    cd MAGIC/python
+    python setup.py install --user
 
 ### Usage
 
@@ -95,9 +95,9 @@ To use MAGIC, you will need to install both the R and Python packages.
 
 You can install `Rmagic` with `devtools` by running the following in R:
 
-        if (!require(devtools)) install.packages("devtools")
-        library(devtools)
-        install_github("KrishnaswamyLab/magic/Rmagic")
+    if (!require(devtools)) install.packages("devtools")
+    library(devtools)
+    install_github("KrishnaswamyLab/magic/Rmagic")
 
 You then need to install MAGIC in Python with `pip` by running the following from a terminal:
 
@@ -109,11 +109,11 @@ If `python` or `pip` are not installed, you will need to install them. We recomm
 
 To clone the repository and install manually, run the following from a terminal:
 
-        git clone git://github.com/KrishnaswamyLab/MAGIC.git
-        cd MAGIC/python
-        python setup.py install --user
-        cd ../Rmagic
-        R CMD INSTALL .
+    git clone git://github.com/KrishnaswamyLab/MAGIC.git
+    cd MAGIC/python
+    python setup.py install --user
+    cd ../Rmagic
+    R CMD INSTALL .
 
 ### Usage
 
