@@ -17,14 +17,14 @@ cache: packages
 
 env:
   global:
-    - PATH="$HOME/miniconda2/bin:$PATH"
+    - PATH="$HOME/miniconda2/bin:$HOME/miniconda3/bin:$PATH"
     - RETICULATE_PYTHON="$HOME/miniconda2/bin/python"
 
 before_install:
   - chmod +x travis_setup.sh
   - ./travis_setup.sh
-  - $HOME/miniconda2/pip install --user phate
-  - $HOME/miniconda3/pip install --user phate
+  - $HOME/miniconda2/bin/pip install --user phate
+  - $HOME/miniconda3/bin/pip install --user phate
   - R -e "install.packages(c('reticulate', 'devtools', 'readr', 'phateR', 'Matrix', 'ggplot2'))"
 
 install:
