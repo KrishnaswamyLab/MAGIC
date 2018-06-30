@@ -1,4 +1,9 @@
-#' @title Perform MAGIC on a data matrix
+#' Perform MAGIC on a data matrix
+#' 
+#' Markov Affinity-based Graph Imputation of Cells (MAGIC) is an
+#' algorithm for denoising and transcript recover of single cells
+#' applied to single-cell RNA sequencing data, as described in
+#' van Dijk et al, 2018.
 #'
 #' @param data input data matrix
 #' @param genes character or integer vector, default: NULL
