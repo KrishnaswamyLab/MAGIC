@@ -1,6 +1,8 @@
-from . import MAGIC_core
-from . import mg
-from . import magic_gui
-from . import MAGIC
+from __future__ import absolute_import
 
-__version__ = "0.1"
+from .magic import MAGIC
+from .version import __version__
+
+import magic.io
+import magic.preprocessing
+import magic.plot
