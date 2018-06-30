@@ -87,8 +87,10 @@ library(phateR)
 
 ### Loading data
 
-The example data is located in the PHATE Github repository. We can load
-it directly from the web.
+In this tutorial, we will analyse myeloid and erythroid cells in mouse
+bone marrow, as described in Paul et al., 2015. The example data is 
+located in the PHATE Github repository and we can load it directly from 
+the web.
 
 ``` r
 # load data
