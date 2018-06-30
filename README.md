@@ -28,7 +28,7 @@ MAGIC has been implemented in Python, Matlab, and R.
         * [Quick Start](#quick-start)
         * [Tutorials](#tutorials)
   * [Matlab](#matlab)
-        * [Instructions for the Matlab version](#instructions-for-the-matlab-version)
+     * [Instructions for the Matlab version](#instructions-for-the-matlab-version)
   * [R](#r)
      * [Installation](#installation-1)
         * [Installation with devtools and <code>pip</code>](#installation-with-devtools-and-pip)
@@ -81,7 +81,7 @@ Bone Marrow data notebook: http://nbviewer.jupyter.org/github/KrishnaswamyLab/MA
 
 ## Matlab
 
-#### Instructions for the Matlab version
+### Instructions for the Matlab version
 1. run_magic.m -- MAGIC imputation function
 2. test_magic.m -- Shows how to run MAGIC. Also included is a function for loading 10x format data (load_10x.m)
 
