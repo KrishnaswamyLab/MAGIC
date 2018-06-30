@@ -20,22 +20,22 @@ MAGIC has been implemented in Python, Matlab, and R.
 
 ### Table of Contents
 
-      * [Python](#python)
-         * [Installation](#installation)
-            * [Installation with pip](#installation-with-pip)
-            * [Installation from GitHub](#installation-from-github)
-         * [Usage](#usage)
-            * [Quick Start](#quick-start)
-            * [Tutorials](#tutorials)
-      * [Matlab](#matlab)
-            * [Instructions for the Matlab version](#instructions-for-the-matlab-version)
-      * [R](#r)
-         * [Installation](#installation-1)
-            * [Installation with devtools and <code>pip</code>](#installation-with-devtools-and-pip)
-            * [Installation from GitHub](#installation-from-github-1)
-         * [Usage](#usage-1)
-            * [Quick Start](#quick-start-1)
-            * [Tutorials](#tutorials-1)
+  * [Python](#python)
+     * [Installation](#installation)
+        * [Installation with pip](#installation-with-pip)
+        * [Installation from GitHub](#installation-from-github)
+     * [Usage](#usage)
+        * [Quick Start](#quick-start)
+        * [Tutorials](#tutorials)
+  * [Matlab](#matlab)
+        * [Instructions for the Matlab version](#instructions-for-the-matlab-version)
+  * [R](#r)
+     * [Installation](#installation-1)
+        * [Installation with devtools and <code>pip</code>](#installation-with-devtools-and-pip)
+        * [Installation from GitHub](#installation-from-github-1)
+     * [Usage](#usage-1)
+        * [Quick Start](#quick-start-1)
+        * [Tutorials](#tutorials-1)
 
 ## Python
 
