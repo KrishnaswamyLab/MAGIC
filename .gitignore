@@ -20,3 +20,5 @@ python/*.dll
 python/*.egg-info
 python/magic/__pycache__
 python/magic/*.pyc
+.DS_Store
+matlab/EMT.csv

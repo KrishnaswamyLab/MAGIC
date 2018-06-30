@@ -1,80 +1,71 @@
-function [t_opt, r2_vec] = compute_optimal_t(data, DiffOp, varargin)
-% [t_opt, r2_vec] = compute_optimal_t(data, DiffOp, varargin)
-%   data - input data
-%   DiffOp - diffusion operator
-%   varargin:
-%       t_max - max t to try
-%       n_genes - number of random genes to compute optimal t on, should be
-%        at least 100, fewer is faster
-%       make_plots - draw convergence as a function of t with which we
-%        select the optimal t
+function [data_opt_t, t_opt]  = compute_optimal_t(data, DiffOp, varargin)
 
 t_max = 32;
-n_genes = size(data,2);
-make_plots = true;
+make_plot = true;
+th = 1e-3;
+data_opt_t = [];
 
 if ~isempty(varargin)
     for j = 1:length(varargin)
         if strcmp(varargin{j}, 't_max')
             t_max = varargin{j+1};
         end
-        if strcmp(varargin{j}, 'n_genes')
-            n_genes = varargin{j+1};
+        if strcmp(varargin{j}, 'make_plot')
+            make_plot = varargin{j+1};
         end
-        if strcmp(varargin{j}, 'make_plots')
-            make_plots = varargin{j+1};
+        if strcmp(varargin{j}, 'th')
+            th = varargin{j+1};
         end
     end
 end
 
-if ~issparse(DiffOp)
-    DiffOp = sparse(DiffOp);
+data_prev = data;
+if make_plot
+    error_vec = nan(t_max,1);
+    for I=1:t_max
+        disp(['t = ' num2str(I)]);
+        data_curr = DiffOp * data_prev;
+        error_vec(I) = procrustes(data_prev, data_curr);
+        if error_vec(I) < th && isempty(data_opt_t)
+            data_opt_t = data_curr;
+        end
+        data_prev = data_curr;
+    end
+    t_opt = find(error_vec < th, 1, 'first');
+    
+    figure;
+    hold all;
+    plot(1:t_max, error_vec, '*-');
+    plot(t_opt, error_vec(t_opt), 'or', 'markersize', 10);
+    xlabel 't'
+    ylabel 'error'
+    axis tight
+    ylim([0 ceil(max(error_vec)*10)/10]);
+    plot(xlim, [th th], '--k');
+    legend({'y' 'optimal t' ['y=' num2str(th)]});
+    set(gca,'xtick',1:t_max);
+    set(gca,'ytick',0:0.1:1);
+else
+    for I=1:t_max
+        disp(['t = ' num2str(I)]);
+        data_curr = DiffOp * data_prev;
+        error = procrustes(data_prev, data_curr);
+        if error < th
+            t_opt = I;
+            data_opt_t = data_curr;
+            break
+        end
+        data_prev = data_curr;
+    end
 end
-
-if n_genes > size(data,2)
-    disp 'n_genes too large, capping n_genes at maximum possible number of genes'
-    n_genes = size(data,2)
-end
-
-idx_genes = randsample(size(data,2), n_genes);
-data_imputed = data;
-data_imputed = data_imputed(:,idx_genes);
-
-if min(data_imputed(:)) < 0
-    disp 'data has negative values, shifting to positive'
-    data_imputed = data_imputed - min(data_imputed(:));
-end
-
-r2_vec = nan(t_max,1);
-data_prev = data_imputed;
-data_prev = bsxfun(@rdivide, data_prev, sum(data_prev));
-disp 'computing optimal t'
-for I=1:t_max
-    data_imputed = DiffOp * data_imputed;
-    data_curr = data_imputed;
-    data_curr = bsxfun(@rdivide, data_curr, sum(data_curr));
-    r2 = rsquare(data_prev(:), data_curr(:));
-    r2_vec(I) = 1 - r2;
-    data_prev = data_curr;
-end
-
-t_opt = find(r2_vec < 0.05, 1, 'first') + 1;
 
 disp(['optimal t = ' num2str(t_opt)]);
 
-if make_plots
-    figure;
-    hold all;
-    plot(1:t_max, r2_vec, '*-');
-    plot(t_opt, r2_vec(t_opt), 'or', 'markersize', 10);
-    xlabel 't'
-    ylabel '1 - R^2(data_{t},data_{t-1})'
-    axis tight
-    ylim([0 1]);
-    plot(xlim, [0.05 0.05], '--k');
-    legend({'y' 'optimal t' 'y=0.05'});
-    set(gca,'xtick',1:t_max);
-    set(gca,'ytick',0:0.1:1);
-end
+
+
+
+
+
+
 
 
