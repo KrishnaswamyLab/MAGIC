@@ -23,9 +23,9 @@ env:
 before_install:
   - chmod +x travis_setup.sh
   - ./travis_setup.sh
-  - $HOME/miniconda2/bin/pip install --user phate
-  - $HOME/miniconda3/bin/pip install --user phate
-  - R -e "install.packages(c('reticulate', 'devtools', 'readr', 'phateR', 'Matrix', 'ggplot2'))"
+  - $HOME/miniconda2/bin/pip install --user phate nose2
+  - $HOME/miniconda3/bin/pip install --user phate nose2
+  - R -e "install.packages(c('reticulate', 'devtools', 'readr', 'phateR', 'Matrix', 'ggplot2', 'viridis'))"
 
 install:
   - cd python
