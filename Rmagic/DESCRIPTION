@@ -17,6 +17,7 @@ Imports:
     ggplot2
 Suggests:
 	readr,
+    viridis,
 	phateR
 License: MIT + file LICENSE
 LazyData: true
