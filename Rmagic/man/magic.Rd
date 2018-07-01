@@ -52,6 +52,12 @@ n_jobs = -2, all CPUs but one are used}
 
 \item{seed}{int or `NULL`, random state (default: `NULL`)}
 }
+\description{
+Markov Affinity-based Graph Imputation of Cells (MAGIC) is an
+algorithm for denoising and transcript recover of single cells
+applied to single-cell RNA sequencing data, as described in
+van Dijk et al, 2018.
+}
 \examples{
 if (reticulate::py_module_available("phate")) {
 
