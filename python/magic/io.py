@@ -251,7 +251,7 @@ def load_csv(filename, cell_axis='row', delimiter=',',
 def load_tsv(filename, cell_axis='row', delimiter='\t',
              gene_names=True, cell_names=True,
              sparse=False, **kwargs):
-    """Load a csv file
+    """Load a tsv file
 
     Parameters
     ----------
