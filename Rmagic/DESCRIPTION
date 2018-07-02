@@ -5,7 +5,7 @@ Version: 1.0.0
 Authors@R: c(person(given = "David", family = "van Dijk", email = "davidvandijk@gmail.com", role = c("aut")),
 		  person(given = 'Scott', family = 'Gigante', email = 'scott.gigante@yale.edu', role = 'cre', comment = c(ORCID = '0000-0002-4544-2764')))
 Maintainer: Scott Gigante <scott.gigante@yale.edu>
-Description: MAGIC (Markov affinity-based graph imputation of cells) is a method for addressing technical noise in single-cell data, including under-sampling of mRNA molecules, often termed "dropout" which can severely obscure important gene-gene relationships. MAGIC shares information across similar cells, via data diffusion, to denoise the cell count matrix and fill in missing transcripts. Read more: van Dijk et al. (2018). DOI: 10.1016/j.cell.2018.05.061 <https://www.cell.com/cell/abstract/S0092-8674(18)30724-4>.
+Description: MAGIC (Markov affinity-based graph imputation of cells) is a method for addressing technical noise in single-cell data, including under-sampling of mRNA molecules, often termed "dropout" which can severely obscure important gene-gene relationships. MAGIC shares information across similar cells, via data diffusion, to denoise the cell count matrix and fill in missing transcripts. Read more: van Dijk et al. (2018) <DOI:10.1016/j.cell.2018.05.061>.
 Depends:
     R (>= 3.3),
     Matrix (>= 1.2-0)
