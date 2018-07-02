@@ -1,0 +1,26 @@
+bibentry(
+	bibtype="Article",
+	title="Recovering Gene Interactions from Single-Cell Data Using Data Diffusion",
+	author = c(
+		person("David", "van Dijk"), 
+		person("Roshan", "Sharma"), 
+		person("Juozas", "Nainys"), 
+		person("Kristina", "Yim"), 
+		person("Pooja", "Kathail"), 
+		person("Ambrose J.", "Carr"), 
+		person("Cassandra", "Burdziak"), 
+		person("Kevin R.", "Moon"), 
+		person("Christine L.", "Chaffer"), 
+		person("Diwakar", "Pattabiraman"), 
+		person("Brian", "Bierie"), 
+		person("Linas", "Mazutis"), 
+		person("Guy", "Wolf"), 
+		person("Smita", "Krishnaswamy"), 
+		person("Dana", "Pe’er")),
+	year=2018,
+	url="https://www.cell.com/cell/abstract/S0092-8674(18)30724-4",
+	doi="10.1016/j.cell.2018.05.061
+showArticle Info",
+	journal="Cell",
+	publisher="Cell Press"
+)
