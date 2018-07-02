@@ -3,6 +3,7 @@ Rmagic v1.0.0
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
+[![Latest CRAN version](https://img.shields.io/cran/v/Rmagic.svg)](https://cran.r-project.org/package=Rmagic)
 [![Travis CI
 Build](https://api.travis-ci.com/KrishnaswamyLab/MAGIC.svg?branch=master)](https://travis-ci.com/KrishnaswamyLab/MAGIC)
 [![Read the

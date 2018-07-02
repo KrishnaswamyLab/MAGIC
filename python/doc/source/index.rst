@@ -4,6 +4,10 @@ MAGIC - Markov Affinity-based Graph Imputation of Cells
 
 .. raw:: html
 
+    <a href="https://cran.r-project.org/package=Rmagic"><img src="https://img.shields.io/cran/v/Rmagic.svg" alt="Latest CRAN version"></a>
+
+.. raw:: html
+
     <a href="https://travis-ci.com/KrishnaswamyLab/MAGIC"><img src="https://api.travis-ci.com/KrishnaswamyLab/magic.svg?branch=master" alt="Travis CI Build"></a>
 
 .. raw:: html

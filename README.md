@@ -1,6 +1,7 @@
 Markov Affinity-based Graph Imputation of Cells (MAGIC)
 -------------------------------------------------------
 
+[![Latest CRAN version](https://img.shields.io/cran/v/Rmagic.svg)](https://cran.r-project.org/package=Rmagic)
 [![Travis CI Build](https://api.travis-ci.com/KrishnaswamyLab/MAGIC.svg?branch=master)](https://travis-ci.com/KrishnaswamyLab/MAGIC)
 [![Read the Docs](https://img.shields.io/readthedocs/magic.svg)](https://magic.readthedocs.io/)
 [![Cell Publication DOI](https://zenodo.org/badge/DOI/10.1016/j.cell.2018.05.061.svg)](https://www.cell.com/cell/abstract/S0092-8674(18)30724-4)
