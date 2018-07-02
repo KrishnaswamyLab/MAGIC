@@ -31,7 +31,7 @@ MAGIC has been implemented in Python, Matlab, and R.
      * [Instructions for the Matlab version](#instructions-for-the-matlab-version)
   * [R](#r)
      * [Installation](#installation-1)
-        * [Installation with devtools and <code>pip</code>](#installation-with-devtools-and-pip)
+        * [Installation from CRAN](#installation-from-cran)
         * [Installation from GitHub](#installation-from-github-1)
      * [Usage](#usage-1)
         * [Quick Start](#quick-start-1)
@@ -91,19 +91,20 @@ Bone Marrow data notebook: http://nbviewer.jupyter.org/github/KrishnaswamyLab/MA
 
 To use MAGIC, you will need to install both the R and Python packages.
 
-#### Installation with `devtools` and `pip`
+If `python` or `pip` are not installed, you will need to install them. We recommend
+[Miniconda3](https://conda.io/miniconda.html) to install Python and `pip` together,
+or otherwise you can install `pip` from https://pip.pypa.io/en/stable/installing/.
 
-You can install `Rmagic` with `devtools` by running the following in R:
+#### Installation from CRAN
 
-    if (!require(devtools)) install.packages("devtools")
-    library(devtools)
-    install_github("KrishnaswamyLab/magic/Rmagic")
+In R, run this command to install MAGIC and all dependencies:
 
-You then need to install MAGIC in Python with `pip` by running the following from a terminal:
+    install.packages("Rmagic")
 
-		pip install --user git+git://github.com/KrishnaswamyLab/MAGIC.git#subdirectory=python
+In a terminal, run the following command to install the Python
+repository.
 
-If `python` or `pip` are not installed, you will need to install them. We recommend [Miniconda3](https://conda.io/miniconda.html) to install Python and `pip` together, or otherwise you can install `pip` from https://pip.pypa.io/en/stable/installing/.
+    pip install --user git+git://github.com/KrishnaswamyLab/MAGIC.git#subdirectory=python
 
 #### Installation from GitHub
 

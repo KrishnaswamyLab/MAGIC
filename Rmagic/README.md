@@ -42,11 +42,16 @@ Diffusion*, Cell
 
 To use MAGIC, you will need to install both the R and Python packages.
 
-In R, run these commands to install MAGIC and all dependencies:
+If `python` or `pip` are not installed, you will need to install them. We recommend
+[Miniconda3](https://conda.io/miniconda.html) to install Python and `pip` together,
+or otherwise you can install `pip` from https://pip.pypa.io/en/stable/installing/.
+
+#### Installation from CRAN
+
+In R, run this command to install MAGIC and all dependencies:
 
 ``` r
-if (!require(devtools)) install.packages(devtools)
-if (!require(Rmagic)) devtools::install_github("KrishnaswamyLab/magic/Rmagic")
+install.packages("Rmagic")
 ```
 
 In a terminal, run the following command to install the Python
@@ -55,6 +60,21 @@ repository.
 ``` bash
 pip install --user git+git://github.com/KrishnaswamyLab/MAGIC.git#subdirectory=python
 ```
+
+#### Installaton from source
+
+To install the very latest version of MAGIC, you can install from
+GitHub with the following commands run in a terminal.
+
+``` bash
+git clone https://github.com/KrishnaswamyLab/MAGIC
+cd MAGIC/python
+python setup.py install --user
+cd ../Rmagic
+R CMD INSTALL .
+```
+
+#### Extra packages for the tutorial
 
 We’ll install a couple more tools for this tutorial.
 
