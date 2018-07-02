@@ -56,7 +56,7 @@ class MAGIC(BaseEstimator):
     t : int, optional, default: 'auto'
         power to which the diffusion operator is powered.
         This sets the level of diffusion. If 'auto', t is selected
-        according to the R squared of the diffused data
+        according to the Procrustes disparity of the diffused data
 
     n_pca : int, optional, default: 100
         Number of principal components to use for calculating

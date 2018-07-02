@@ -16,7 +16,8 @@
 #' If NULL, alpha decaying kernel is not used
 #' @param t int, optional, default: 'auto'
 #' power to which the diffusion operator is powered
-#' sets the level of diffusion
+#' sets the level of diffusion. If 'auto', t is selected according to the
+#' Procrustes disparity of the diffused data.'
 #' @param npca number of PCA components that should be used; default: 20.
 #' @param init magic object, optional
 #' object to use for initialization. Avoids recomputing
