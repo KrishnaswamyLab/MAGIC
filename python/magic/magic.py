@@ -89,10 +89,10 @@ class MAGIC(BaseEstimator):
     Attributes
     ----------
 
-    X : array-like, shape=[n_samples, n_dimensions]
+    X : array-like, shape=[n_samples, n_features]
         Input data
 
-    X_magic : array-like, shape=[n_samples, n_dimensions]
+    X_magic : array-like, shape=[n_samples, n_features]
         Output data
 
     graph : graphtools.BaseGraph
@@ -306,7 +306,7 @@ class MAGIC(BaseEstimator):
         Parameters
         ----------
         X : array, shape=[n_samples, n_features]
-            input data with `n_samples` samples and `n_dimensions`
+            input data with `n_samples` samples and `n_features`
             dimensions. Accepted data types: `numpy.ndarray`,
             `scipy.sparse.spmatrix`, `pd.DataFrame`, `anndata.AnnData`. If
             `knn_dist` is 'precomputed', `data` should be a n_samples x
@@ -391,7 +391,7 @@ class MAGIC(BaseEstimator):
         Parameters
         ----------
         X : array, optional, shape=[n_samples, n_features]
-            input data with `n_samples` samples and `n_dimensions`
+            input data with `n_samples` samples and `n_features`
             dimensions. Not required, since MAGIC does not embed
             cells not given in the input matrix to `MAGIC.fit()`.
             Accepted data types: `numpy.ndarray`,
@@ -506,7 +506,7 @@ class MAGIC(BaseEstimator):
         Parameters
         ----------
         X : array, shape=[n_samples, n_features]
-            input data with `n_samples` samples and `n_dimensions`
+            input data with `n_samples` samples and `n_features`
             dimensions. Accepted data types: `numpy.ndarray`,
             `scipy.sparse.spmatrix`, `pd.DataFrame`, `anndata.AnnData` If
             `knn_dist` is 'precomputed', `data` should be a n_samples x
