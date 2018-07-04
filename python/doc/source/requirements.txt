@@ -7,4 +7,3 @@ future
 graphtools>=0.1.8
 sphinx
 sphinxcontrib-napoleon
-phate>=0.2.8.3
