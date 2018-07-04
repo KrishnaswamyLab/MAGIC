@@ -4,7 +4,7 @@ API
 MAGIC
 -----
 
-.. automodule:: magic.phate
+.. automodule:: magic.magic
     :members:
     :inherited-members:
     :show-inheritance:
