@@ -13,7 +13,7 @@ Markov Affinity-based Graph Imputation of Cells (MAGIC) is an algorithm for deno
 MAGIC has been implemented in Python, Matlab, and R.
 
 <p align="center">
-<img src="https://github.com/KrishnaswamyLab/MAGIC/blob/master/magic.gif"/>
+<img src="https://raw.githubusercontent.com/KrishnaswamyLab/MAGIC/master/magic.gif"/>
 <br>
 <i>Magic reveals the interaction between Vimentin (VIM), Cadherin-1 (CDH1), and Zinc finger E-box-binding homeobox 1 (ZEB1, encoded by colors).
 </i>
