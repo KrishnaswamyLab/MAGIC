@@ -40,7 +40,6 @@ script:
   - python2 setup.py test
   - python3 setup.py test
   - cd doc
-  - pip install sphinx
   - pip install -r source/requirements.txt
   - make html
 
