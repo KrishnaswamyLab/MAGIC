@@ -8,7 +8,7 @@ Markov Affinity-based Graph Imputation of Cells (MAGIC)
 [![Twitter](https://img.shields.io/twitter/follow/KrishnaswamyLab.svg?style=social&label=Follow)](https://twitter.com/KrishnaswamyLab)
 [![Github Stars](https://img.shields.io/github/stars/KrishnaswamyLab/MAGIC.svg?style=social&label=Stars)](https://github.com/KrishnaswamyLab/MAGIC/)
 
-Markov Affinity-based Graph Imputation of Cells (MAGIC) is an algorithm for denoising and transcript recover of single cells applied to single-cell RNA sequencing data, as described in Van Dijk D *et al.* (2018), *Recovering Gene Interactions from Single-Cell Data Using Data Diffusion*, Cell <https://www.cell.com/cell/abstract/S0092-8674(18)30724-4>.
+Markov Affinity-based Graph Imputation of Cells (MAGIC) is an algorithm for denoising and imputation of single cells applied to single-cell RNA sequencing data, as described in Van Dijk D *et al.* (2018), *Recovering Gene Interactions from Single-Cell Data Using Data Diffusion*, Cell <https://www.cell.com/cell/abstract/S0092-8674(18)30724-4>.
 
 MAGIC has been implemented in Python, Matlab, and R.
 
@@ -37,6 +37,7 @@ MAGIC has been implemented in Python, Matlab, and R.
      * [Usage](#usage-1)
         * [Quick Start](#quick-start-1)
         * [Tutorials](#tutorials-1)
+  * [Help](#help)
 
 ## Python
 
@@ -133,3 +134,7 @@ After installing the package, MAGIC can be run by loading the library and callin
 #### Tutorials
 
 For a working example, see the Rmarkdown tutorials at https://github.com/KrishnaswamyLab/MAGIC/blob/master/Rmagic/inst/examples/bonemarrow_tutorial.md and https://github.com/KrishnaswamyLab/MAGIC/blob/master/Rmagic/inst/examples/EMT_tutorial.md or in `R/inst/examples`.
+
+## Help
+
+If you have any questions or require assistance using MAGIC, please contact us at <https://krishnaswamylab.org/get-help>.
