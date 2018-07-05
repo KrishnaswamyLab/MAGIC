@@ -490,8 +490,7 @@ class MAGIC(BaseEstimator):
 
         # return selected genes
         if isinstance(genes, str) and genes == "pca_only":
-            if sparse.issparse(self.graph.data):
-                X_magic = PCA().fit_transform(X_magic)
+            X_magic = PCA().fit_transform(X_magic)
             genes = ["PC{}".format(i + 1) for i in range(X_magic.shape[1])]
         else:
             X_magic = graph.inverse_transform(X_magic, columns=genes)
