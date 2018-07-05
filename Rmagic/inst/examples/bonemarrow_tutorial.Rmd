@@ -174,3 +174,6 @@ ggplot(bmmsc_PHATE) +
 ggsave('BMMSC_data_R_phate_colored_by_magic.png', width=5, height=5)
 ```
 
+## Help
+
+If you have any questions or require assistance using MAGIC, please contact us at <https://krishnaswamylab.org/get-help>.

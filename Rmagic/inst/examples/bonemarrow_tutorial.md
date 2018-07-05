@@ -78,18 +78,18 @@ library(viridis)
 library(phateR)
 ```
 
-    ## 
+    ##
     ## Attaching package: 'phateR'
 
     ## The following object is masked from 'package:Rmagic':
-    ## 
+    ##
     ##     library.size.normalize
 
 ### Loading data
 
 In this tutorial, we will analyse myeloid and erythroid cells in mouse
-bone marrow, as described in Paul et al., 2015. The example data is 
-located in the PHATE Github repository and we can load it directly from 
+bone marrow, as described in Paul et al., 2015. The example data is
+located in the PHATE Github repository and we can load it directly from
 the web.
 
 ``` r
@@ -276,3 +276,7 @@ ggplot(bmmsc_PHATE) +
 ``` r
 ggsave('BMMSC_data_R_phate_colored_by_magic.png', width=5, height=5)
 ```
+
+## Help
+
+If you have any questions or require assistance using MAGIC, please contact us at <https://krishnaswamylab.org/get-help>.

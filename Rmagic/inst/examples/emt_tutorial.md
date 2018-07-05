@@ -78,11 +78,11 @@ library(viridis)
 library(phateR)
 ```
 
-    ## 
+    ##
     ## Attaching package: 'phateR'
 
     ## The following object is masked from 'package:Rmagic':
-    ## 
+    ##
     ##     library.size.normalize
 
 ### Loading data
@@ -241,3 +241,7 @@ ggplot(data_MAGIC_PCA) +
 ``` r
 ggsave('EMT_data_R_pca_colored_by_magic.png', width=5, height=5)
 ```
+
+## Help
+
+If you have any questions or require assistance using MAGIC, please contact us at <https://krishnaswamylab.org/get-help>.
