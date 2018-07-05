@@ -24,3 +24,11 @@ Data Preprocessing
     :members:
     :inherited-members:
     :show-inheritance:
+
+Plotting
+--------
+
+.. automodule:: magic.plot
+    :members:
+    :inherited-members:
+    :show-inheritance:
