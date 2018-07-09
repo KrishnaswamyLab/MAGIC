@@ -127,7 +127,7 @@ class MAGIC(BaseEstimator):
     ----------
     .. [1] Van Dijk D *et al.* (2018),
         *Recovering Gene Interactions from Single-Cell Data Using Data Diffusion*,
-        `Cell <https://www.cell.com/cell/abstract/S0092-8674(18)30724-4>`_.
+        `Cell <https://www.cell.com/cell/abstract/S0092-8674(18)30724-4>`__.
     """
 
     def __init__(self, k=10, a=15, t='auto', n_pca=100,
