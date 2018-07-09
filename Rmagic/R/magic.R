@@ -124,6 +124,8 @@ magic <- function(data,
     genes <- as.integer(genes - 1)
   } else if (length(genes) == 1 && genes == "all_genes") {
     gene_names <- colnames(data)
+  } else if (length(genes) == 1 && genes == "pca_only") {
+    gene_names <- paste0("PC", 1:npca)
   } else {
     # character vector
     if (!all(genes %in% colnames(data))) {
