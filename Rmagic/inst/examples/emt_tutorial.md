@@ -78,11 +78,11 @@ library(viridis)
 library(phateR)
 ```
 
-    ##
+    ## 
     ## Attaching package: 'phateR'
 
     ## The following object is masked from 'package:Rmagic':
-    ##
+    ## 
     ##     library.size.normalize
 
 ### Loading data
@@ -198,38 +198,15 @@ ggsave('EMT_data_R_after_magic.png', width=5, height=5)
 ```
 
 As you can see, the gene-gene relationships are much clearer after
-MAGIC. We can look at the entire smoothed matrix with
-`genes='all_genes'`, passing the original result to the argument `init`
-to avoid recomputing intermediate steps. Note that this matrix may be
-large and could take up a lot of memory.
-
-``` r
-data_MAGIC <- magic(data, k=15, genes="all_genes", init=data_MAGIC)
-as.data.frame(data_MAGIC)[1:5, 1:10]
-```
-
-    ##          A1BG   A1BG-AS1       A2ML1      A4GALT      AAAS      AACS
-    ## 1 0.001854893 0.02881591 0.008900173 0.012437242 0.1272436 0.2203742
-    ## 2 0.001133693 0.03286448 0.011011072 0.006169585 0.1264281 0.2170346
-    ## 3 0.002097424 0.02698868 0.008464190 0.013413017 0.1277215 0.2207171
-    ## 4 0.003076367 0.03379555 0.019677135 0.017580554 0.1052129 0.2326787
-    ## 5 0.001704564 0.02785588 0.007650259 0.010583328 0.1302630 0.2196815
-    ##        AADAT     AAED1     AAGAB      AAK1
-    ## 1 0.03026436 0.1445250 0.2745069 0.6526160
-    ## 2 0.02708794 0.1486098 0.2743147 0.6408745
-    ## 3 0.03088562 0.1448863 0.2745518 0.6522863
-    ## 4 0.02384704 0.1466735 0.2638890 0.6601329
-    ## 5 0.03078958 0.1448066 0.2767862 0.6450917
+MAGIC.
 
 ### Visualizing MAGIC values on PCA
 
-We can visualize the results of MAGIC on PCA as follows.
+We can visualize the results of MAGIC on PCA with `genes="pca_only"`.
 
 ``` r
-gt <- reticulate::import("graphtools")
-dat <- gt$base$Data(as.matrix(data_MAGIC$result), n_pca=2L)
-data_MAGIC_PCA <- as.data.frame(dat$data_nu) # as.data.frame(prcomp(data_MAGIC)$x)
-colnames(data_MAGIC_PCA) <- c("PC1", "PC2")
+data_MAGIC_PCA <- magic(data, genes="pca_only", 
+                        k=15, init=data_MAGIC)
 ggplot(data_MAGIC_PCA) +
   geom_point(aes(x=PC1, y=PC2, color=data_MAGIC$result$VIM)) +
   scale_color_viridis(option="B") +
@@ -242,6 +219,33 @@ ggplot(data_MAGIC_PCA) +
 ggsave('EMT_data_R_pca_colored_by_magic.png', width=5, height=5)
 ```
 
+### Using MAGIC for downstream analysis
+
+We can look at the entire smoothed matrix with `genes='all_genes'`,
+passing the original result to the argument `init` to avoid recomputing
+intermediate steps. Note that this matrix may be large and could take up
+a lot of memory.
+
+``` r
+data_MAGIC <- magic(data, genes="all_genes", 
+                    k=15, init=data_MAGIC)
+as.data.frame(data_MAGIC)[1:5, 1:10]
+```
+
+    ##          A1BG   A1BG-AS1       A2ML1      A4GALT      AAAS      AACS
+    ## 1 0.001839592 0.02876726 0.008686110 0.012471223 0.1274074 0.2205920
+    ## 2 0.001104917 0.03285876 0.010440814 0.006188766 0.1265774 0.2170516
+    ## 3 0.002082237 0.02697853 0.008503791 0.013469548 0.1276566 0.2208905
+    ## 4 0.003121141 0.03391476 0.019349338 0.017437881 0.1053139 0.2323029
+    ## 5 0.001686928 0.02783747 0.007459623 0.010616114 0.1303800 0.2198455
+    ##        AADAT     AAED1     AAGAB      AAK1
+    ## 1 0.03046543 0.1442079 0.2745806 0.6525354
+    ## 2 0.02730860 0.1485649 0.2754257 0.6392821
+    ## 3 0.03098135 0.1446796 0.2742247 0.6526963
+    ## 4 0.02378804 0.1464825 0.2638087 0.6597285
+    ## 5 0.03099255 0.1444643 0.2769162 0.6451414
+
 ## Help
 
-If you have any questions or require assistance using MAGIC, please contact us at <https://krishnaswamylab.org/get-help>.
+If you have any questions or require assistance using MAGIC, please
+contact us at <https://krishnaswamylab.org/get-help>.
