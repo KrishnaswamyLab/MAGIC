@@ -423,6 +423,20 @@ class MAGIC(BaseEstimator):
         """
         try:
             if isinstance(X, anndata.AnnData):
+                if (genes is None or (isinstance(genes, str)
+                                      and genes in ['all_genes', 'pca_only'])):
+                    # special names
+                    pass
+                else:
+                    # ensure the genes is a 1D ndarray
+                    genes = np.array([genes]).flatten()
+                    if issubclass(genes.dtype.type, numbers.Integral):
+                        # integer indices
+                        pass
+                    else:
+                        # names
+                        genes = np.argwhere(np.isin(X.var_names,
+                                                    genes)).flatten()
                 X = X.X
         except NameError:
             # anndata not installed
