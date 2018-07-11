@@ -134,9 +134,12 @@ def convert_to_same_format(data, target_data, columns=None):
                 target_columns = target_columns[columns]
             else:
                 target_columns = target_columns.iloc[columns]
-    except (KeyError, IndexError):
+    except (KeyError, IndexError, ValueError):
         # keep the original column names
-        target_columns = columns
+        if pandas:
+            target_columns = columns
+        else:
+            target_columns = pd.DataFrame(index=columns)
     # set column names on new data object
     if pandas:
         data.columns = target_columns
