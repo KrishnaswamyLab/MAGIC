@@ -305,9 +305,7 @@ class MAGIC(BaseEstimator):
         X : array, shape=[n_samples, n_features]
             input data with `n_samples` samples and `n_features`
             dimensions. Accepted data types: `numpy.ndarray`,
-            `scipy.sparse.spmatrix`, `pd.DataFrame`, `anndata.AnnData`. If
-            `knn_dist` is 'precomputed', `data` should be a n_samples x
-            n_samples distance or affinity matrix
+            `scipy.sparse.spmatrix`, `pd.DataFrame`, `anndata.AnnData`.
 
         Returns
         -------
@@ -517,9 +515,7 @@ class MAGIC(BaseEstimator):
         X : array, shape=[n_samples, n_features]
             input data with `n_samples` samples and `n_features`
             dimensions. Accepted data types: `numpy.ndarray`,
-            `scipy.sparse.spmatrix`, `pd.DataFrame`, `anndata.AnnData` If
-            `knn_dist` is 'precomputed', `data` should be a n_samples x
-            n_samples distance or affinity matrix
+            `scipy.sparse.spmatrix`, `pd.DataFrame`, `anndata.AnnData`.
 
         kwargs : further arguments for `PHATE.transform()`
             Keyword arguments as specified in :func:`~phate.PHATE.transform`
