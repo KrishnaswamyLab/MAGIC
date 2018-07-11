@@ -1,9 +1,10 @@
 """
 Markov Affinity-based Graph Imputation of Cells (MAGIC)
-"""
 
-# authors: Scott Gigante <scott.gigante@yale.edu>, Daniel Dager <daniel.dager@yale.edu>
-# (C) 2017 Krishnaswamy Lab GPLv2
+Authors:
+Scott Gigante <scott.gigante@yale.edu>, Daniel Dager <daniel.dager@yale.edu>
+(C) 2018 Krishnaswamy Lab GPLv2
+"""
 
 from __future__ import print_function, division, absolute_import
 
@@ -18,15 +19,8 @@ from scipy import sparse, spatial
 import pandas as pd
 import numbers
 
-
-from .utils import (check_int,
-                    check_positive,
-                    check_between,
-                    check_in,
-                    check_if_not,
-                    convert_to_same_format,
-                    matrix_is_equivalent)
-from .logging import set_logging, log_start, log_complete, log_info, log_debug
+from . import utils
+from . import logging
 
 try:
     import anndata
@@ -111,17 +105,19 @@ class MAGIC(BaseEstimator):
     >>> X_magic.shape
     (500, 3)
     >>> magic_operator.set_params(t=7)
-    MAGIC(a=15, k=5, knn_dist='euclidean', n_jobs=1, n_pca=100, random_state=None,
-       t=7, verbose=1)
+    MAGIC(a=15, k=5, knn_dist='euclidean', n_jobs=1, n_pca=100,
+       random_state=None, t=7, verbose=1)
     >>> X_magic = magic_operator.transform(genes=['VIM', 'CDH1', 'ZEB1'])
     >>> X_magic.shape
     (500, 3)
     >>> X_magic = magic_operator.transform(genes="all_genes")
     >>> X_magic.shape
     (500, 197)
-    >>> plt.scatter(X_magic['VIM'], X_magic['CDH1'], c=X_magic['ZEB1'], s=1, cmap='inferno')
+    >>> plt.scatter(X_magic['VIM'], X_magic['CDH1'],
+    ...             c=X_magic['ZEB1'], s=1, cmap='inferno')
     >>> plt.show()
-    >>> magic.plot.animate_magic(X, gene_x='VIM', gene_y='CDH1', gene_color='ZEB1', operator=magic_operator)
+    >>> magic.plot.animate_magic(X, gene_x='VIM', gene_y='CDH1',
+    ...                          gene_color='ZEB1', operator=magic_operator)
 
     References
     ----------
@@ -146,7 +142,7 @@ class MAGIC(BaseEstimator):
         self.X_magic = None
         self._check_params()
         self.verbose = verbose
-        set_logging(verbose)
+        logging.set_logging(verbose)
 
     @property
     def diff_op(self):
@@ -170,24 +166,25 @@ class MAGIC(BaseEstimator):
         ------
         ValueError : unacceptable choice of parameters
         """
-        check_positive(k=self.k,
-                       a=self.a)
-        check_int(k=self.k,
-                  n_jobs=self.n_jobs)
+        utils.check_positive(k=self.k)
+        utils.check_int(k=self.k,
+                        n_jobs=self.n_jobs)
         # TODO: epsilon
-        check_between(v_min=0,
-                      v_max=100)
-        check_if_not(None, check_positive, check_int,
-                     n_pca=self.n_pca)
-        check_if_not('auto', check_positive, check_int,
-                     t=self.t)
-        check_in(['euclidean', 'precomputed', 'cosine', 'correlation',
-                  'cityblock', 'l1', 'l2', 'manhattan', 'braycurtis',
-                  'canberra', 'chebyshev', 'dice', 'hamming', 'jaccard',
-                  'kulsinski', 'mahalanobis', 'matching', 'minkowski',
-                  'rogerstanimoto', 'russellrao', 'seuclidean',
-                  'sokalmichener', 'sokalsneath', 'sqeuclidean', 'yule'],
-                 knn_dist=self.knn_dist)
+        utils.check_between(v_min=0,
+                            v_max=100)
+        utils.check_if_not(None, utils.check_positive, utils.check_int,
+                           n_pca=self.n_pca)
+        utils.check_if_not(None, utils.check_positive,
+                           a=self.a)
+        utils.check_if_not('auto', utils.check_positive, utils.check_int,
+                           t=self.t)
+        utils.check_in(['euclidean', 'precomputed', 'cosine', 'correlation',
+                        'cityblock', 'l1', 'l2', 'manhattan', 'braycurtis',
+                        'canberra', 'chebyshev', 'dice', 'hamming', 'jaccard',
+                        'kulsinski', 'mahalanobis', 'matching', 'minkowski',
+                        'rogerstanimoto', 'russellrao', 'seuclidean',
+                        'sokalmichener', 'sokalsneath', 'sqeuclidean', 'yule'],
+                       knn_dist=self.knn_dist)
 
     def _set_graph_params(self, **params):
         try:
@@ -286,7 +283,7 @@ class MAGIC(BaseEstimator):
             del params['random_state']
         if 'verbose' in params:
             self.verbose = params['verbose']
-            set_logging(self.verbose)
+            logging.set_logging(self.verbose)
             self._set_graph_params(verbose=params['verbose'])
             del params['verbose']
 
@@ -317,13 +314,6 @@ class MAGIC(BaseEstimator):
         magic_operator : MAGIC
             The estimator object
         """
-        try:
-            if isinstance(X, anndata.AnnData):
-                X = X.X
-        except NameError:
-            # anndata not installed
-            pass
-
         if self.knn_dist == 'precomputed':
             if isinstance(X, sparse.coo_matrix):
                 X = X.tocsr()
@@ -331,7 +321,8 @@ class MAGIC(BaseEstimator):
                 precomputed = "distance"
             else:
                 precomputed = "affinity"
-            log_info("Using precomputed {} matrix...".format(precomputed))
+            logging.log_info(
+                "Using precomputed {} matrix...".format(precomputed))
             n_pca = None
         else:
             precomputed = None
@@ -341,7 +332,8 @@ class MAGIC(BaseEstimator):
                 n_pca = self.n_pca
 
         if self.graph is not None:
-            if self.X is not None and not matrix_is_equivalent(X, self.X):
+            if self.X is not None and not \
+                    utils.matrix_is_equivalent(X, self.X):
                 """
                 If the same data is used, we can reuse existing kernel and
                 diffusion matrices. Otherwise we have to recompute.
@@ -354,23 +346,23 @@ class MAGIC(BaseEstimator):
                         precomputed=precomputed,
                         n_jobs=self.n_jobs, verbose=self.verbose, n_pca=n_pca,
                         thresh=1e-4, random_state=self.random_state)
-                    log_info(
+                    logging.log_info(
                         "Using precomputed graph and diffusion operator...")
                 except ValueError as e:
                     # something changed that should have invalidated the graph
-                    log_debug("Reset graph due to {}".format(str(e)))
+                    logging.log_debug("Reset graph due to {}".format(str(e)))
                     self.graph = None
 
         self.X = X
 
-        if np.any(np.array(X.sum(0))) == 0:
+        if utils.has_empty_columns(X):
             warnings.warn("Input matrix contains unexpressed genes. "
                           "Please remove them prior to running MAGIC.")
 
         if self.graph is None:
             # reset X_magic in case it was previously set
             self.X_magic = None
-            log_start("graph and diffusion operator")
+            logging.log_start("graph and diffusion operator")
             self.graph = graphtools.Graph(
                 X,
                 n_pca=n_pca,
@@ -380,7 +372,7 @@ class MAGIC(BaseEstimator):
                 n_jobs=self.n_jobs,
                 verbose=self.verbose,
                 random_state=self.random_state)
-            log_complete("graph and diffusion operator")
+            logging.log_complete("graph and diffusion operator")
 
         return self
 
@@ -437,7 +429,6 @@ class MAGIC(BaseEstimator):
                         # names
                         genes = np.argwhere(np.isin(X.var_names,
                                                     genes)).flatten()
-                X = X.X
         except NameError:
             # anndata not installed
             pass
@@ -452,7 +443,7 @@ class MAGIC(BaseEstimator):
                     "using this method.")
 
         store_result = True
-        if X is not None and not matrix_is_equivalent(X, self.X):
+        if X is not None and not utils.matrix_is_equivalent(X, self.X):
             store_result = False
             graph = graphtools.base.Data(X, n_pca=self.n_pca)
             warnings.warn(UserWarning, "Running MAGIC.transform on different "
@@ -484,15 +475,20 @@ class MAGIC(BaseEstimator):
             genes = np.array([genes]).flatten()
             if not issubclass(genes.dtype.type, numbers.Integral):
                 # gene names
-                if not isinstance(X, pd.DataFrame):
+                if isinstance(X, pd.DataFrame):
+                    gene_names = X.columns
+                elif utils.is_anndata(X):
+                    gene_names = X.var_names
+                else:
                     raise ValueError(
                         "Non-integer gene names only valid with pd.DataFrame "
-                        "input. X is a {}, genes = {}".format(type(X).__name__,
-                                                              genes))
-                if not np.all(np.isin(genes, X.columns)):
+                        "or anndata.AnnData input. "
+                        "X is a {}, genes = {}".format(type(X).__name__,
+                                                       genes))
+                if not np.all(np.isin(genes, gene_names)):
                     warnings.warn("genes {} missing from input data".format(
-                        genes[~np.isin(genes, X.columns)]))
-                genes = np.argwhere(np.isin(X.columns, genes)).reshape(-1)
+                        genes[~np.isin(genes, gene_names)]))
+                genes = np.argwhere(np.isin(gene_names, genes)).reshape(-1)
 
         if store_result and self.X_magic is not None:
             X_magic = self.X_magic
@@ -509,7 +505,7 @@ class MAGIC(BaseEstimator):
         else:
             X_magic = graph.inverse_transform(X_magic, columns=genes)
             # convert back to pandas dataframe, if necessary
-        X_magic = convert_to_same_format(X_magic, X, columns=genes)
+        X_magic = utils.convert_to_same_format(X_magic, X, columns=genes)
         return X_magic
 
     def fit_transform(self, X, **kwargs):
@@ -533,10 +529,10 @@ class MAGIC(BaseEstimator):
         X_magic : array, shape=[n_samples, n_genes]
             The gene expression values after diffusion
         """
-        log_start('MAGIC')
+        logging.log_start('MAGIC')
         self.fit(X)
         X_magic = self.transform(**kwargs)
-        log_complete('MAGIC')
+        logging.log_complete('MAGIC')
         return X_magic
 
     def calculate_error(self, data, data_prev=None, weights=None,
@@ -624,7 +620,7 @@ class MAGIC(BaseEstimator):
         else:
             t_opt = self.t
 
-        log_start("imputation")
+        logging.log_start("imputation")
 
         # classic magic
         # the diffusion matrix is powered when t has been specified by
@@ -651,16 +647,17 @@ class MAGIC(BaseEstimator):
                         weights=weights,
                         subsample_genes=subsample_genes)
                     error_vec.append(error)
-                    log_debug("{}: {}".format(i, error_vec))
+                    logging.log_debug("{}: {}".format(i, error_vec))
                     if error < threshold and t_opt is None:
                         t_opt = i + 1
-                        log_info("Automatically selected t = {}".format(t_opt))
+                        logging.log_info(
+                            "Automatically selected t = {}".format(t_opt))
 
-        log_complete("imputation")
+        logging.log_complete("imputation")
 
         if plot:
             # continue to t_max
-            log_start("optimal t plot")
+            logging.log_start("optimal t plot")
             if t_opt is None:
                 # never converged
                 warnings.warn("optimal t > t_max ({})".format(t_max),
@@ -693,7 +690,7 @@ class MAGIC(BaseEstimator):
             ax.set_ylabel('disparity(data_{t}, data_{t-1})')
             ax.set_xlim([1, len(error_vec)])
             plt.tight_layout()
-            log_complete("optimal t plot")
+            logging.log_complete("optimal t plot")
             if show:
                 plt.show(block=False)
 
