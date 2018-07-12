@@ -30,8 +30,8 @@ install:
 script:
   - cd Rmagic; R CMD build .
   - travis_wait 30 R CMD check *tar.gz
-  - cd ../python; $HOME/miniconda2/bin/pip install -e -q .[test,doc]
-  - $HOME/miniconda3/bin/pip install -e -q .[test,doc]
+  - cd ../python; $HOME/miniconda2/bin/pip install -q .[test,doc]
+  - $HOME/miniconda3/bin/pip install -q .[test,doc]
   - python2 setup.py test
   - python3 setup.py test
   - cd doc; make html
