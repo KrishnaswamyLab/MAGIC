@@ -1,11 +1,13 @@
 ---
 title: "Rmagic Bone Marrow Tutorial"
 output:
-  github_document: default
-toc: true
+  html_document:
+    df_print: paged
+    toc: yes
+    toc_depth: '3'
 ---
 
-<!-- README.md is generated from README.Rmd. Please edit that file -->
+<!-- bonemarrow_tutorial.md is generated from bonemarrow_tutorial.Rmd. Please edit that file -->
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
@@ -66,7 +68,7 @@ library(phateR)
 
 ### Loading data
 
-In this tutorial, we will analyse myeloid and erythroid cells in mouse bone marrow, as described in Paul et al., 2015. The example data is located in the PHATE Github repository and we can load it directly from the web.
+In this tutorial, we will analyse myeloid and erythroid cells in mouse bone marrow, as described in Paul et al., 2015. The example data is located in the PHATE Github repository and we can load it directly from the web. You can run this tutorial with your own data by downloading <https://raw.githubusercontent.com/KrishnaswamyLab/MAGIC/master/Rmagic/inst/examples/bonemarrow_tutorial.Rmd> and opening it in RStudio.
 
 ```{r load_data}
 # load data
@@ -74,6 +76,8 @@ bmmsc <- read_csv("https://github.com/KrishnaswamyLab/PHATE/raw/master/data/BMMC
 bmmsc <- bmmsc[,2:ncol(bmmsc)]
 bmmsc[1:5,1:10]
 ```
+
+### Filtering data
 
 First, we need to remove lowly expressed genes and cells with small library size.
 
@@ -93,6 +97,7 @@ keep_rows <- rowSums(bmmsc) > 1000
 bmmsc <- bmmsc[keep_rows,]
 ```
 
+### Normalizing data
 
 We should library size normalize and transform the data prior to MAGIC. Many people use a log transform, which requires adding a "pseudocount" to avoid log(0). We square root instead, which has a similar form but doesn't suffer from instabilities at zero.
 
@@ -114,8 +119,8 @@ We can plot the data before and after MAGIC to visualize the results.
 
 ```{r plot_raw}
 ggplot(bmmsc) +
-  geom_point(aes(Mpo, Klf1, colour=Ifitm1)) +
-  scale_colour_viridis(option="B")
+  geom_point(aes(Mpo, Klf1, color=Ifitm1)) +
+  scale_color_viridis(option="B")
 ggsave('BMMSC_data_R_before_magic.png', width=5, height=5)
 ```
 
@@ -123,11 +128,13 @@ The data suffers from dropout to the point that we cannot infer anything about t
 
 ```{r plot_magic}
 ggplot(bmmsc_MAGIC) +
-  geom_point(aes(Mpo, Klf1, colour=Ifitm1)) +
-  scale_colour_viridis(option="B")
+  geom_point(aes(Mpo, Klf1, color=Ifitm1)) +
+  scale_color_viridis(option="B")
 ```
 
 As you can see, the gene-gene relationships are much clearer after MAGIC. These relationships also match the biological progression we expect to see - Ifitm1 is a stem cell marker, Klf1 is an erythroid marker, and Mpo is a myeloid marker.
+
+### Rerunning MAGIC with new parameters
 
 The data is a little too smooth - we can decrease `t` from the automatic value to reduce the amount of diffusion. We pass the original result to the argument `init` to avoid recomputing intermediate steps.
 
@@ -135,8 +142,8 @@ The data is a little too smooth - we can decrease `t` from the automatic value t
 bmmsc_MAGIC <- magic(bmmsc, genes=c("Mpo", "Klf1", "Ifitm1"), 
                      t=4, init=bmmsc_MAGIC)
 ggplot(bmmsc_MAGIC) +
-  geom_point(aes(Mpo, Klf1, colour=Ifitm1)) +
-  scale_colour_viridis(option="B")
+  geom_point(aes(Mpo, Klf1, color=Ifitm1)) +
+  scale_color_viridis(option="B")
 ggsave('BMMSC_data_R_after_magic.png', width=5, height=5)
 ```
 
