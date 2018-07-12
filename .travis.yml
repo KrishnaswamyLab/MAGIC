@@ -19,20 +19,20 @@ env:
 
 before_install:
   - chmod +x travis_setup.sh; ./travis_setup.sh
-  - $HOME/miniconda2/bin/pip install --user phate
-  - $HOME/miniconda3/bin/pip install --user phate
+  - $HOME/miniconda2/bin/pip install phate
+  - $HOME/miniconda3/bin/pip install phate
   - R -e "install.packages(c('reticulate', 'devtools', 'readr', 'phateR', 'Matrix', 'ggplot2', 'viridis'))"
 
 install:
-  - cd python; python2 setup.py install --user
-  - python3 setup.py install --user
+  - cd python; python2 setup.py install
+  - python3 setup.py install
   - cd ../Rmagic; R CMD INSTALL .; cd ..
 
 script:
   - cd Rmagic; R CMD build .
   - travis_wait 30 R CMD check *tar.gz
-  - cd ../python; $HOME/miniconda2/bin/pip install -U .[test,doc]
-  - $HOME/miniconda3/bin/pip install -U .[test,doc]
+  - cd ../python; $HOME/miniconda2/bin/pip install -e .[test,doc]
+  - $HOME/miniconda3/bin/pip install -e .[test,doc]
   - python2 setup.py test
   - python3 setup.py test
   - cd doc; make html
