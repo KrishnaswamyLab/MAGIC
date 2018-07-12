@@ -35,7 +35,7 @@ def test_scdata():
 def test_anndata():
     try:
         anndata
-    except (ImportError, SyntaxError):
+    except NameError:
         # anndata not installed
         return
     scdata = anndata.read_csv("../data/test_data.csv")
