@@ -113,10 +113,10 @@ def matrix_is_equivalent(X, Y):
 
 def convert_to_same_format(data, target_data, columns=None):
     # create new data object
-    if is_pandas(target_data, sparse=True):
+    if isinstance(target_data, pd.SparseDataFrame):
         data = pd.SparseDataFrame(data)
         pandas = True
-    elif is_pandas(target_data):
+    elif isinstance(target_data, pd.DataFrame):
         data = pd.DataFrame(data)
         pandas = True
     elif is_anndata(target_data):
@@ -160,23 +160,6 @@ def in_ipynb():
     try:
         return str(type(get_ipython())) in __VALID_NOTEBOOKS
     except NameError:
-        return False
-
-
-def is_pandas(data, sparse=None):
-    try:
-        if sparse is True:
-            return isinstance(data, pd.SparseDataFrame)
-        elif sparse is False:
-            return isinstance(data, pd.DataFrame) and not \
-                isinstance(data, pd.SparseDataFrame)
-        elif sparse is None:
-            return isinstance(data, pd.DataFrame)
-        else:
-            raise ValueError("Expected sparse in [True, False, None]. "
-                             "Got {}".format(sparse))
-    except NameError:
-        # pandas not installed
         return False
 
 
