@@ -30,7 +30,11 @@ class RSafeStdErr(object):
         os.write(1, bytes(msg, 'utf8'))
 
     def flush(self):
-        sys.stdout.flush()
+        try:
+            sys.stdout.flush()
+        except Exception:
+            # not our problem
+            pass
 
 
 class TaskLogger(object):

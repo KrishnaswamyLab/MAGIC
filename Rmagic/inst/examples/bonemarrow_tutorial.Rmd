@@ -131,28 +131,22 @@ As you can see, the gene-gene relationships are much clearer after MAGIC. These 
 
 The data is a little too smooth - we can decrease `t` from the automatic value to reduce the amount of diffusion. We pass the original result to the argument `init` to avoid recomputing intermediate steps.
 
-```{r}
-bmmsc_MAGIC <- magic(bmmsc, genes=c("Mpo", "Klf1", "Ifitm1"), t=4, init=bmmsc_MAGIC)
+```{r decrease_t}
+bmmsc_MAGIC <- magic(bmmsc, genes=c("Mpo", "Klf1", "Ifitm1"), 
+                     t=4, init=bmmsc_MAGIC)
 ggplot(bmmsc_MAGIC) +
   geom_point(aes(Mpo, Klf1, colour=Ifitm1)) +
   scale_colour_viridis(option="B")
 ggsave('BMMSC_data_R_after_magic.png', width=5, height=5)
 ```
 
-
-We can look at the entire smoothed matrix with `genes='all_genes'`, passing the original result to the argument `init` to avoid recomputing intermediate steps. Note that this matrix may be large and could take up a lot of memory.
-
-```{r run_magic_full_matrix}
-bmmsc_MAGIC <- magic(bmmsc, genes="all_genes", t=4, init=bmmsc_MAGIC)
-as.data.frame(bmmsc_MAGIC)[1:5, 1:10]
-```
-
 ### Visualizing MAGIC values on PCA
 
-We can visualize the results of MAGIC on PCA as follows.
+We can visualize the results of MAGIC on PCA with `genes="pca_only"`.
 
 ```{r run_pca}
-bmmsc_MAGIC_PCA <- as.data.frame(prcomp(bmmsc_MAGIC)$x)
+bmmsc_MAGIC_PCA <- magic(bmmsc, genes="pca_only", 
+                         t=4, init=bmmsc_MAGIC)
 ggplot(bmmsc_MAGIC_PCA) +
   geom_point(aes(x=PC1, y=PC2, color=bmmsc_MAGIC$result$Klf1)) +
   scale_color_viridis(option="B") +
@@ -174,3 +168,16 @@ ggplot(bmmsc_PHATE) +
 ggsave('BMMSC_data_R_phate_colored_by_magic.png', width=5, height=5)
 ```
 
+### Using MAGIC for downstream analysis
+
+We can look at the entire smoothed matrix with `genes='all_genes'`, passing the original result to the argument `init` to avoid recomputing intermediate steps. Note that this matrix may be large and could take up a lot of memory.
+
+```{r run_magic_full_matrix}
+bmmsc_MAGIC <- magic(bmmsc, genes="all_genes", 
+                     t=4, init=bmmsc_MAGIC)
+as.data.frame(bmmsc_MAGIC)[1:5, 1:10]
+```
+
+## Help
+
+If you have any questions or require assistance using MAGIC, please contact us at <https://krishnaswamylab.org/get-help>.

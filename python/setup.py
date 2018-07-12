@@ -8,11 +8,19 @@ install_requires = [
     'scipy>=1.1.0',
     'matplotlib',
     'scikit-learn>=0.19.1',
-    'graphtools>=0.1.8'
+    'graphtools>=0.1.9',
 ]
 
 test_requires = [
     'nose2',
+]
+
+if sys.version_info[0] == 3:
+    test_requires += ['anndata']
+
+doc_requires = [
+    'sphinx',
+    'sphinxcontrib-napoleon',
 ]
 
 if sys.version_info[:2] < (2, 7) or (3, 0) <= sys.version_info[:2] < (3, 5):
@@ -33,7 +41,8 @@ setup(name='magic',
       packages=['magic', ],
       license='GNU General Public License Version 2',
       install_requires=install_requires,
-      extras_require={'test': test_requires},
+      extras_require={'test': test_requires,
+                      'doc': doc_requires},
       test_suite='nose2.collector.collector',
       long_description=readme,
       url='https://github.com/KrishnaswamyLab/MAGIC',

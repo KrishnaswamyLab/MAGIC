@@ -4,6 +4,10 @@ MAGIC - Markov Affinity-based Graph Imputation of Cells
 
 .. raw:: html
 
+    <a href="https://cran.r-project.org/package=Rmagic"><img src="https://img.shields.io/cran/v/Rmagic.svg" alt="Latest CRAN version"></a>
+
+.. raw:: html
+
     <a href="https://travis-ci.com/KrishnaswamyLab/MAGIC"><img src="https://api.travis-ci.com/KrishnaswamyLab/magic.svg?branch=master" alt="Travis CI Build"></a>
 
 .. raw:: html
@@ -22,12 +26,12 @@ MAGIC - Markov Affinity-based Graph Imputation of Cells
 
     <a href="https://github.com/KrishnaswamyLab/MAGIC/"><img src="https://img.shields.io/github/stars/KrishnaswamyLab/MAGIC.svg?style=social&label=Stars" alt="GitHub stars"></a>
 
-MAGIC is a tool that shares information across similar cells, via data diffusion, to denoise the cell count matrix and fill in missing transcripts. To see how MAGIC can be applied to single-cell RNA-seq, elucidating the epithelial-to-mesenchymal transition, read our `publication in Cell`_.
+Markov Affinity-based Graph Imputation of Cells (MAGIC) is an algorithm for denoising and imputation of single cells applied to single-cell RNA sequencing data. To see how MAGIC can be applied to single-cell RNA-seq, elucidating the epithelial-to-mesenchymal transition, read our `publication in Cell`_.
 
 .. raw:: html
 
     <p align="center">
-    <img src="https://github.com/KrishnaswamyLab/MAGIC/blob/master/magic.gif"/>
+    <img src="https://raw.githubusercontent.com/KrishnaswamyLab/MAGIC/master/magic.gif"/>
     <br>
     <i>Magic reveals the interaction between Vimentin (VIM), Cadherin-1 (CDH1), and Zinc finger E-box-binding homeobox 1 (ZEB1, encoded by colors).
     </i>
@@ -60,6 +64,11 @@ To run MAGIC on your dataset, create a MAGIC operator and run `fit_transform`. H
         plt.scatter(X_magic['VIM'], X_magic['CDH1'], c=X_magic['ZEB1'], s=1, cmap='inferno')
         plt.show()
         magic.plot.animate_magic(X, gene_x='VIM', gene_y='CDH1', gene_color='ZEB1', operator=magic_operator)
+
+Help
+====
+
+If you have any questions or require assistance using MAGIC, please contact us at https://krishnaswamylab.org/get-help
 
 .. autoclass:: magic.MAGIC
     :members:

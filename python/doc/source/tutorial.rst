@@ -19,8 +19,8 @@ A demo on MAGIC usage for single cell RNA-seq data can be found in this notebook
 
 __ notebook_
 
-A second tutorial analyzing myeloid and erythroid cells in mouse bone marrow is available here_: `http://nbviewer.jupyter.org/github/KrishnaswamyLab/magic/blob/develop/python/tutorial_notebooks/bonemarrow_tutorial.ipynb`__
+A second tutorial analyzing myeloid and erythroid cells in mouse bone marrow is available here_: `http://nbviewer.jupyter.org/github/KrishnaswamyLab/magic/blob/master/python/tutorial_notebooks/bonemarrow_tutorial.ipynb`__
 
-.. _here: http://nbviewer.jupyter.org/github/KrishnaswamyLab/magic/blob/develop/python/tutorial_notebooks/bonemarrow_tutorial.ipynb
+.. _here: http://nbviewer.jupyter.org/github/KrishnaswamyLab/magic/blob/master/python/tutorial_notebooks/bonemarrow_tutorial.ipynb
 
 __ here_

@@ -24,7 +24,8 @@ If NULL, alpha decaying kernel is not used}
 
 \item{t}{int, optional, default: 'auto'
 power to which the diffusion operator is powered
-sets the level of diffusion}
+sets the level of diffusion. If 'auto', t is selected according to the
+Procrustes disparity of the diffused data.'}
 
 \item{npca}{number of PCA components that should be used; default: 20.}
 
@@ -51,6 +52,12 @@ For n_jobs below -1, (n.cpus + 1 + n.jobs) are used. Thus for
 n_jobs = -2, all CPUs but one are used}
 
 \item{seed}{int or `NULL`, random state (default: `NULL`)}
+}
+\description{
+Markov Affinity-based Graph Imputation of Cells (MAGIC) is an
+algorithm for denoising and transcript recover of single cells
+applied to single-cell RNA sequencing data, as described in
+van Dijk et al, 2018.
 }
 \examples{
 if (reticulate::py_module_available("phate")) {

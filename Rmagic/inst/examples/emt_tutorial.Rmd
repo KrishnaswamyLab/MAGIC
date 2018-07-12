@@ -134,25 +134,32 @@ ggplot(data_MAGIC) +
 ggsave('EMT_data_R_after_magic.png', width=5, height=5)
 ```
 
-As you can see, the gene-gene relationships are much clearer after MAGIC. We can look at the entire smoothed matrix with `genes='all_genes'`, passing the original result to the argument `init` to avoid recomputing intermediate steps. Note that this matrix may be large and could take up a lot of memory.
-
-```{r run_magic_full_matrix}
-data_MAGIC <- magic(data, k=15, genes="all_genes", init=data_MAGIC)
-as.data.frame(data_MAGIC)[1:5, 1:10]
-```
+As you can see, the gene-gene relationships are much clearer after MAGIC. 
 
 ### Visualizing MAGIC values on PCA
 
-We can visualize the results of MAGIC on PCA as follows.
+We can visualize the results of MAGIC on PCA with `genes="pca_only"`.
 
 ```{r run_pca}
-gt <- reticulate::import("graphtools")
-dat <- gt$base$Data(as.matrix(data_MAGIC$result), n_pca=2L)
-data_MAGIC_PCA <- as.data.frame(dat$data_nu) # as.data.frame(prcomp(data_MAGIC)$x)
-colnames(data_MAGIC_PCA) <- c("PC1", "PC2")
+data_MAGIC_PCA <- magic(data, genes="pca_only", 
+                        k=15, init=data_MAGIC)
 ggplot(data_MAGIC_PCA) +
   geom_point(aes(x=PC1, y=PC2, color=data_MAGIC$result$VIM)) +
   scale_color_viridis(option="B") +
   labs(color="VIM")
 ggsave('EMT_data_R_pca_colored_by_magic.png', width=5, height=5)
 ```
+
+### Using MAGIC for downstream analysis
+
+We can look at the entire smoothed matrix with `genes='all_genes'`, passing the original result to the argument `init` to avoid recomputing intermediate steps. Note that this matrix may be large and could take up a lot of memory.
+
+```{r run_magic_full_matrix}
+data_MAGIC <- magic(data, genes="all_genes", 
+                    k=15, init=data_MAGIC)
+as.data.frame(data_MAGIC)[1:5, 1:10]
+```
+
+## Help
+
+If you have any questions or require assistance using MAGIC, please contact us at <https://krishnaswamylab.org/get-help>.

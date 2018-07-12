@@ -88,8 +88,8 @@ library(phateR)
 ### Loading data
 
 In this tutorial, we will analyse myeloid and erythroid cells in mouse
-bone marrow, as described in Paul et al., 2015. The example data is 
-located in the PHATE Github repository and we can load it directly from 
+bone marrow, as described in Paul et al., 2015. The example data is
+located in the PHATE Github repository and we can load it directly from
 the web.
 
 ``` r
@@ -196,57 +196,29 @@ marker, and Mpo is a myeloid marker.
 
 The data is a little too smooth - we can decrease `t` from the automatic
 value to reduce the amount of diffusion. We pass the original result to
-the argument `init` to avoid recomputing intermediate
-steps.
+the argument `init` to avoid recomputing intermediate steps.
 
 ``` r
-bmmsc_MAGIC <- magic(bmmsc, genes=c("Mpo", "Klf1", "Ifitm1"), t=4, init=bmmsc_MAGIC)
+bmmsc_MAGIC <- magic(bmmsc, genes=c("Mpo", "Klf1", "Ifitm1"), 
+                     t=4, init=bmmsc_MAGIC)
 ggplot(bmmsc_MAGIC) +
   geom_point(aes(Mpo, Klf1, colour=Ifitm1)) +
   scale_colour_viridis(option="B")
 ```
 
-![](bonemarrow_tutorial_files/figure-gfm/unnamed-chunk-3-1.png)<!-- -->
+![](bonemarrow_tutorial_files/figure-gfm/decrease_t-1.png)<!-- -->
 
 ``` r
 ggsave('BMMSC_data_R_after_magic.png', width=5, height=5)
 ```
 
-We can look at the entire smoothed matrix with `genes='all_genes'`,
-passing the original result to the argument `init` to avoid recomputing
-intermediate steps. Note that this matrix may be large and could take up
-a lot of memory.
-
-``` r
-bmmsc_MAGIC <- magic(bmmsc, genes="all_genes", t=4, init=bmmsc_MAGIC)
-as.data.frame(bmmsc_MAGIC)[1:5, 1:10]
-```
-
-    ##   0610007C21Rik;Apr3 0610007L01Rik 0610007P08Rik;Rad26l 0610007P14Rik
-    ## 1          0.1518517     0.4808969           0.05179379     0.3415315
-    ## 2          0.1230258     0.3904692           0.12708682     0.3880762
-    ## 3          0.1344016     0.5496261           0.06617484     0.3745274
-    ## 4          0.1132422     0.3812295           0.11713295     0.3683106
-    ## 5          0.1417958     0.4637729           0.04572850     0.3465252
-    ##   0610007P22Rik 0610009B22Rik 0610009D07Rik 0610009O20Rik
-    ## 1    0.02452145    0.05066031    0.06728059     0.1611080
-    ## 2    0.04026323    0.07548813    0.11778619     0.3763095
-    ## 3    0.02323954    0.05561339    0.05379475     0.1802045
-    ## 4    0.03597300    0.06506830    0.08923059     0.3736334
-    ## 5    0.02303185    0.05190157    0.05275807     0.1621462
-    ##   0610010F05Rik;mKIAA1841;Kiaa1841 0610010K14Rik;Rnasek
-    ## 1                       0.03023858            1.0447754
-    ## 2                       0.03823837            0.9875507
-    ## 3                       0.04074101            1.0408079
-    ## 4                       0.03201622            1.0149211
-    ## 5                       0.02737464            0.9940195
-
 ### Visualizing MAGIC values on PCA
 
-We can visualize the results of MAGIC on PCA as follows.
+We can visualize the results of MAGIC on PCA with `genes="pca_only"`.
 
 ``` r
-bmmsc_MAGIC_PCA <- as.data.frame(prcomp(bmmsc_MAGIC)$x)
+bmmsc_MAGIC_PCA <- magic(bmmsc, genes="pca_only", 
+                         t=4, init=bmmsc_MAGIC)
 ggplot(bmmsc_MAGIC_PCA) +
   geom_point(aes(x=PC1, y=PC2, color=bmmsc_MAGIC$result$Klf1)) +
   scale_color_viridis(option="B") +
@@ -276,3 +248,40 @@ ggplot(bmmsc_PHATE) +
 ``` r
 ggsave('BMMSC_data_R_phate_colored_by_magic.png', width=5, height=5)
 ```
+
+### Using MAGIC for downstream analysis
+
+We can look at the entire smoothed matrix with `genes='all_genes'`,
+passing the original result to the argument `init` to avoid recomputing
+intermediate steps. Note that this matrix may be large and could take up
+a lot of memory.
+
+``` r
+bmmsc_MAGIC <- magic(bmmsc, genes="all_genes", 
+                     t=4, init=bmmsc_MAGIC)
+as.data.frame(bmmsc_MAGIC)[1:5, 1:10]
+```
+
+    ##   0610007C21Rik;Apr3 0610007L01Rik 0610007P08Rik;Rad26l 0610007P14Rik
+    ## 1          0.1549824     0.4679229           0.04833548     0.3375627
+    ## 2          0.1258027     0.3985109           0.12145880     0.3823707
+    ## 3          0.1413302     0.5435405           0.06683477     0.3800269
+    ## 4          0.1174019     0.3926025           0.11427759     0.3681400
+    ## 5          0.1448539     0.4639641           0.04619264     0.3501628
+    ##   0610007P22Rik 0610009B22Rik 0610009D07Rik 0610009O20Rik
+    ## 1    0.02389823    0.05000459    0.06770403     0.1619621
+    ## 2    0.03938288    0.07441909    0.12164666     0.3746967
+    ## 3    0.02385330    0.05705996    0.06572649     0.1827189
+    ## 4    0.03613569    0.06550685    0.09894108     0.3700848
+    ## 5    0.02237849    0.05214152    0.05640094     0.1646388
+    ##   0610010F05Rik;mKIAA1841;Kiaa1841 0610010K14Rik;Rnasek
+    ## 1                       0.02761702            1.0343910
+    ## 2                       0.03653270            0.9662523
+    ## 3                       0.04163247            1.0368219
+    ## 4                       0.03174709            0.9917525
+    ## 5                       0.02760502            1.0007198
+
+## Help
+
+If you have any questions or require assistance using MAGIC, please
+contact us at <https://krishnaswamylab.org/get-help>.
