@@ -1,5 +1,5 @@
 #' Perform MAGIC on a data matrix
-#' 
+#'
 #' Markov Affinity-based Graph Imputation of Cells (MAGIC) is an
 #' algorithm for denoising and transcript recover of single cells
 #' applied to single-cell RNA sequencing data, as described in
@@ -83,7 +83,7 @@ magic <- function(data,
                   seed=NULL) {
   # check installation
   if (!reticulate::py_module_available(module = "magic")) {
-    install.magic()
+    load_pymagic()
   }
   tryCatch(pymagic, error = function(e) load_pymagic())
   k <- as.integer(k)
