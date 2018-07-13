@@ -2,7 +2,7 @@
 % Please edit documentation in R/utils.R
 \name{install.magic}
 \alias{install.magic}
-\title{Install PHATE Python Package}
+\title{Install MAGIC Python Package}
 \usage{
 install.magic(envname = "r-reticulate", method = "auto", conda = "auto",
   pip = TRUE, ...)
@@ -24,13 +24,10 @@ and other conventional install locations).}
 virtualenv_install().}
 }
 \description{
-Install PHATE Python package into a virtualenv or conda env.
+Install MAGIC Python package into a virtualenv or conda env.
 }
 \details{
 On Linux and OS X the "virtualenv" method will be used by default
 ("conda" will be used if virtualenv isn't available). On Windows,
 the "conda" method is always used.
-As of reticulate v1.7, this functionality is only available in the
-development version of reticulate, which can be installed using
-`devtools::install_github('rstudio/reticulate')`
 }
