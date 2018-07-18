@@ -27,7 +27,14 @@ class RSafeStdErr(object):
         print(msg, end='', file=sys.stdout)
 
     def write_r_safe(self, msg):
-        os.write(1, bytes(msg, 'utf8'))
+        try:
+            os.write(1, bytes(msg, 'utf8'))
+        except OSError as e:
+            if str(e) == "[Errno 9] Bad file descriptor":
+                # weird windows 7 error
+                print(msg)
+            else:
+                raise
 
     def flush(self):
         sys.stdout.flush()
