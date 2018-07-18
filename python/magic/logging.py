@@ -32,7 +32,7 @@ class RSafeStdErr(object):
         except OSError as e:
             if str(e) == "[Errno 9] Bad file descriptor":
                 # weird windows 7 error
-                print(msg)
+                print(msg, end='')
             else:
                 raise
 
