@@ -3,6 +3,7 @@ Rmagic v1.0.0
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
+[![Latest CRAN version](https://img.shields.io/cran/v/Rmagic.svg)](https://cran.r-project.org/package=Rmagic)
 [![Travis CI
 Build](https://api.travis-ci.com/KrishnaswamyLab/MAGIC.svg?branch=master)](https://travis-ci.com/KrishnaswamyLab/MAGIC)
 [![Read the
@@ -13,14 +14,14 @@ Docs](https://img.shields.io/readthedocs/magic.svg)](https://magic.readthedocs.i
 Stars](https://img.shields.io/github/stars/KrishnaswamyLab/MAGIC.svg?style=social&label=Stars)](https://github.com/KrishnaswamyLab/MAGIC/)
 
 Markov Affinity-based Graph Imputation of Cells (MAGIC) is an algorithm
-for denoising and transcript recover of single cells applied to
+for denoising and imputation of single cells applied to
 single-cell RNA sequencing data, as described in Van Dijk D *et al.*
 (2018), *Recovering Gene Interactions from Single-Cell Data Using Data
 Diffusion*, Cell
 <https://www.cell.com/cell/abstract/S0092-8674(18)30724-4>.
 
 <p align="center">
-<img src="https://github.com/KrishnaswamyLab/MAGIC/blob/master/magic.gif"/>
+<img src="https://raw.githubusercontent.com/KrishnaswamyLab/MAGIC/master/magic.gif"/>
 <br>
 <i>Magic reveals the interaction between Vimentin (VIM), Cadherin-1 (CDH1), and Zinc finger E-box-binding homeobox 1 (ZEB1, encoded by colors).
 </i>
@@ -35,18 +36,23 @@ Diffusion*, Cell
   - You can view further examples of MAGIC on real data in our notebooks
     under
         `inst/examples`:
-      - <https://github.com/KrishnaswamyLab/MAGIC/blob/master/Rmagic/inst/examples/EMT_tutorial.md>
-      - <https://github.com/KrishnaswamyLab/MAGIC/blob/master/Rmagic/inst/examples/bonemarrow_tutorial.md>
+      - <http://htmlpreview.github.io/?https://github.com/KrishnaswamyLab/MAGIC/blob/master/Rmagic/inst/examples/EMT_tutorial.html>
+      - <http://htmlpreview.github.io/?https://github.com/KrishnaswamyLab/MAGIC/blob/master/Rmagic/inst/examples/bonemarrow_tutorial.html>
 
 ### Installation
 
 To use MAGIC, you will need to install both the R and Python packages.
 
-In R, run these commands to install MAGIC and all dependencies:
+If `python` or `pip` are not installed, you will need to install them. We recommend
+[Miniconda3](https://conda.io/miniconda.html) to install Python and `pip` together,
+or otherwise you can install `pip` from https://pip.pypa.io/en/stable/installing/.
+
+#### Installation from CRAN
+
+In R, run this command to install MAGIC and all dependencies:
 
 ``` r
-if (!require(devtools)) install.packages(devtools)
-if (!require(Rmagic)) devtools::install_github("KrishnaswamyLab/magic/Rmagic")
+install.packages("Rmagic")
 ```
 
 In a terminal, run the following command to install the Python
@@ -55,6 +61,21 @@ repository.
 ``` bash
 pip install --user git+git://github.com/KrishnaswamyLab/MAGIC.git#subdirectory=python
 ```
+
+#### Installaton from source
+
+To install the very latest version of MAGIC, you can install from
+GitHub with the following commands run in a terminal.
+
+``` bash
+git clone https://github.com/KrishnaswamyLab/MAGIC
+cd MAGIC/python
+python setup.py install --user
+cd ../Rmagic
+R CMD INSTALL .
+```
+
+#### Extra packages for the tutorial
 
 We’ll install a couple more tools for this tutorial.
 
@@ -211,3 +232,7 @@ ggplot(data_PHATE) +
 ```
 
 <img src="man/figures/README-run_phate-1.png" width="100%" />
+
+## Help
+
+If you have any questions or require assistance using MAGIC, please contact us at <https://krishnaswamylab.org/get-help>.

@@ -9,20 +9,20 @@ null_equal <- function(x, y) {
   }
 }
 
-load_pymagic <- function() {
-  pymagic <<- reticulate::import("magic", delay_load = TRUE)
+load_pymagic <- function(delay_load = FALSE) {
+  result <- try(pymagic <<- reticulate::import("magic", delay_load = delay_load))
+  if (methods::is(result, "try-error")) {
+    install.magic()
+  }
 }
 
-#' Install PHATE Python Package
+#' Install MAGIC Python Package
 #'
-#' Install PHATE Python package into a virtualenv or conda env.
+#' Install MAGIC Python package into a virtualenv or conda env.
 #'
 #' On Linux and OS X the "virtualenv" method will be used by default
 #' ("conda" will be used if virtualenv isn't available). On Windows,
 #' the "conda" method is always used.
-#' As of reticulate v1.7, this functionality is only available in the
-#' development version of reticulate, which can be installed using
-#' `devtools::install_github('rstudio/reticulate')`
 #'
 #' @param envname Name of environment to install packages into
 #' @param method Installation method. By default, "auto" automatically finds
@@ -39,7 +39,7 @@ load_pymagic <- function() {
 install.magic <- function(envname = "r-reticulate", method = "auto",
                           conda = "auto", pip=TRUE, ...) {
   stop(paste0(
-      "Cannot install MAGIC, please install from a console with ",
+      "Cannot locate MAGIC Python package, please install from a console with ",
       "pip install --user git+git://github.com/KrishnaswamyLab/MAGIC.git#subdirectory=python"
     ))
 }
@@ -47,5 +47,5 @@ install.magic <- function(envname = "r-reticulate", method = "auto",
 pymagic <- NULL
 
 .onLoad <- function(libname, pkgname) {
-  load_pymagic()
+  load_pymagic(delay_load = TRUE)
 }

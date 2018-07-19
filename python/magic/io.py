@@ -251,7 +251,7 @@ def load_csv(filename, cell_axis='row', delimiter=',',
 def load_tsv(filename, cell_axis='row', delimiter='\t',
              gene_names=True, cell_names=True,
              sparse=False, **kwargs):
-    """Load a csv file
+    """Load a tsv file
 
     Parameters
     ----------
@@ -522,7 +522,7 @@ def load_10X_zip(filename, sparse=True, gene_labels='symbol',
 
 
 @with_tables
-def load_10x_HDF5(filename, genome, sparse=True, gene_labels='symbol',
+def load_10X_HDF5(filename, genome=None, sparse=True, gene_labels='symbol',
                   allow_duplicates=None):
     """Basic IO for HDF5 10X data produced from the 10X Cellranger pipeline.
 
@@ -532,8 +532,10 @@ def load_10x_HDF5(filename, genome, sparse=True, gene_labels='symbol',
     ----------
     filename: string
         path to HDF5 input data
-    genome : str
-        Name of the genome to which CellRanger ran analysis
+    genome : str or None, optional (default: None)
+        Name of the genome to which CellRanger ran analysis. If None, selects
+        the first available genome, and prints all available genomes if more
+        than one is available.
     sparse: boolean
         If True, a sparse Pandas DataFrame is returned.
     gene_labels: string, {'id', 'symbol', 'both'} optional, default: 'symbol'
@@ -545,28 +547,38 @@ def load_10x_HDF5(filename, genome, sparse=True, gene_labels='symbol',
 
     Returns
     -------
-    data: pandas.DataFrame shape = (n_cell, n_genes)
-        imported data matrix
+    data: array-like, shape=[n_samples, n_features]
+        If sparse, data will be a pd.SparseDataFrame. Otherwise, data will
+        be a pd.DataFrame.
     """
     with tables.open_file(filename, 'r') as f:
+        if genome is None:
+            genomes = [node._v_name for node in f.list_nodes(f.root)]
+            print_genomes = ", ".join(genomes)
+            genome = genomes[0]
+            if len(genomes) > 1:
+                print("Available genomes: {}. Selecting {} by default".format(
+                    print_genomes, genome))
         try:
             group = f.get_node(f.root, genome)
         except tables.NoSuchNodeError:
+            genomes = [node._v_name for node in f.list_nodes(f.root)]
+            print_genomes = ", ".join(genomes)
             raise ValueError(
-                "Genome {} not found in {}.".format(genome, filename))
-            # TODO: print available genomes.
+                "Genome {} not found in {}. "
+                "Available genomes: {}".format(genome, filename, print_genomes))
         if allow_duplicates is None:
             allow_duplicates = not sparse
         gene_names = _parse_10x_genes(
             symbols=[g.decode() for g in getattr(group, 'gene_names').read()],
-            ids=[g.decode() for g in getattr(group, 'gene').read()],
+            ids=[g.decode() for g in getattr(group, 'genes').read()],
             gene_labels=gene_labels, allow_duplicates=allow_duplicates)
         cell_names = [b.decode() for b in getattr(group, 'barcodes').read()]
         data = getattr(group, 'data').read()
         indices = getattr(group, 'indices').read()
         indptr = getattr(group, 'indptr').read()
         shape = getattr(group, 'shape').read()
-        data = sp.csr_matrix((data, indices, indptr), shape=shape)
+        data = sp.csc_matrix((data, indices, indptr), shape=shape)
         data = _matrix_to_data_frame(data.T,
                                      gene_names=gene_names,
                                      cell_names=cell_names,

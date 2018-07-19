@@ -1,9 +1,10 @@
 """
 Markov Affinity-based Graph Imputation of Cells (MAGIC)
-"""
 
-# authors: Scott Gigante <scott.gigante@yale.edu>, Daniel Dager <daniel.dager@yale.edu>
-# (C) 2017 Krishnaswamy Lab GPLv2
+Authors:
+Scott Gigante <scott.gigante@yale.edu>, Daniel Dager <daniel.dager@yale.edu>
+(C) 2018 Krishnaswamy Lab GPLv2
+"""
 
 from __future__ import print_function, division, absolute_import
 
@@ -19,14 +20,7 @@ import pandas as pd
 import numbers
 import tasklogger
 
-
-from .utils import (check_int,
-                    check_positive,
-                    check_between,
-                    check_in,
-                    check_if_not,
-                    convert_to_same_format,
-                    matrix_is_equivalent)
+from . import utils
 
 try:
     import anndata
@@ -56,7 +50,7 @@ class MAGIC(BaseEstimator):
     t : int, optional, default: 'auto'
         power to which the diffusion operator is powered.
         This sets the level of diffusion. If 'auto', t is selected
-        according to the R squared of the diffused data
+        according to the Procrustes disparity of the diffused data
 
     n_pca : int, optional, default: 100
         Number of principal components to use for calculating
@@ -89,10 +83,10 @@ class MAGIC(BaseEstimator):
     Attributes
     ----------
 
-    X : array-like, shape=[n_samples, n_dimensions]
+    X : array-like, shape=[n_samples, n_features]
         Input data
 
-    X_magic : array-like, shape=[n_samples, n_dimensions]
+    X_magic : array-like, shape=[n_samples, n_features]
         Output data
 
     graph : graphtools.BaseGraph
@@ -111,23 +105,25 @@ class MAGIC(BaseEstimator):
     >>> X_magic.shape
     (500, 3)
     >>> magic_operator.set_params(t=7)
-    MAGIC(a=15, k=5, knn_dist='euclidean', n_jobs=1, n_pca=100, random_state=None,
-       t=7, verbose=1)
+    MAGIC(a=15, k=5, knn_dist='euclidean', n_jobs=1, n_pca=100,
+       random_state=None, t=7, verbose=1)
     >>> X_magic = magic_operator.transform(genes=['VIM', 'CDH1', 'ZEB1'])
     >>> X_magic.shape
     (500, 3)
     >>> X_magic = magic_operator.transform(genes="all_genes")
     >>> X_magic.shape
     (500, 197)
-    >>> plt.scatter(X_magic['VIM'], X_magic['CDH1'], c=X_magic['ZEB1'], s=1, cmap='inferno')
+    >>> plt.scatter(X_magic['VIM'], X_magic['CDH1'],
+    ...             c=X_magic['ZEB1'], s=1, cmap='inferno')
     >>> plt.show()
-    >>> magic.plot.animate_magic(X, gene_x='VIM', gene_y='CDH1', gene_color='ZEB1', operator=magic_operator)
+    >>> magic.plot.animate_magic(X, gene_x='VIM', gene_y='CDH1',
+    ...                          gene_color='ZEB1', operator=magic_operator)
 
     References
     ----------
     .. [1] Van Dijk D *et al.* (2018),
         *Recovering Gene Interactions from Single-Cell Data Using Data Diffusion*,
-        `Cell <https://www.cell.com/cell/abstract/S0092-8674(18)30724-4>`_.
+        `Cell <https://www.cell.com/cell/abstract/S0092-8674(18)30724-4>`__.
     """
 
     def __init__(self, k=10, a=15, t='auto', n_pca=100,
@@ -170,24 +166,25 @@ class MAGIC(BaseEstimator):
         ------
         ValueError : unacceptable choice of parameters
         """
-        check_positive(k=self.k,
-                       a=self.a)
-        check_int(k=self.k,
-                  n_jobs=self.n_jobs)
+        utils.check_positive(k=self.k)
+        utils.check_int(k=self.k,
+                        n_jobs=self.n_jobs)
         # TODO: epsilon
-        check_between(v_min=0,
-                      v_max=100)
-        check_if_not(None, check_positive, check_int,
-                     n_pca=self.n_pca)
-        check_if_not('auto', check_positive, check_int,
-                     t=self.t)
-        check_in(['euclidean', 'precomputed', 'cosine', 'correlation',
-                  'cityblock', 'l1', 'l2', 'manhattan', 'braycurtis',
-                  'canberra', 'chebyshev', 'dice', 'hamming', 'jaccard',
-                  'kulsinski', 'mahalanobis', 'matching', 'minkowski',
-                  'rogerstanimoto', 'russellrao', 'seuclidean',
-                  'sokalmichener', 'sokalsneath', 'sqeuclidean', 'yule'],
-                 knn_dist=self.knn_dist)
+        utils.check_between(v_min=0,
+                            v_max=100)
+        utils.check_if_not(None, utils.check_positive, utils.check_int,
+                           n_pca=self.n_pca)
+        utils.check_if_not(None, utils.check_positive,
+                           a=self.a)
+        utils.check_if_not('auto', utils.check_positive, utils.check_int,
+                           t=self.t)
+        utils.check_in(['euclidean', 'precomputed', 'cosine', 'correlation',
+                        'cityblock', 'l1', 'l2', 'manhattan', 'braycurtis',
+                        'canberra', 'chebyshev', 'dice', 'hamming', 'jaccard',
+                        'kulsinski', 'mahalanobis', 'matching', 'minkowski',
+                        'rogerstanimoto', 'russellrao', 'seuclidean',
+                        'sokalmichener', 'sokalsneath', 'sqeuclidean', 'yule'],
+                       knn_dist=self.knn_dist)
 
     def _set_graph_params(self, **params):
         try:
@@ -306,24 +303,15 @@ class MAGIC(BaseEstimator):
         Parameters
         ----------
         X : array, shape=[n_samples, n_features]
-            input data with `n_samples` samples and `n_dimensions`
+            input data with `n_samples` samples and `n_features`
             dimensions. Accepted data types: `numpy.ndarray`,
-            `scipy.sparse.spmatrix`, `pd.DataFrame`, `anndata.AnnData`. If
-            `knn_dist` is 'precomputed', `data` should be a n_samples x
-            n_samples distance or affinity matrix
+            `scipy.sparse.spmatrix`, `pd.DataFrame`, `anndata.AnnData`.
 
         Returns
         -------
         magic_operator : MAGIC
             The estimator object
         """
-        try:
-            if isinstance(X, anndata.AnnData):
-                X = X.X
-        except NameError:
-            # anndata not installed
-            pass
-
         if self.knn_dist == 'precomputed':
             if isinstance(X, sparse.coo_matrix):
                 X = X.tocsr()
@@ -331,7 +319,7 @@ class MAGIC(BaseEstimator):
                 precomputed = "distance"
             else:
                 precomputed = "affinity"
-            tasklogger.log_info(
+            logging.log_info(
                 "Using precomputed {} matrix...".format(precomputed))
             n_pca = None
         else:
@@ -342,7 +330,8 @@ class MAGIC(BaseEstimator):
                 n_pca = self.n_pca
 
         if self.graph is not None:
-            if self.X is not None and not matrix_is_equivalent(X, self.X):
+            if self.X is not None and not \
+                    utils.matrix_is_equivalent(X, self.X):
                 """
                 If the same data is used, we can reuse existing kernel and
                 diffusion matrices. Otherwise we have to recompute.
@@ -365,7 +354,7 @@ class MAGIC(BaseEstimator):
 
         self.X = X
 
-        if np.any(np.array(X.sum(0))) == 0:
+        if utils.has_empty_columns(X):
             warnings.warn("Input matrix contains unexpressed genes. "
                           "Please remove them prior to running MAGIC.")
 
@@ -393,7 +382,7 @@ class MAGIC(BaseEstimator):
         Parameters
         ----------
         X : array, optional, shape=[n_samples, n_features]
-            input data with `n_samples` samples and `n_dimensions`
+            input data with `n_samples` samples and `n_features`
             dimensions. Not required, since MAGIC does not embed
             cells not given in the input matrix to `MAGIC.fit()`.
             Accepted data types: `numpy.ndarray`,
@@ -425,7 +414,20 @@ class MAGIC(BaseEstimator):
         """
         try:
             if isinstance(X, anndata.AnnData):
-                X = X.X
+                if (genes is None or (isinstance(genes, str)
+                                      and genes in ['all_genes', 'pca_only'])):
+                    # special names
+                    pass
+                else:
+                    # ensure the genes is a 1D ndarray
+                    genes = np.array([genes]).flatten()
+                    if issubclass(genes.dtype.type, numbers.Integral):
+                        # integer indices
+                        pass
+                    else:
+                        # names
+                        genes = np.argwhere(np.isin(X.var_names,
+                                                    genes)).flatten()
         except NameError:
             # anndata not installed
             pass
@@ -440,7 +442,7 @@ class MAGIC(BaseEstimator):
                     "using this method.")
 
         store_result = True
-        if X is not None and not matrix_is_equivalent(X, self.X):
+        if X is not None and not utils.matrix_is_equivalent(X, self.X):
             store_result = False
             graph = graphtools.base.Data(X, n_pca=self.n_pca)
             warnings.warn(UserWarning, "Running MAGIC.transform on different "
@@ -472,15 +474,20 @@ class MAGIC(BaseEstimator):
             genes = np.array([genes]).flatten()
             if not issubclass(genes.dtype.type, numbers.Integral):
                 # gene names
-                if not isinstance(X, pd.DataFrame):
+                if isinstance(X, pd.DataFrame):
+                    gene_names = X.columns
+                elif utils.is_anndata(X):
+                    gene_names = X.var_names
+                else:
                     raise ValueError(
                         "Non-integer gene names only valid with pd.DataFrame "
-                        "input. X is a {}, genes = {}".format(type(X).__name__,
-                                                              genes))
-                if not np.all(np.isin(genes, X.columns)):
+                        "or anndata.AnnData input. "
+                        "X is a {}, genes = {}".format(type(X).__name__,
+                                                       genes))
+                if not np.all(np.isin(genes, gene_names)):
                     warnings.warn("genes {} missing from input data".format(
-                        genes[~np.isin(genes, X.columns)]))
-                genes = np.argwhere(np.isin(X.columns, genes)).reshape(-1)
+                        genes[~np.isin(genes, gene_names)]))
+                genes = np.argwhere(np.isin(gene_names, genes)).reshape(-1)
 
         if store_result and self.X_magic is not None:
             X_magic = self.X_magic
@@ -492,13 +499,12 @@ class MAGIC(BaseEstimator):
 
         # return selected genes
         if isinstance(genes, str) and genes == "pca_only":
-            if sparse.issparse(self.graph.data):
-                X_magic = PCA().fit_transform(X_magic)
+            X_magic = PCA().fit_transform(X_magic)
             genes = ["PC{}".format(i + 1) for i in range(X_magic.shape[1])]
         else:
             X_magic = graph.inverse_transform(X_magic, columns=genes)
             # convert back to pandas dataframe, if necessary
-        X_magic = convert_to_same_format(X_magic, X, columns=genes)
+        X_magic = utils.convert_to_same_format(X_magic, X, columns=genes)
         return X_magic
 
     def fit_transform(self, X, **kwargs):
@@ -508,11 +514,9 @@ class MAGIC(BaseEstimator):
         Parameters
         ----------
         X : array, shape=[n_samples, n_features]
-            input data with `n_samples` samples and `n_dimensions`
+            input data with `n_samples` samples and `n_features`
             dimensions. Accepted data types: `numpy.ndarray`,
-            `scipy.sparse.spmatrix`, `pd.DataFrame`, `anndata.AnnData` If
-            `knn_dist` is 'precomputed', `data` should be a n_samples x
-            n_samples distance or affinity matrix
+            `scipy.sparse.spmatrix`, `pd.DataFrame`, `anndata.AnnData`.
 
         kwargs : further arguments for `PHATE.transform()`
             Keyword arguments as specified in :func:`~phate.PHATE.transform`
@@ -643,7 +647,7 @@ class MAGIC(BaseEstimator):
                     tasklogger.log_debug("{}: {}".format(i, error_vec))
                     if error < threshold and t_opt is None:
                         t_opt = i + 1
-                        tasklogger.log_info(
+                        logging.log_info(
                             "Automatically selected t = {}".format(t_opt))
 
         tasklogger.log_complete("imputation")

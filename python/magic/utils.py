@@ -1,7 +1,11 @@
 import numbers
 import numpy as np
 import pandas as pd
-from scipy import sparse
+try:
+    import anndata
+except (ImportError, SyntaxError):
+    # anndata not installed
+    pass
 
 
 def check_positive(**params):
@@ -108,25 +112,41 @@ def matrix_is_equivalent(X, Y):
 
 
 def convert_to_same_format(data, target_data, columns=None):
+    # create new data object
+    if isinstance(target_data, pd.SparseDataFrame):
+        data = pd.SparseDataFrame(data)
+        pandas = True
+    elif isinstance(target_data, pd.DataFrame):
+        data = pd.DataFrame(data)
+        pandas = True
+    elif is_anndata(target_data):
+        data = anndata.AnnData(data)
+        pandas = False
+    else:
+        # nothing to do
+        return data
+    # retrieve column names
+    target_columns = target_data.columns if pandas else target_data.var
+    # subset column names
     try:
-        if isinstance(target_data, pd.SparseDataFrame):
-            data = pd.SparseDataFrame(data)
-        elif isinstance(target_data, pd.DataFrame):
-            data = pd.DataFrame(data)
-        else:
-            # nothing to do
-            return data
-        target_columns = target_data.columns
-        try:
-            if columns is not None:
+        if columns is not None:
+            if pandas:
                 target_columns = target_columns[columns]
-        except (KeyError, IndexError):
+            else:
+                target_columns = target_columns.iloc[columns]
+    except (KeyError, IndexError, ValueError):
+        # keep the original column names
+        if pandas:
             target_columns = columns
+        else:
+            target_columns = pd.DataFrame(index=columns)
+    # set column names on new data object
+    if pandas:
         data.columns = target_columns
         data.index = target_data.index
-    except NameError:
-        # pandas not installed
-        pass
+    else:
+        data.var = target_columns
+        data.obs = target_data.obs
     return data
 
 
@@ -141,3 +161,21 @@ def in_ipynb():
         return str(type(get_ipython())) in __VALID_NOTEBOOKS
     except NameError:
         return False
+
+
+def is_anndata(data):
+    try:
+        return isinstance(data, anndata.AnnData)
+    except NameError:
+        # anndata not installed
+        return False
+
+
+def has_empty_columns(data):
+    try:
+        return np.any(np.array(data.sum(0)) == 0)
+    except AttributeError:
+        if is_anndata(data):
+            return np.any(np.array(data.X.sum(0)))
+        else:
+            raise
