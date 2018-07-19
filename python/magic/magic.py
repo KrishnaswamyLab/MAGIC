@@ -18,9 +18,9 @@ import matplotlib.pyplot as plt
 from scipy import sparse, spatial
 import pandas as pd
 import numbers
+import tasklogger
 
 from . import utils
-from . import logging
 
 try:
     import anndata
@@ -142,7 +142,7 @@ class MAGIC(BaseEstimator):
         self.X_magic = None
         self._check_params()
         self.verbose = verbose
-        logging.set_logging(verbose)
+        tasklogger.set_level(verbose)
 
     @property
     def diff_op(self):
@@ -283,7 +283,7 @@ class MAGIC(BaseEstimator):
             del params['random_state']
         if 'verbose' in params:
             self.verbose = params['verbose']
-            logging.set_logging(self.verbose)
+            tasklogger.set_level(self.verbose)
             self._set_graph_params(verbose=params['verbose'])
             del params['verbose']
 
@@ -319,7 +319,7 @@ class MAGIC(BaseEstimator):
                 precomputed = "distance"
             else:
                 precomputed = "affinity"
-            logging.log_info(
+            tasklogger.log_info(
                 "Using precomputed {} matrix...".format(precomputed))
             n_pca = None
         else:
@@ -344,11 +344,12 @@ class MAGIC(BaseEstimator):
                         precomputed=precomputed,
                         n_jobs=self.n_jobs, verbose=self.verbose, n_pca=n_pca,
                         thresh=1e-4, random_state=self.random_state)
-                    logging.log_info(
+                    tasklogger.log_info(
                         "Using precomputed graph and diffusion operator...")
                 except ValueError as e:
                     # something changed that should have invalidated the graph
-                    logging.log_debug("Reset graph due to {}".format(str(e)))
+                    tasklogger.log_debug(
+                        "Reset graph due to {}".format(str(e)))
                     self.graph = None
 
         self.X = X
@@ -360,7 +361,7 @@ class MAGIC(BaseEstimator):
         if self.graph is None:
             # reset X_magic in case it was previously set
             self.X_magic = None
-            logging.log_start("graph and diffusion operator")
+            tasklogger.log_start("graph and diffusion operator")
             self.graph = graphtools.Graph(
                 X,
                 n_pca=n_pca,
@@ -370,7 +371,7 @@ class MAGIC(BaseEstimator):
                 n_jobs=self.n_jobs,
                 verbose=self.verbose,
                 random_state=self.random_state)
-            logging.log_complete("graph and diffusion operator")
+            tasklogger.log_complete("graph and diffusion operator")
 
         return self
 
@@ -525,10 +526,10 @@ class MAGIC(BaseEstimator):
         X_magic : array, shape=[n_samples, n_genes]
             The gene expression values after diffusion
         """
-        logging.log_start('MAGIC')
+        tasklogger.log_start('MAGIC')
         self.fit(X)
         X_magic = self.transform(**kwargs)
-        logging.log_complete('MAGIC')
+        tasklogger.log_complete('MAGIC')
         return X_magic
 
     def calculate_error(self, data, data_prev=None, weights=None,
@@ -616,7 +617,7 @@ class MAGIC(BaseEstimator):
         else:
             t_opt = self.t
 
-        logging.log_start("imputation")
+        tasklogger.log_start("imputation")
 
         # classic magic
         # the diffusion matrix is powered when t has been specified by
@@ -643,17 +644,17 @@ class MAGIC(BaseEstimator):
                         weights=weights,
                         subsample_genes=subsample_genes)
                     error_vec.append(error)
-                    logging.log_debug("{}: {}".format(i, error_vec))
+                    tasklogger.log_debug("{}: {}".format(i, error_vec))
                     if error < threshold and t_opt is None:
                         t_opt = i + 1
-                        logging.log_info(
+                        tasklogger.log_info(
                             "Automatically selected t = {}".format(t_opt))
 
-        logging.log_complete("imputation")
+        tasklogger.log_complete("imputation")
 
         if plot:
             # continue to t_max
-            logging.log_start("optimal t plot")
+            tasklogger.log_start("optimal t plot")
             if t_opt is None:
                 # never converged
                 warnings.warn("optimal t > t_max ({})".format(t_max),
@@ -686,7 +687,7 @@ class MAGIC(BaseEstimator):
             ax.set_ylabel('disparity(data_{t}, data_{t-1})')
             ax.set_xlim([1, len(error_vec)])
             plt.tight_layout()
-            logging.log_complete("optimal t plot")
+            tasklogger.log_complete("optimal t plot")
             if show:
                 plt.show(block=False)
 
