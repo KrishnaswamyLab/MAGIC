@@ -319,7 +319,7 @@ class MAGIC(BaseEstimator):
                 precomputed = "distance"
             else:
                 precomputed = "affinity"
-            logging.log_info(
+            tasklogger.log_info(
                 "Using precomputed {} matrix...".format(precomputed))
             n_pca = None
         else:
@@ -647,7 +647,7 @@ class MAGIC(BaseEstimator):
                     tasklogger.log_debug("{}: {}".format(i, error_vec))
                     if error < threshold and t_opt is None:
                         t_opt = i + 1
-                        logging.log_info(
+                        tasklogger.log_info(
                             "Automatically selected t = {}".format(t_opt))
 
         tasklogger.log_complete("imputation")
