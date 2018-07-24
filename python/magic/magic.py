@@ -58,6 +58,9 @@ class MAGIC(BaseEstimator):
         n_pca < 20 allows neighborhoods to be calculated in
         roughly log(n_samples) time.
 
+    n_landmark : int, optional, default: None
+        number of landmarks to use in exceptionally large datasets
+
     knn_dist : string, optional, default: 'euclidean'
         recommended values: 'euclidean', 'cosine', 'precomputed'
         Any metric from `scipy.spatial.distance` can be used
@@ -85,6 +88,9 @@ class MAGIC(BaseEstimator):
 
     X : array-like, shape=[n_samples, n_features]
         Input data
+
+    diff_op :  array-like, shape=[n_samples, n_samples] or [n_landmark, n_landmark]
+        The diffusion operator built from the graph
 
     X_magic : array-like, shape=[n_samples, n_features]
         Output data
@@ -127,12 +133,13 @@ class MAGIC(BaseEstimator):
     """
 
     def __init__(self, k=10, a=15, t='auto', n_pca=100,
-                 knn_dist='euclidean', n_jobs=1, random_state=None,
-                 verbose=1):
+                 n_landmark=None, knn_dist='euclidean', 
+                 n_jobs=1, random_state=None, verbose=1):
         self.k = k
         self.a = a
         self.t = t
         self.n_pca = n_pca
+        self.n_landmark = n_landmark
         self.knn_dist = knn_dist
         self.n_jobs = n_jobs
         self.random_state = random_state
@@ -149,7 +156,13 @@ class MAGIC(BaseEstimator):
         """The diffusion operator calculated from the data
         """
         if self.graph is not None:
-            return self.graph.diff_op
+            if isinstance(self.graph, graphtools.graphs.LandmarkGraph):
+                diff_op = self.graph.landmark_op
+            else:
+                diff_op = self.graph.diff_op
+            if sparse.issparse(diff_op):
+                diff_op = diff_op.toarray()
+            return diff_op
         else:
             raise NotFittedError("This MAGIC instance is not fitted yet. Call "
                                  "'fit' with appropriate arguments before "
@@ -173,7 +186,8 @@ class MAGIC(BaseEstimator):
         utils.check_between(v_min=0,
                             v_max=100)
         utils.check_if_not(None, utils.check_positive, utils.check_int,
-                           n_pca=self.n_pca)
+                           n_pca=self.n_pca,
+                           n_landmark=self.n_landmark)
         utils.check_if_not(None, utils.check_positive,
                            a=self.a)
         utils.check_if_not('auto', utils.check_positive, utils.check_int,
@@ -219,6 +233,9 @@ class MAGIC(BaseEstimator):
             neighborhoods. For extremely large datasets, using
             n_pca < 20 allows neighborhoods to be calculated in
             roughly log(n_samples) time.
+
+        n_landmark : int, optional, default: None
+            number of landmarks to use
 
         knn_dist : string, optional, default: 'euclidean'
             recommended values: 'euclidean', 'cosine', 'precomputed'
@@ -271,6 +288,14 @@ class MAGIC(BaseEstimator):
             self.knn_dist = params['knn_dist']
             reset_kernel = True
             del params['knn_dist']
+        if 'n_landmark' in params and params['n_landmark'] != self.n_landmark:
+            if self.n_landmark is None or params['n_landmark'] is None:
+                # need a different type of graph, reset entirely
+                self._reset_graph()
+            else:
+                self._set_graph_params(n_landmark=params['n_landmark'])
+            self.n_landmark = params['n_landmark']
+            del params['n_landmark']
 
         # parameters that don't change the embedding
         if 'n_jobs' in params:
@@ -328,6 +353,10 @@ class MAGIC(BaseEstimator):
                 n_pca = None
             else:
                 n_pca = self.n_pca
+            if self.n_landmark is None or X.shape[0] <= self.n_landmark:
+                n_landmark = None
+            else:
+                n_landmark = self.n_landmark
 
         if self.graph is not None:
             if self.X is not None and not \
@@ -343,7 +372,8 @@ class MAGIC(BaseEstimator):
                         decay=self.a, knn=self.k + 1, distance=self.knn_dist,
                         precomputed=precomputed,
                         n_jobs=self.n_jobs, verbose=self.verbose, n_pca=n_pca,
-                        thresh=1e-4, random_state=self.random_state)
+                        n_landmark=n_landmark, thresh=1e-4, 
+                        random_state=self.random_state)
                     tasklogger.log_info(
                         "Using precomputed graph and diffusion operator...")
                 except ValueError as e:
@@ -365,6 +395,7 @@ class MAGIC(BaseEstimator):
             self.graph = graphtools.Graph(
                 X,
                 n_pca=n_pca,
+                n_landmark=n_landmark,
                 knn=self.k + 1,
                 decay=self.a,
                 thresh=1e-4,
@@ -373,6 +404,8 @@ class MAGIC(BaseEstimator):
                 random_state=self.random_state)
             tasklogger.log_complete("graph and diffusion operator")
 
+        # landmark op doesn't build unless forced
+        self.diff_op
         return self
 
     def transform(self, X=None, genes=None, t_max=20,
@@ -532,8 +565,7 @@ class MAGIC(BaseEstimator):
         tasklogger.log_complete('MAGIC')
         return X_magic
 
-    def calculate_error(self, data, data_prev=None, weights=None,
-                        subsample_genes=None):
+    def calculate_error(self, data, data_prev=None, subsample_genes=None):
         """Calculates difference before and after diffusion
 
         Parameters
@@ -543,9 +575,6 @@ class MAGIC(BaseEstimator):
         data_prev : array-like, optional (default: None)
             previous data matrix. If None, `data` is simply prepared for
             comparison and no error is returned
-        weights : list-like, optional (default: None)
-            weightings for dimensions of data. If None, dimensions are equally
-            weighted
         subsample_genes : like-like, optional (default: None)
             genes to select in subsampling. If None, no subsampling is
             performed
@@ -559,8 +588,6 @@ class MAGIC(BaseEstimator):
         """
         if subsample_genes is not None:
             data = data[:, subsample_genes]
-        if weights is None:
-            weights = np.ones(data.shape[1]) / data.shape[1]
         if data_prev is not None:
             _, _, error = spatial.procrustes(data_prev, data)
         else:
@@ -593,9 +620,13 @@ class MAGIC(BaseEstimator):
         X_magic : array-like, shape=[n_samples, n_pca]
             Imputed data
         """
+
         if not isinstance(data, graphtools.base.Data):
             data = graphtools.base.Data(data, n_pca=self.n_pca)
         data_imputed = data.data_nu
+
+        if isinstance(data, graphtools.graphs.LandmarkGraph):
+            data_imputed = data._data_transitions().dot(data_imputed)
 
         if data_imputed.shape[1] > max_genes_compute_t:
             subsample_genes = np.random.choice(data_imputed.shape[1],
@@ -603,14 +634,10 @@ class MAGIC(BaseEstimator):
                                                replace=False)
         else:
             subsample_genes = None
-        if hasattr(data, "data_pca"):
-            weights = None  # data.data_pca.explained_variance_ratio_
-        else:
-            weights = None
+
         if self.t == 'auto':
             _, data_prev = self.calculate_error(
                 data_imputed, data_prev=None,
-                weights=weights,
                 subsample_genes=subsample_genes)
             error_vec = []
             t_opt = None
@@ -641,7 +668,6 @@ class MAGIC(BaseEstimator):
                 if self.t == 'auto':
                     error, data_prev = self.calculate_error(
                         data_imputed, data_prev,
-                        weights=weights,
                         subsample_genes=subsample_genes)
                     error_vec.append(error)
                     tasklogger.log_debug("{}: {}".format(i, error_vec))
@@ -649,6 +675,9 @@ class MAGIC(BaseEstimator):
                         t_opt = i + 1
                         tasklogger.log_info(
                             "Automatically selected t = {}".format(t_opt))
+            
+            if if isinstance(data, graphtools.graphs.LandmarkGraph):
+                data.transitions.dot(data_imputed)
 
         tasklogger.log_complete("imputation")
 
@@ -666,7 +695,6 @@ class MAGIC(BaseEstimator):
                     data_overimputed = self.diff_op.dot(data_overimputed)
                     error, data_prev = self.calculate_error(
                         data_overimputed, data_prev,
-                        weights=weights,
                         subsample_genes=subsample_genes)
                     error_vec.append(error)
 
