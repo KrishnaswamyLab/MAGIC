@@ -675,9 +675,6 @@ class MAGIC(BaseEstimator):
                         t_opt = i + 1
                         tasklogger.log_info(
                             "Automatically selected t = {}".format(t_opt))
-            
-            if isinstance(data, graphtools.graphs.LandmarkGraph):
-                data.transitions.dot(data_imputed)
 
         tasklogger.log_complete("imputation")
 
@@ -718,5 +715,8 @@ class MAGIC(BaseEstimator):
             tasklogger.log_complete("optimal t plot")
             if show:
                 plt.show(block=False)
+
+        if isinstance(data, graphtools.graphs.LandmarkGraph):
+                data_imputed = data.interpolate(data_imputed)
 
         return data_imputed
