@@ -1,6 +1,7 @@
 Markov Affinity-based Graph Imputation of Cells (MAGIC)
 -------------------------------------------------------
 
+[![Latest PyPI version](https://img.shields.io/pypi/v/magic-impute.svg)](https://pypi.org/project/magic-impute/)
 [![Latest CRAN version](https://img.shields.io/cran/v/Rmagic.svg)](https://cran.r-project.org/package=Rmagic)
 [![Travis CI Build](https://api.travis-ci.com/KrishnaswamyLab/MAGIC.svg?branch=master)](https://travis-ci.com/KrishnaswamyLab/MAGIC)
 [![Read the Docs](https://img.shields.io/readthedocs/magic.svg)](https://magic.readthedocs.io/)
@@ -47,7 +48,7 @@ MAGIC has been implemented in Python, Matlab, and R.
 
 To install with `pip`, run the following from a terminal:
 
-    pip install --user git+git://github.com/KrishnaswamyLab/MAGIC.git#subdirectory=python
+    pip install --user magic-impute
 
 #### Installation from GitHub
 
@@ -106,7 +107,7 @@ In R, run this command to install MAGIC and all dependencies:
 In a terminal, run the following command to install the Python
 repository.
 
-    pip install --user git+git://github.com/KrishnaswamyLab/MAGIC.git#subdirectory=python
+    pip install --user magic-impute
 
 #### Installation from GitHub
 

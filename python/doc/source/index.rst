@@ -4,6 +4,10 @@ MAGIC - Markov Affinity-based Graph Imputation of Cells
 
 .. raw:: html
 
+    <a href="https://pypi.org/project/magic-impute/"><img src="https://img.shields.io/pypi/v/magic-impute.svg" alt="Latest PyPI version"></a>
+
+.. raw:: html
+
     <a href="https://cran.r-project.org/package=Rmagic"><img src="https://img.shields.io/cran/v/Rmagic.svg" alt="Latest CRAN version"></a>
 
 .. raw:: html

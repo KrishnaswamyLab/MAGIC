@@ -36,7 +36,7 @@ if (!require(Rmagic)) devtools::install_github("KrishnaswamyLab/magic/Rmagic")
 In a terminal, run the following command to install the Python repository.
 
 ```{bash install_python_magic, eval=FALSE}
-pip install --user git+git://github.com/KrishnaswamyLab/MAGIC.git#subdirectory=python
+pip install --user magic-impute
 ```
 
 We'll install a couple more tools for this tutorial.

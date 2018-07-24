@@ -34,7 +34,7 @@ version = open(version_py).read().strip().split(
 
 readme = open('README.md').read()
 
-setup(name='magic',
+setup(name='magic-impute',
       version=version,
       description='MAGIC',
       author='',
