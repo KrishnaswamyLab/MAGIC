@@ -23,7 +23,7 @@ before_install:
   - R -e "install.packages(c('reticulate', 'devtools', 'readr', 'phateR', 'Matrix', 'ggplot2', 'viridis'), quiet=TRUE)"
 
 install:
-  - cd python; $HOME/miniconda2/bin/pip install --verbose .
+  - cd python; $HOME/miniconda2/bin/pip install -q .
   - $HOME/miniconda3/bin/pip install -q .
   - cd ../Rmagic; R CMD INSTALL .; cd ..
 
