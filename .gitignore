@@ -19,6 +19,8 @@ python/*.dll
 python/*.egg-info
 python/magic/__pycache__
 python/magic/*.pyc
+python/tutorial_notebooks/.ipynb_checkpoints
+
 matlab/EMT.csv
 
 # Mac detritus
