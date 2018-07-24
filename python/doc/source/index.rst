@@ -4,6 +4,10 @@ MAGIC - Markov Affinity-based Graph Imputation of Cells
 
 .. raw:: html
 
+    <a href="https://pypi.org/project/magic-impute/"><img src="https://img.shields.io/pypi/v/magic-impute.svg" alt="Latest PyPI version"></a>
+
+.. raw:: html
+
     <a href="https://cran.r-project.org/package=Rmagic"><img src="https://img.shields.io/cran/v/Rmagic.svg" alt="Latest CRAN version"></a>
 
 .. raw:: html
@@ -55,15 +59,15 @@ Quick Start
 
 To run MAGIC on your dataset, create a MAGIC operator and run `fit_transform`. Here we show an example with a small, artificial dataset located in the MAGIC repository::
 
-        import magic
-        import pandas as pd
-        import matplotlib.pyplot as plt
-        X = pd.read_csv("MAGIC/data/test_data.csv")
-        magic_operator = magic.MAGIC()
-        X_magic = magic_operator.fit_transform(X, genes=['VIM', 'CDH1', 'ZEB1'])
-        plt.scatter(X_magic['VIM'], X_magic['CDH1'], c=X_magic['ZEB1'], s=1, cmap='inferno')
-        plt.show()
-        magic.plot.animate_magic(X, gene_x='VIM', gene_y='CDH1', gene_color='ZEB1', operator=magic_operator)
+    import magic
+    import pandas as pd
+    import matplotlib.pyplot as plt
+    X = pd.read_csv("MAGIC/data/test_data.csv")
+    magic_operator = magic.MAGIC()
+    X_magic = magic_operator.fit_transform(X, genes=['VIM', 'CDH1', 'ZEB1'])
+    plt.scatter(X_magic['VIM'], X_magic['CDH1'], c=X_magic['ZEB1'], s=1, cmap='inferno')
+    plt.show()
+    magic.plot.animate_magic(X, gene_x='VIM', gene_y='CDH1', gene_color='ZEB1', operator=magic_operator)
 
 Help
 ====

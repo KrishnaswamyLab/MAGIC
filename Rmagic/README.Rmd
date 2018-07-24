@@ -15,6 +15,7 @@ knitr::opts_chunk$set(
 )
 ```
 
+[![Latest PyPI version](https://img.shields.io/pypi/v/magic-impute.svg)](https://pypi.org/project/magic-impute/)
 [![Latest CRAN version](https://img.shields.io/cran/v/Rmagic.svg)](https://cran.r-project.org/package=Rmagic)
 [![Travis CI Build](https://api.travis-ci.com/KrishnaswamyLab/MAGIC.svg?branch=master)](https://travis-ci.com/KrishnaswamyLab/MAGIC)
 [![Read the Docs](https://img.shields.io/readthedocs/magic.svg)](https://magic.readthedocs.io/)
@@ -37,8 +38,8 @@ Markov Affinity-based Graph Imputation of Cells (MAGIC) is an algorithm for deno
 * MAGIC can be performed on a variety of datasets
 * Here, we show the usage of MAGIC on a toy dataset
 * You can view further examples of MAGIC on real data in our notebooks under `inst/examples`:
-    * https://github.com/KrishnaswamyLab/MAGIC/blob/master/Rmagic/inst/examples/EMT_tutorial.md
-    * https://github.com/KrishnaswamyLab/MAGIC/blob/master/Rmagic/inst/examples/bonemarrow_tutorial.md
+    * http://htmlpreview.github.io/?https://github.com/KrishnaswamyLab/MAGIC/blob/master/Rmagic/inst/examples/EMT_tutorial.html
+    * http://htmlpreview.github.io/?https://github.com/KrishnaswamyLab/MAGIC/blob/master/Rmagic/inst/examples/bonemarrow_tutorial.html
 
 ### Installation
 
@@ -57,7 +58,7 @@ install.packages("Rmagic")
 In a terminal, run the following command to install the Python repository.
 
 ```{bash install_python_magic, eval=FALSE}
-pip install --user git+git://github.com/KrishnaswamyLab/MAGIC.git#subdirectory=python
+pip install --user magic-impute
 ```
 
 #### Installaton from source

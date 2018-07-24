@@ -27,7 +27,7 @@ power to which the diffusion operator is powered
 sets the level of diffusion. If 'auto', t is selected according to the
 Procrustes disparity of the diffused data.'}
 
-\item{npca}{number of PCA components that should be used; default: 20.}
+\item{npca}{number of PCA components that should be used; default: 100.}
 
 \item{init}{magic object, optional
 object to use for initialization. Avoids recomputing

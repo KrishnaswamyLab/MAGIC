@@ -9,7 +9,7 @@ Installation with `pip`
 
 The Python version of MAGIC can be installed using::
 
-        pip install --user git+git://github.com/KrishnaswamyLab/MAGIC.git#subdirectory=python
+        pip install --user magic-impute
 
 Installation from source
 ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -47,7 +47,7 @@ In R, run this command to install MAGIC and all dependencies::
 In a terminal, run the following command to install the Python
 repository::
 
-    pip install --user git+git://github.com/KrishnaswamyLab/MAGIC.git#subdirectory=python
+    pip install --user magic-impute
 
 .. _Miniconda3: https://conda.io/miniconda.html
 

@@ -1,10 +1,13 @@
 ---
 title: "Rmagic EMT Tutorial"
-output: github_document
-toc: true
+output:
+  html_document:
+    df_print: paged
+    toc: yes
+    toc_depth: '3'
 ---
 
-<!-- README.md is generated from README.Rmd. Please edit that file -->
+<!-- emt_tutorial.md is generated from emt_tutorial.Rmd. Please edit that file -->
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
@@ -33,7 +36,7 @@ if (!require(Rmagic)) devtools::install_github("KrishnaswamyLab/magic/Rmagic")
 In a terminal, run the following command to install the Python repository.
 
 ```{bash install_python_magic, eval=FALSE}
-pip install --user git+git://github.com/KrishnaswamyLab/MAGIC.git#subdirectory=python
+pip install --user magic-impute
 ```
 
 We'll install a couple more tools for this tutorial.
@@ -65,13 +68,15 @@ library(phateR)
 
 ### Loading data
 
-The example data is located in the MAGIC Github repository.
+In this tutorial, we will analyze single-cell RNA sequencing of the epithelial to mesenchymal transition. The example data is located in the MAGIC Github repository. You can run this tutorial with your own data by downloading <https://raw.githubusercontent.com/KrishnaswamyLab/MAGIC/master/Rmagic/inst/examples/emt_tutorial.Rmd> and opening it in RStudio.
 
 ```{r load_data}
 # load data
 data <- read_csv("../../../data/HMLE_TGFb_day_8_10.csv.gz")
 data[1:5,1:10]
 ```
+
+### Filtering data
 
 First, we need to remove lowly expressed genes.
 
@@ -98,6 +103,8 @@ if (FALSE) {
 }
 ```
 
+### Normalizing data
+
 We should library size normalize the data prior to MAGIC. Often we also transform the data with either log or square root. The log transform is commonly used, which requires adding a "pseudocount" to avoid log(0). We normally square root instead, which has a similar form but doesn't suffer from instabilities at zero. For this dataset, though, it is not necessary as the distribution of gene expression is not too extreme.
 
 ```{r normalize}
@@ -116,21 +123,19 @@ Running MAGIC is as simple as running the `magic` function. Because this dataset
 data_MAGIC <- magic(data, k=15, genes=c("VIM", "CDH1", "ZEB1"))
 ```
 
-### Results
-
 We can plot the data before and after MAGIC to visualize the results.
 
 ```{r plot_raw}
 ggplot(data) +
-  geom_point(aes(VIM, CDH1, colour=ZEB1)) +
-  scale_colour_viridis(option="B")
+  geom_point(aes(VIM, CDH1, color=ZEB1)) +
+  scale_color_viridis(option="B")
 ggsave('EMT_data_R_before_magic.png', width=5, height=5)
 ```
 
 ```{r plot_magic}
 ggplot(data_MAGIC) +
-  geom_point(aes(VIM, CDH1, colour=ZEB1)) +
-  scale_colour_viridis(option="B")
+  geom_point(aes(VIM, CDH1, color=ZEB1)) +
+  scale_color_viridis(option="B")
 ggsave('EMT_data_R_after_magic.png', width=5, height=5)
 ```
 
@@ -160,6 +165,6 @@ data_MAGIC <- magic(data, genes="all_genes",
 as.data.frame(data_MAGIC)[1:5, 1:10]
 ```
 
-## Help
+### Help
 
 If you have any questions or require assistance using MAGIC, please contact us at <https://krishnaswamylab.org/get-help>.

@@ -1,6 +1,7 @@
 Markov Affinity-based Graph Imputation of Cells (MAGIC)
 -------------------------------------------------------
 
+[![Latest PyPI version](https://img.shields.io/pypi/v/magic-impute.svg)](https://pypi.org/project/magic-impute/)
 [![Latest CRAN version](https://img.shields.io/cran/v/Rmagic.svg)](https://cran.r-project.org/package=Rmagic)
 [![Travis CI Build](https://api.travis-ci.com/KrishnaswamyLab/MAGIC.svg?branch=master)](https://travis-ci.com/KrishnaswamyLab/MAGIC)
 [![Read the Docs](https://img.shields.io/readthedocs/magic.svg)](https://magic.readthedocs.io/)
@@ -47,7 +48,7 @@ MAGIC has been implemented in Python, Matlab, and R.
 
 To install with `pip`, run the following from a terminal:
 
-    pip install --user git+git://github.com/KrishnaswamyLab/MAGIC.git#subdirectory=python
+    pip install --user magic-impute
 
 #### Installation from GitHub
 
@@ -63,15 +64,15 @@ To clone the repository and install manually, run the following from a terminal:
 
 The following code runs MAGIC on test data located in the MAGIC repository.
 
-		import magic
-		import pandas as pd
-		import matplotlib.pyplot as plt
-		X = pd.read_csv("MAGIC/data/test_data.csv")
-		magic_operator = magic.MAGIC()
-		X_magic = magic_operator.fit_transform(X, genes=['VIM', 'CDH1', 'ZEB1'])
-		plt.scatter(X_magic['VIM'], X_magic['CDH1'], c=X_magic['ZEB1'], s=1, cmap='inferno')
-		plt.show()
-		magic.plot.animate_magic(X, gene_x='VIM', gene_y='CDH1', gene_color='ZEB1', operator=magic_operator)
+    import magic
+    import pandas as pd
+    import matplotlib.pyplot as plt
+    X = pd.read_csv("MAGIC/data/test_data.csv")
+    magic_operator = magic.MAGIC()
+    X_magic = magic_operator.fit_transform(X, genes=['VIM', 'CDH1', 'ZEB1'])
+    plt.scatter(X_magic['VIM'], X_magic['CDH1'], c=X_magic['ZEB1'], s=1, cmap='inferno')
+    plt.show()
+    magic.plot.animate_magic(X, gene_x='VIM', gene_y='CDH1', gene_color='ZEB1', operator=magic_operator)
 
 #### Tutorials
 
@@ -106,7 +107,7 @@ In R, run this command to install MAGIC and all dependencies:
 In a terminal, run the following command to install the Python
 repository.
 
-    pip install --user git+git://github.com/KrishnaswamyLab/MAGIC.git#subdirectory=python
+    pip install --user magic-impute
 
 #### Installation from GitHub
 
@@ -124,16 +125,16 @@ To clone the repository and install manually, run the following from a terminal:
 
 After installing the package, MAGIC can be run by loading the library and calling `magic()`:
 
-		library(Rmagic)
-		library(ggplot2)
-		data(magic_testdata)
-		MAGIC_data <- magic(magic_testdata, genes=c("VIM", "CDH1", "ZEB1"))
-		ggplot(MAGIC_data) +
-		  geom_point(aes(x=VIM, y=CDH1, color=ZEB1))
+    library(Rmagic)
+    library(ggplot2)
+    data(magic_testdata)
+    MAGIC_data <- magic(magic_testdata, genes=c("VIM", "CDH1", "ZEB1"))
+    ggplot(MAGIC_data) +
+      geom_point(aes(x=VIM, y=CDH1, color=ZEB1))
 
 #### Tutorials
 
-For a working example, see the Rmarkdown tutorials at https://github.com/KrishnaswamyLab/MAGIC/blob/master/Rmagic/inst/examples/bonemarrow_tutorial.md and https://github.com/KrishnaswamyLab/MAGIC/blob/master/Rmagic/inst/examples/EMT_tutorial.md or in `R/inst/examples`.
+For a working example, see the Rmarkdown tutorials at <http://htmlpreview.github.io/?https://github.com/KrishnaswamyLab/MAGIC/blob/master/Rmagic/inst/examples/bonemarrow_tutorial.html> and <http://htmlpreview.github.io/?https://github.com/KrishnaswamyLab/MAGIC/blob/master/Rmagic/inst/examples/EMT_tutorial.hmtl> or in `Rmagic/inst/examples`.
 
 ## Help
 
