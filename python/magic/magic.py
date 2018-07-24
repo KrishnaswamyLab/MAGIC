@@ -676,7 +676,7 @@ class MAGIC(BaseEstimator):
                         tasklogger.log_info(
                             "Automatically selected t = {}".format(t_opt))
             
-            if if isinstance(data, graphtools.graphs.LandmarkGraph):
+            if isinstance(data, graphtools.graphs.LandmarkGraph):
                 data.transitions.dot(data_imputed)
 
         tasklogger.log_complete("imputation")
