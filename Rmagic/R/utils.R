@@ -38,10 +38,20 @@ load_pymagic <- function(delay_load = FALSE) {
 #' @export
 install.magic <- function(envname = "r-reticulate", method = "auto",
                           conda = "auto", pip=TRUE, ...) {
-  stop(paste0(
-      "Cannot locate MAGIC Python package, please install from a console with ",
-      "pip install --user git+git://github.com/KrishnaswamyLab/MAGIC.git#subdirectory=python"
+  message("Attempting to install MAGIC python package with reticulate")
+  tryCatch({
+    reticulate::py_install("magic-impute",
+      envname = envname, method = method,
+      conda = conda, pip=pip, ...
+    )
+  },
+  error = function(e) {
+    stop(paste0(
+      "Cannot locate MAGIC Python package, please install through pip ",
+      "(e.g. pip install magic-impute)."
     ))
+  }
+  )
 }
 
 pymagic <- NULL
