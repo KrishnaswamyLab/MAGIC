@@ -48,7 +48,7 @@ install.magic <- function(envname = "r-reticulate", method = "auto",
   error = function(e) {
     stop(paste0(
       "Cannot locate MAGIC Python package, please install through pip ",
-      "(e.g. pip install magic-impute)."
+      "(e.g. pip install magic-impute) and then restart R."
     ))
   }
   )
