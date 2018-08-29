@@ -134,7 +134,7 @@ After installing the package, MAGIC can be run by loading the library and callin
 
 #### Tutorials
 
-For a working example, see the Rmarkdown tutorials at <http://htmlpreview.github.io/?https://github.com/KrishnaswamyLab/MAGIC/blob/master/Rmagic/inst/examples/bonemarrow_tutorial.html> and <http://htmlpreview.github.io/?https://github.com/KrishnaswamyLab/MAGIC/blob/master/Rmagic/inst/examples/EMT_tutorial.hmtl> or in `Rmagic/inst/examples`.
+For a working example, see the Rmarkdown tutorials at <http://htmlpreview.github.io/?https://github.com/KrishnaswamyLab/MAGIC/blob/master/Rmagic/inst/examples/bonemarrow_tutorial.html> and <http://htmlpreview.github.io/?https://github.com/KrishnaswamyLab/MAGIC/blob/master/Rmagic/inst/examples/emt_tutorial.html> or in `Rmagic/inst/examples`.
 
 ## Help
 

@@ -37,7 +37,7 @@ Diffusion*, Cell
   - You can view further examples of MAGIC on real data in our notebooks
     under
         `inst/examples`:
-      - <http://htmlpreview.github.io/?https://github.com/KrishnaswamyLab/MAGIC/blob/master/Rmagic/inst/examples/EMT_tutorial.html>
+      - <http://htmlpreview.github.io/?https://github.com/KrishnaswamyLab/MAGIC/blob/master/Rmagic/inst/examples/emt_tutorial.html>
       - <http://htmlpreview.github.io/?https://github.com/KrishnaswamyLab/MAGIC/blob/master/Rmagic/inst/examples/bonemarrow_tutorial.html>
 
 ### Installation
