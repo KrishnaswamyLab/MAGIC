@@ -504,7 +504,8 @@ class MAGIC(BaseEstimator):
         else:
             X_magic = graph.inverse_transform(X_magic, columns=genes)
             # convert back to pandas dataframe, if necessary
-        X_magic = utils.convert_to_same_format(X_magic, X, columns=genes)
+        X_magic = utils.convert_to_same_format(X_magic, X, columns=genes,
+                                               prevent_sparse=True)
         return X_magic
 
     def fit_transform(self, X, **kwargs):
