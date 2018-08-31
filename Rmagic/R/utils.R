@@ -10,8 +10,14 @@ null_equal <- function(x, y) {
 }
 
 load_pymagic <- function(delay_load = FALSE) {
-  result <- try(pymagic <<- reticulate::import("magic", delay_load = delay_load))
-  if (methods::is(result, "try-error")) {
+    if (is.null(pymagic)) {
+    result <- try(pymagic <<- reticulate::import("magic", delay_load = delay_load))
+  } else {
+    result <- try(reticulate::import("magic", delay_load = delay_load))
+  }
+  if (methods::is(result, "try-error") &&
+      (length(grep("ModuleNotFoundError: No module named 'magic'", result)) > 0 ||
+        length(grep("ImportError: No module named magic", result)) > 0)) {
     install.magic()
   }
 }
