@@ -63,5 +63,6 @@ install.magic <- function(envname = "r-reticulate", method = "auto",
 pymagic <- NULL
 
 .onLoad <- function(libname, pkgname) {
+  py_config <- reticulate::py_discover_config(required_module = "magic")
   load_pymagic(delay_load = TRUE)
 }
