@@ -13,10 +13,10 @@ except (ImportError, SyntaxError):
 
 
 def test_scdata():
-    scdata = scprep.io.read_csv("../data/test_data.csv")
-    scdata_norm = scprep.filter.remove_empty_cells(scdata)
-    scdata_norm = scprep.filter.remove_empty_genes(scdata)
-    scdata_norm = scprep.normalize.library_size_normalize(scdata_norm)
+    scdata = scprep.io.load_csv("../data/test_data.csv")
+    scdata = scprep.filter.remove_empty_cells(scdata)
+    scdata = scprep.filter.remove_empty_genes(scdata)
+    scdata_norm = scprep.normalize.library_size_normalize(scdata)
     scdata_norm = scprep.transform.sqrt(scdata_norm)
     assert scdata.shape == scdata_norm.shape
     magic_op = magic.MAGIC(t='auto', a=20, k=10)
