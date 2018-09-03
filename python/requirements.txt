@@ -5,4 +5,4 @@ matplotlib
 scikit-learn>=0.19.1
 graphtools>=0.1.8
 future
-tasklogger>=0.2
+tasklogger>=0.2.1

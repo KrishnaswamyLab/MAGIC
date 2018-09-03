@@ -8,12 +8,13 @@ install_requires = [
     'scipy>=1.1.0',
     'matplotlib',
     'scikit-learn>=0.19.1',
-    'tasklogger>=0.2',
+    'tasklogger>=0.2.1',
     'graphtools>=0.1.9',
 ]
 
 test_requires = [
     'nose2',
+    'scprep',
 ]
 
 if sys.version_info[0] == 3:
