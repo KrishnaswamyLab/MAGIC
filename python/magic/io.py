@@ -203,6 +203,9 @@ def load_csv(filename, cell_axis='row', delimiter=',',
     -------
     data : pd.DataFrame
     """
+    warnings.warn("magic.io is deprecated. Please use scprep.io instead. "
+                  "Read more at http://scprep.readthedocs.io",
+                  FutureWarning)
     if cell_axis not in ['row', 'column', 'col']:
         raise ValueError(
             "cell_axis {} not recognized. Expected 'row' or 'column'".format(
@@ -309,6 +312,9 @@ def load_fcs(filename, gene_names=True, cell_names=True,
     -------
     data : pd.DataFrame
     """
+    warnings.warn("magic.io is deprecated. Please use scprep.io instead. "
+                  "Read more at http://scprep.readthedocs.io",
+                  FutureWarning)
     if cell_names is True:
         cell_names = None
     if gene_names is True:
@@ -347,6 +353,9 @@ def load_mtx(mtx_file, cell_axis='row',
     -------
     data : pd.DataFrame
     """
+    warnings.warn("magic.io is deprecated. Please use scprep.io instead. "
+                  "Read more at http://scprep.readthedocs.io",
+                  FutureWarning)
     if cell_axis not in ['row', 'column', 'col']:
         raise ValueError(
             "cell_axis {} not recognized. Expected 'row' or 'column'".format(
@@ -435,6 +444,9 @@ def load_10X(data_dir, sparse=True, gene_labels='symbol',
     data: pandas.DataFrame shape = (n_cell, n_genes)
         imported data matrix
     """
+    warnings.warn("magic.io is deprecated. Please use scprep.io instead. "
+                  "Read more at http://scprep.readthedocs.io",
+                  FutureWarning)
 
     if gene_labels not in ['id', 'symbol', 'both']:
         raise ValueError("gene_labels not in ['id', 'symbol', 'both']")
@@ -551,6 +563,9 @@ def load_10X_HDF5(filename, genome=None, sparse=True, gene_labels='symbol',
         If sparse, data will be a pd.SparseDataFrame. Otherwise, data will
         be a pd.DataFrame.
     """
+    warnings.warn("magic.io is deprecated. Please use scprep.io instead. "
+                  "Read more at http://scprep.readthedocs.io",
+                  FutureWarning)
     with tables.open_file(filename, 'r') as f:
         if genome is None:
             genomes = [node._v_name for node in f.list_nodes(f.root)]
