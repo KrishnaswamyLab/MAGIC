@@ -59,11 +59,9 @@ class MAGIC(BaseEstimator):
         roughly log(n_samples) time.
 
     knn_dist : string, optional, default: 'euclidean'
-        recommended values: 'euclidean', 'cosine', 'precomputed'
+        recommended values: 'euclidean', 'cosine'
         Any metric from `scipy.spatial.distance` can be used
-        distance metric for building kNN graph. If 'precomputed',
-        `data` should be an n_samples x n_samples distance or
-        affinity matrix
+        distance metric for building kNN graph.
 
     n_jobs : integer, optional, default: 1
         The number of jobs to use for the computation.
@@ -178,7 +176,7 @@ class MAGIC(BaseEstimator):
                            a=self.a)
         utils.check_if_not('auto', utils.check_positive, utils.check_int,
                            t=self.t)
-        utils.check_in(['euclidean', 'precomputed', 'cosine', 'correlation',
+        utils.check_in(['euclidean', 'cosine', 'correlation',
                         'cityblock', 'l1', 'l2', 'manhattan', 'braycurtis',
                         'canberra', 'chebyshev', 'dice', 'hamming', 'jaccard',
                         'kulsinski', 'mahalanobis', 'matching', 'minkowski',
@@ -221,11 +219,9 @@ class MAGIC(BaseEstimator):
             roughly log(n_samples) time.
 
         knn_dist : string, optional, default: 'euclidean'
-            recommended values: 'euclidean', 'cosine', 'precomputed'
+            recommended values: 'euclidean', 'cosine'
             Any metric from `scipy.spatial.distance` can be used
-            distance metric for building kNN graph. If 'precomputed',
-            `data` should be an n_samples x n_samples distance or
-            affinity matrix
+            distance metric for building kNN graph.
 
         n_jobs : integer, optional, default: 1
             The number of jobs to use for the computation.
@@ -297,7 +293,7 @@ class MAGIC(BaseEstimator):
         self._check_params()
         return self
 
-    def fit(self, X):
+    def fit(self, X, graph=None):
         """Computes the diffusion operator
 
         Parameters
@@ -306,42 +302,34 @@ class MAGIC(BaseEstimator):
             input data with `n_samples` samples and `n_features`
             dimensions. Accepted data types: `numpy.ndarray`,
             `scipy.sparse.spmatrix`, `pd.DataFrame`, `anndata.AnnData`.
+        graph : `graphtools.Graph`, optional (default: None)
+            If given, provides a precomputed kernel matrix with which to
+            perform diffusion.
 
         Returns
         -------
         magic_operator : MAGIC
             The estimator object
         """
-        if self.knn_dist == 'precomputed':
-            if isinstance(X, sparse.coo_matrix):
-                X = X.tocsr()
-            if X[0, 0] == 0:
-                precomputed = "distance"
-            else:
-                precomputed = "affinity"
-            tasklogger.log_info(
-                "Using precomputed {} matrix...".format(precomputed))
+        if self.n_pca is None or X.shape[1] <= self.n_pca:
             n_pca = None
         else:
-            precomputed = None
-            if self.n_pca is None or X.shape[1] <= self.n_pca:
-                n_pca = None
-            else:
-                n_pca = self.n_pca
+            n_pca = self.n_pca
+        if graph is None:
+            graph = self.graph
 
-        if self.graph is not None:
+        if graph is not None:
             if self.X is not None and not \
                     utils.matrix_is_equivalent(X, self.X):
                 """
                 If the same data is used, we can reuse existing kernel and
                 diffusion matrices. Otherwise we have to recompute.
                 """
-                self.graph = None
+                graph = None
             else:
                 try:
-                    self.graph.set_params(
+                    graph.set_params(
                         decay=self.a, knn=self.k + 1, distance=self.knn_dist,
-                        precomputed=precomputed,
                         n_jobs=self.n_jobs, verbose=self.verbose, n_pca=n_pca,
                         thresh=1e-4, random_state=self.random_state)
                     tasklogger.log_info(
@@ -350,7 +338,7 @@ class MAGIC(BaseEstimator):
                     # something changed that should have invalidated the graph
                     tasklogger.log_debug(
                         "Reset graph due to {}".format(str(e)))
-                    self.graph = None
+                    graph = None
 
         self.X = X
 
@@ -358,7 +346,7 @@ class MAGIC(BaseEstimator):
             warnings.warn("Input matrix contains unexpressed genes. "
                           "Please remove them prior to running MAGIC.")
 
-        if self.graph is None:
+        if graph is None:
             # reset X_magic in case it was previously set
             self.X_magic = None
             tasklogger.log_start("graph and diffusion operator")
@@ -372,6 +360,8 @@ class MAGIC(BaseEstimator):
                 verbose=self.verbose,
                 random_state=self.random_state)
             tasklogger.log_complete("graph and diffusion operator")
+        else:
+            self.graph = graph
 
         return self
 
@@ -508,7 +498,7 @@ class MAGIC(BaseEstimator):
                                                prevent_sparse=True)
         return X_magic
 
-    def fit_transform(self, X, **kwargs):
+    def fit_transform(self, X, graph=None, **kwargs):
         """Computes the diffusion operator and the position of the cells in the
         embedding space
 
@@ -519,6 +509,10 @@ class MAGIC(BaseEstimator):
             dimensions. Accepted data types: `numpy.ndarray`,
             `scipy.sparse.spmatrix`, `pd.DataFrame`, `anndata.AnnData`.
 
+        graph : `graphtools.Graph`, optional (default: None)
+            If given, provides a precomputed kernel matrix with which to
+            perform diffusion.
+
         kwargs : further arguments for `PHATE.transform()`
             Keyword arguments as specified in :func:`~phate.PHATE.transform`
 
@@ -528,7 +522,7 @@ class MAGIC(BaseEstimator):
             The gene expression values after diffusion
         """
         tasklogger.log_start('MAGIC')
-        self.fit(X)
+        self.fit(X, graph=graph)
         X_magic = self.transform(**kwargs)
         tasklogger.log_complete('MAGIC')
         return X_magic
