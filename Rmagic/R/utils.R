@@ -18,7 +18,9 @@ load_pymagic <- function(delay_load = FALSE) {
   if (methods::is(result, "try-error") &&
       (length(grep("ModuleNotFoundError: No module named 'magic'", result)) > 0 ||
         length(grep("ImportError: No module named magic", result)) > 0)) {
-    install.magic()
+      if (menu(c("Yes", "No"), title="Install MAGIC Python package with reticulate?") == 1) {
+        install.magic()
+      }
   } else if (length(grep("r\\-reticulate", reticulate::py_config()$python)) > 0) {
     message("Consider removing the 'r-reticulate' environment by running:")
     if (grep("virtualenvs", reticulate::py_config()$python)) {
@@ -57,6 +59,7 @@ install.magic <- function(envname = "r-reticulate", method = "auto",
       envname = envname, method = method,
       conda = conda, pip=pip, ...
     )
+    message("Install complete. Please restart R and try again.")
   },
   error = function(e) {
     stop(paste0(
