@@ -20,4 +20,4 @@ Suggests:
 	phateR
 License: GPL-2 | file LICENSE
 LazyData: true
-RoxygenNote: 6.0.1
+RoxygenNote: 6.1.0
