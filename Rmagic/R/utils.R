@@ -18,7 +18,7 @@ load_pymagic <- function(delay_load = FALSE) {
   if (methods::is(result, "try-error") &&
       (length(grep("ModuleNotFoundError: No module named 'magic'", result)) > 0 ||
         length(grep("ImportError: No module named magic", result)) > 0)) {
-      if (menu(c("Yes", "No"), title="Install MAGIC Python package with reticulate?") == 1) {
+      if (utils::menu(c("Yes", "No"), title="Install MAGIC Python package with reticulate?") == 1) {
         install.magic()
       }
   } else if (length(grep("r\\-reticulate", reticulate::py_config()$python)) > 0) {

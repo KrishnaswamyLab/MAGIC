@@ -1,4 +1,4 @@
-Rmagic v1.0.0
+Rmagic v1.1.0
 ================
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
