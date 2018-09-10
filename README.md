@@ -76,7 +76,7 @@ The following code runs MAGIC on test data located in the MAGIC repository.
 
 #### Tutorials
 
-We have included two tutorial notebooks on MAGIC usage and results visualization for single cell RNA-seq data.
+You can read the MAGIC documentation at https://magic.readthedocs.io/. We have included two tutorial notebooks on MAGIC usage and results visualization for single cell RNA-seq data.
 
 EMT data notebook: http://nbviewer.jupyter.org/github/KrishnaswamyLab/MAGIC/blob/master/python/tutorial_notebooks/emt_tutorial.ipynb
 
@@ -134,7 +134,7 @@ After installing the package, MAGIC can be run by loading the library and callin
 
 #### Tutorials
 
-For a working example, see the Rmarkdown tutorials at <http://htmlpreview.github.io/?https://github.com/KrishnaswamyLab/MAGIC/blob/master/Rmagic/inst/examples/bonemarrow_tutorial.html> and <http://htmlpreview.github.io/?https://github.com/KrishnaswamyLab/MAGIC/blob/master/Rmagic/inst/examples/emt_tutorial.html> or in `Rmagic/inst/examples`.
+You can read the MAGIC tutorial by running `help(Rmagic::magic)`. For a working example, see the Rmarkdown tutorials at <http://htmlpreview.github.io/?https://github.com/KrishnaswamyLab/MAGIC/blob/master/Rmagic/inst/examples/bonemarrow_tutorial.html> and <http://htmlpreview.github.io/?https://github.com/KrishnaswamyLab/MAGIC/blob/master/Rmagic/inst/examples/emt_tutorial.html> or in `Rmagic/inst/examples`.
 
 ## Help
 
