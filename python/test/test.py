@@ -37,7 +37,7 @@ def test_scdata():
                                              genes="all_genes")
     assert scdata_norm.shape == magic_all_genes.shape
     dremi = magic_op.knnDREMI("VIM", "ZEB1", plot=True)
-    np.testing.assert_allclose(dremi, 1.5687165)
+    np.testing.assert_allclose(dremi, 1.568716)
 
 
 def test_anndata():
