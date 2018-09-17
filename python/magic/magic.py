@@ -726,12 +726,6 @@ class MAGIC(BaseEstimator):
         -------
         dremi : float
             kNN condtional Density resampled estimate of mutual information
-
-        References
-        ----------
-        .. [1] van Dijk D *et al.* (2018),
-            *Recovering Gene Interactions from Single-Cell Data Using Data
-            Diffusion*, `Cell <https://doi.org/10.1016/j.cell.2018.05.061>`_.
         """
         data = self.transform(genes=[gene_x, gene_y])
         dremi = scprep.stats.knnDREMI(
