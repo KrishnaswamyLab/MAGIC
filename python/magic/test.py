@@ -2,6 +2,8 @@
 
 
 from __future__ import print_function, division, absolute_import
+import matplotlib as mpl
+mpl.use("agg")
 import magic
 import numpy as np
 import scprep
@@ -19,6 +21,7 @@ def test_scdata():
     scdata_norm = scprep.normalize.library_size_normalize(scdata)
     scdata_norm = scprep.transform.sqrt(scdata_norm)
     assert scdata.shape == scdata_norm.shape
+    np.random.seed(42)
     magic_op = magic.MAGIC(t='auto', a=20, k=10)
     str_gene_magic = magic_op.fit_transform(
         scdata_norm, genes=['VIM', 'ZEB1'])
@@ -33,6 +36,8 @@ def test_scdata():
     magic_all_genes = magic_op.fit_transform(scdata_norm,
                                              genes="all_genes")
     assert scdata_norm.shape == magic_all_genes.shape
+    dremi = magic_op.knnDREMI("VIM", "ZEB1", plot=True)
+    np.testing.assert_allclose(dremi, 1.5687165)
 
 
 def test_anndata():

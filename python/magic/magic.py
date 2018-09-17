@@ -19,6 +19,7 @@ from scipy import sparse, spatial
 import pandas as pd
 import numbers
 import tasklogger
+import scprep
 
 from . import utils
 
@@ -116,6 +117,7 @@ class MAGIC(BaseEstimator):
     >>> plt.show()
     >>> magic.plot.animate_magic(X, gene_x='VIM', gene_y='CDH1',
     ...                          gene_color='ZEB1', operator=magic_operator)
+    >>> dremi = magic_operator.knnDREMI('VIM', 'CDH1', plot=True)
 
     References
     ----------
@@ -315,30 +317,32 @@ class MAGIC(BaseEstimator):
             n_pca = None
         else:
             n_pca = self.n_pca
+
         if graph is None:
             graph = self.graph
-
-        if graph is not None:
             if self.X is not None and not \
                     utils.matrix_is_equivalent(X, self.X):
                 """
                 If the same data is used, we can reuse existing kernel and
                 diffusion matrices. Otherwise we have to recompute.
                 """
+                tasklogger.log_debug(
+                    "Reset graph due to difference in input data")
                 graph = None
-            else:
-                try:
-                    graph.set_params(
-                        decay=self.a, knn=self.k + 1, distance=self.knn_dist,
-                        n_jobs=self.n_jobs, verbose=self.verbose, n_pca=n_pca,
-                        thresh=1e-4, random_state=self.random_state)
-                    tasklogger.log_info(
-                        "Using precomputed graph and diffusion operator...")
-                except ValueError as e:
-                    # something changed that should have invalidated the graph
-                    tasklogger.log_debug(
-                        "Reset graph due to {}".format(str(e)))
-                    graph = None
+
+        if graph is not None:
+            try:
+                graph.set_params(
+                    decay=self.a, knn=self.k + 1, distance=self.knn_dist,
+                    n_jobs=self.n_jobs, verbose=self.verbose, n_pca=n_pca,
+                    thresh=1e-4, random_state=self.random_state)
+                tasklogger.log_info(
+                    "Using precomputed graph and diffusion operator...")
+            except ValueError as e:
+                # something changed that should have invalidated the graph
+                tasklogger.log_debug(
+                    "Reset graph due to {}".format(str(e)))
+                graph = None
 
         self.X = X
 
@@ -482,8 +486,8 @@ class MAGIC(BaseEstimator):
         if store_result and self.X_magic is not None:
             X_magic = self.X_magic
         else:
-            X_magic = self.impute(graph, t_max=t_max,
-                                  plot=plot_optimal_t, ax=ax)
+            X_magic = self._impute(graph, t_max=t_max,
+                                   plot=plot_optimal_t, ax=ax)
             if store_result:
                 self.X_magic = X_magic
 
@@ -527,8 +531,8 @@ class MAGIC(BaseEstimator):
         tasklogger.log_complete('MAGIC')
         return X_magic
 
-    def calculate_error(self, data, data_prev=None, weights=None,
-                        subsample_genes=None):
+    def _calculate_error(self, data, data_prev=None, weights=None,
+                         subsample_genes=None):
         """Calculates difference before and after diffusion
 
         Parameters
@@ -562,8 +566,8 @@ class MAGIC(BaseEstimator):
             error = None
         return error, data
 
-    def impute(self, data, t_max=20, plot=False, ax=None,
-               max_genes_compute_t=500, threshold=0.001):
+    def _impute(self, data, t_max=20, plot=False, ax=None,
+                max_genes_compute_t=500, threshold=0.001):
         """Peform MAGIC imputation
 
         Parameters
@@ -603,7 +607,7 @@ class MAGIC(BaseEstimator):
         else:
             weights = None
         if self.t == 'auto':
-            _, data_prev = self.calculate_error(
+            _, data_prev = self._calculate_error(
                 data_imputed, data_prev=None,
                 weights=weights,
                 subsample_genes=subsample_genes)
@@ -634,7 +638,7 @@ class MAGIC(BaseEstimator):
                 i += 1
                 data_imputed = self.diff_op.dot(data_imputed)
                 if self.t == 'auto':
-                    error, data_prev = self.calculate_error(
+                    error, data_prev = self._calculate_error(
                         data_imputed, data_prev,
                         weights=weights,
                         subsample_genes=subsample_genes)
@@ -659,7 +663,7 @@ class MAGIC(BaseEstimator):
                 while i < t_max:
                     i += 1
                     data_overimputed = self.diff_op.dot(data_overimputed)
-                    error, data_prev = self.calculate_error(
+                    error, data_prev = self._calculate_error(
                         data_overimputed, data_prev,
                         weights=weights,
                         subsample_genes=subsample_genes)
@@ -687,3 +691,51 @@ class MAGIC(BaseEstimator):
                 plt.show(block=False)
 
         return data_imputed
+
+    def knnDREMI(self, gene_x, gene_y,
+                 k=10, n_bins=20, n_mesh=3, n_jobs=1,
+                 plot=False, **kwargs):
+        """Calculate kNN-DREMI on MAGIC output
+
+        Calculates k-Nearest Neighbor conditional Density Resampled Estimate of
+        Mutual Information as defined in Van Dijk et al, 2018. [1]_
+
+        Note that kNN-DREMI, like Mutual Information and DREMI, is not
+        symmetric. Here we are estimating I(Y|X).
+
+        Parameters
+        ----------
+        gene_x : array-like, shape=[n_samples]
+            Gene shown on the x axis (independent feature)
+        gene_y : array-like, shape=[n_samples]
+            Gene shown on the y axis (dependent feature)
+        k : int, range=[0:n_samples), optional (default: 10)
+            Number of neighbors
+        n_bins : int, range=[0:inf), optional (default: 20)
+            Number of bins for density resampling
+        n_mesh : int, range=[0:inf), optional (default: 3)
+            In each bin, density will be calculcated around (mesh ** 2) points
+        n_jobs : int, optional (default: 1)
+            Number of threads used for kNN calculation
+        plot : bool, optional (default: False)
+            If True, DREMI create plots of the data like those seen in
+            Fig 5C/D of van Dijk et al. 2018. (doi:10.1016/j.cell.2018.05.061).
+        **kwargs : additional arguments for `scprep.stats.plot_knnDREMI`
+
+        Returns
+        -------
+        dremi : float
+            kNN condtional Density resampled estimate of mutual information
+
+        References
+        ----------
+        .. [1] van Dijk D *et al.* (2018),
+            *Recovering Gene Interactions from Single-Cell Data Using Data
+            Diffusion*, `Cell <https://doi.org/10.1016/j.cell.2018.05.061>`_.
+        """
+        data = self.transform(genes=[gene_x, gene_y])
+        dremi = scprep.stats.knnDREMI(
+            data[gene_x], data[gene_y],
+            k=k, n_bins=n_bins, n_mesh=n_mesh, n_jobs=n_jobs,
+            plot=plot, **kwargs)
+        return dremi
