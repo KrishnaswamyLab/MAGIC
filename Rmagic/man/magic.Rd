@@ -61,7 +61,7 @@ applied to single-cell RNA sequencing data, as described in
 van Dijk et al, 2018.
 }
 \examples{
-if (reticulate::py_module_available("phate")) {
+if (reticulate::py_module_available("magic")) {
 
 data(magic_testdata)
 
