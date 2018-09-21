@@ -15,7 +15,6 @@ install_requires = [
 
 test_requires = [
     'nose2',
-    'scprep',
 ]
 
 if sys.version_info[0] == 3:
