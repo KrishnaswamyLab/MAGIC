@@ -2,176 +2,8 @@
 # (C) 2018 Krishnaswamy Lab GPLv2
 
 from __future__ import print_function, division
-import pandas as pd
-import scipy.io as sio
-import scipy.sparse as sp
 import warnings
-import numpy as np
-import os
-import zipfile
-import tempfile
-import shutil
-try:
-    import fcsparser
-except ImportError:
-    pass
-try:
-    import tables
-except ImportError:
-    pass
-
-try:
-    FileNotFoundError
-except NameError:
-    # py2 compatibility
-    FileNotFoundError = OSError
-
-
-def with_fcsparser(fun):
-    def wrapped_fun(*args, **kwargs):
-        try:
-            fcsparser
-        except NameError:
-            raise ImportError(
-                "fcsparser not found. "
-                "Please install it with e.g. `pip install --user fcsparser`")
-        return fun(*args, **kwargs)
-    return wrapped_fun
-
-
-def with_tables(fun):
-    def wrapped_fun(*args, **kwargs):
-        try:
-            tables
-        except NameError:
-            raise ImportError(
-                "tables not found. "
-                "Please install it with e.g. `pip install --user tables`")
-        return fun(*args, **kwargs)
-    return wrapped_fun
-
-
-def _parse_header(header, n_expected, header_type="gene_names"):
-    """
-    Parameters
-    ----------
-    header : `str` filename, array-like or `None`
-
-    n_expected : `int`
-        Expected header length
-
-    header_type : argument name for error printing
-    """
-    if header is None or header is False:
-        return None
-    elif isinstance(header, str):
-        # treat as a file
-        if header.endswith("tsv"):
-            delimiter = "\t"
-        else:
-            delimiter = ","
-        columns = pd.read_csv(header, delimiter=delimiter,
-                              header=None).values.reshape(-1)
-        if not len(columns) == n_expected:
-            raise ValueError("Expected {} entries in {}. Got {}".format(
-                n_expected, header, len(columns)))
-    else:
-        # treat as list
-        columns = header
-        if not len(columns) == n_expected:
-            raise ValueError("Expected {} entries in {}. Got {}".format(
-                n_expected, header_type, len(columns)))
-    return columns
-
-
-def _parse_gene_names(header, data):
-    return _parse_header(header, data.shape[1],
-                         header_type="gene_names")
-
-
-def _parse_cell_names(header, data):
-    return _parse_header(header, data.shape[0],
-                         header_type="cell_names")
-
-
-def _matrix_to_data_frame(data, gene_names=None, cell_names=None, sparse=None):
-    """Return the optimal data type given data, gene names and cell names.
-
-    Parameters
-    ----------
-
-    data : array-like
-
-    gene_names : `str`, array-like or `None` (default: None)
-        Either a filename or an array containing a list of gene symbols or ids.
-
-    cell_names : `str`, array-like or `None` (default: None)
-        Either a filename or an array containing a list of cell barcodes.
-
-    sparse : `bool` or `None` (default: None)
-        If not `None`, overrides default sparsity of the data.
-    """
-    if gene_names is None and cell_names is None and \
-            not isinstance(data, pd.DataFrame):
-        # just a matrix
-        if sparse is not None:
-            if sparse:
-                if not sp.issparse(data):
-                    # return scipy.sparse.csr_matrix
-                    data = sp.csr_matrix(data)
-            elif sp.issparse(data) and not sparse:
-                # return numpy.ndarray
-                data = data.toarray()
-        else:
-            # return data as is
-            pass
-        return data
-    else:
-        gene_names = _parse_gene_names(gene_names, data)
-        cell_names = _parse_cell_names(cell_names, data)
-        # dataframe with index and/or columns
-        if sparse is None:
-            # let the input data decide
-            sparse = isinstance(data, pd.SparseDataFrame) or sp.issparse(data)
-        if sparse and gene_names is not None and \
-                len(np.unique(gene_names)) < len(gene_names):
-            warnings.warn(
-                "Duplicate gene names detected! Forcing dense matrix",
-                RuntimeWarning)
-            sparse = False
-        if sparse:
-            # return pandas.SparseDataFrame
-            if isinstance(data, pd.DataFrame):
-                if gene_names is not None:
-                    data.columns = gene_names
-                if cell_names is not None:
-                    data.index = cell_names
-                if not isinstance(data, pd.SparseDataFrame):
-                    data = data.to_sparse(fill_value=0.0)
-            else:
-                data = pd.SparseDataFrame(data, default_fill_value=0.0,
-                                          index=cell_names, columns=gene_names)
-        else:
-            # return pandas.DataFrame
-            if isinstance(data, pd.DataFrame):
-                if gene_names is not None:
-                    data.columns = gene_names
-                if cell_names is not None:
-                    data.index = cell_names
-                if isinstance(data, pd.SparseDataFrame):
-                    data = data.to_dense()
-            else:
-                if sp.issparse(data):
-                    data = data.toarray()
-                data = pd.DataFrame(data, index=cell_names, columns=gene_names)
-        return data
-
-
-def _read_csv_sparse(filename, chunksize=1000000, fill_value=0.0, **kwargs):
-    chunks = pd.read_csv(filename, chunksize=chunksize, **kwargs)
-    data = pd.concat(chunk.to_sparse(fill_value=fill_value)
-                     for chunk in chunks)
-    return data
+import scprep
 
 
 def load_csv(filename, cell_axis='row', delimiter=',',
@@ -203,49 +35,13 @@ def load_csv(filename, cell_axis='row', delimiter=',',
     -------
     data : pd.DataFrame
     """
-    if cell_axis not in ['row', 'column', 'col']:
-        raise ValueError(
-            "cell_axis {} not recognized. Expected 'row' or 'column'".format(
-                cell_axis))
-
-    if 'index_col' in kwargs:
-        # override
-        index_col = kwargs['index_col']
-        cell_names = None
-        del kwargs['index_col']
-    elif cell_names is True:
-        index_col = 0
-        cell_names = None
-    else:
-        index_col = None
-
-    if 'header' in kwargs:
-        # override
-        header = kwargs['header']
-        del kwargs['header']
-        gene_names = None
-    elif gene_names is True:
-        header = 0
-        gene_names = None
-    else:
-        header = None
-
-    # Read in csv file
-    if sparse:
-        read_fun = _read_csv_sparse
-    else:
-        read_fun = pd.read_csv
-    data = read_fun(filename, delimiter=delimiter,
-                    header=header, index_col=index_col,
-                    **kwargs)
-
-    if cell_axis in ['column', 'col']:
-        data = data.T
-
-    data = _matrix_to_data_frame(
-        data, gene_names=gene_names,
-        cell_names=cell_names, sparse=sparse)
-    return data
+    warnings.warn("magic.io is deprecated. Please use scprep.io instead. "
+                  "Read more at http://scprep.readthedocs.io",
+                  FutureWarning)
+    return scprep.io.load_csv(filename=filename, cell_axis=cell_axis,
+                              delimiter=delimiter,
+                              gene_names=gene_names, cell_names=cell_names,
+                              sparse=sparse, **kwargs)
 
 
 def load_tsv(filename, cell_axis='row', delimiter='\t',
@@ -282,7 +78,6 @@ def load_tsv(filename, cell_axis='row', delimiter='\t',
                     sparse=sparse, **kwargs)
 
 
-@with_fcsparser
 def load_fcs(filename, gene_names=True, cell_names=True,
              sparse=None,
              metadata_channels=['Time', 'Event_length', 'DNA1', 'DNA2',
@@ -309,19 +104,13 @@ def load_fcs(filename, gene_names=True, cell_names=True,
     -------
     data : pd.DataFrame
     """
-    if cell_names is True:
-        cell_names = None
-    if gene_names is True:
-        gene_names = None
-    # Parse the fcs file
-    meta, data = fcsparser.parse(filename)
-    metadata_channels = data.columns.intersection(metadata_channels)
-    data_channels = data.columns.difference(metadata_channels)
-    metadata = data[metadata_channels]
-    data = data[data_channels]
-    data = _matrix_to_data_frame(data, gene_names=gene_names,
-                                 cell_names=cell_names, sparse=sparse)
-    return metadata, data
+    warnings.warn("magic.io is deprecated. Please use scprep.io instead. "
+                  "Read more at http://scprep.readthedocs.io",
+                  FutureWarning)
+    return scprep.io.load_fcs(filename=filename, gene_names=gene_names,
+                              cell_names=cell_names,
+                              sparse=sparse,
+                              metadata_channels=metadata_channels)
 
 
 def load_mtx(mtx_file, cell_axis='row',
@@ -347,60 +136,12 @@ def load_mtx(mtx_file, cell_axis='row',
     -------
     data : pd.DataFrame
     """
-    if cell_axis not in ['row', 'column', 'col']:
-        raise ValueError(
-            "cell_axis {} not recognized. Expected 'row' or 'column'".format(
-                cell_axis))
-    # Read in mtx file
-    data = sio.mmread(mtx_file)
-    if cell_axis in ['column', 'col']:
-        data = data.T
-    data = _matrix_to_data_frame(
-        data, gene_names=gene_names,
-        cell_names=cell_names, sparse=sparse)
-    return data
-
-
-def _combine_gene_id(symbols, ids):
-    """Creates gene labels of the form SYMBOL (ID)
-
-    Parameters
-    ----------
-
-    genes: pandas.DataFrame with columns['symbol', 'id']
-
-    Returns
-    -------
-
-    pandas.Index with combined gene symbols and ids
-    """
-    columns = np.core.defchararray.add(
-        np.array(symbols, dtype=str), ' (')
-    columns = np.core.defchararray.add(
-        columns, np.array(ids, dtype=str))
-    columns = np.core.defchararray.add(columns, ')')
-    return columns
-
-
-def _parse_10x_genes(symbols, ids, gene_labels='symbol',
-                     allow_duplicates=True):
-    if gene_labels not in ['symbol', 'id', 'both']:
-        raise ValueError("gene_labels='{}' not recognized. Choose from "
-                         "['symbol', 'id', 'both']")
-    if gene_labels == 'both':
-        columns = _combine_gene_id(symbols, ids)
-    if gene_labels == 'symbol':
-        columns = symbols
-        if not allow_duplicates and len(np.unique(columns)) < len(columns):
-            warnings.warn(
-                "Duplicate gene names detected! Forcing `gene_labels='id'`. "
-                "Alternatively, try `gene_labels='both'`, "
-                "`allow_duplicates=True`, or load the matrix"
-                " with `sparse=False`", RuntimeWarning)
-            gene_labels = 'id'
-    if gene_labels == 'id':
-        columns = ids
-    return columns
+    warnings.warn("magic.io is deprecated. Please use scprep.io instead. "
+                  "Read more at http://scprep.readthedocs.io",
+                  FutureWarning)
+    return scprep.io.load_mtx(mtx_file=mtx_file, cell_axis=cell_axis,
+                              gene_names=gene_names, cell_names=cell_names,
+                              sparse=sparse)
 
 
 def load_10X(data_dir, sparse=True, gene_labels='symbol',
@@ -435,38 +176,12 @@ def load_10X(data_dir, sparse=True, gene_labels='symbol',
     data: pandas.DataFrame shape = (n_cell, n_genes)
         imported data matrix
     """
-
-    if gene_labels not in ['id', 'symbol', 'both']:
-        raise ValueError("gene_labels not in ['id', 'symbol', 'both']")
-
-    if not os.path.isdir(data_dir):
-        raise FileNotFoundError(
-            "{} is not a directory".format(data_dir))
-
-    try:
-        m = sio.mmread(os.path.join(data_dir, "matrix.mtx"))
-        genes = pd.read_csv(os.path.join(data_dir, "genes.tsv"),
-                            delimiter='\t', header=None)
-        genes.columns = ['id', 'symbol']
-        barcodes = pd.read_csv(os.path.join(data_dir, "barcodes.tsv"),
-                               delimiter='\t', header=None)
-
-    except (FileNotFoundError, OSError):
-        raise FileNotFoundError(
-            "'matrix.mtx', 'genes.tsv', and 'barcodes.tsv' must be present "
-            "in {}".format(data_dir))
-
-    cell_names = barcodes[0]
-    if allow_duplicates is None:
-        allow_duplicates = not sparse
-    gene_names = _parse_10x_genes(genes['symbol'], genes['id'],
-                                  gene_labels=gene_labels,
-                                  allow_duplicates=allow_duplicates)
-
-    data = _matrix_to_data_frame(m.T, cell_names=cell_names,
-                                 gene_names=gene_names,
-                                 sparse=sparse)
-    return data
+    warnings.warn("magic.io is deprecated. Please use scprep.io instead. "
+                  "Read more at http://scprep.readthedocs.io",
+                  FutureWarning)
+    return scprep.io.load_10X(data_dir=data_dir, sparse=sparse,
+                              gene_labels=gene_labels,
+                              allow_duplicates=allow_duplicates)
 
 
 def load_10X_zip(filename, sparse=True, gene_labels='symbol',
@@ -495,33 +210,11 @@ def load_10X_zip(filename, sparse=True, gene_labels='symbol',
     data: pandas.DataFrame shape = (n_cell, n_genes)
         imported data matrix
     """
-    tmpdir = tempfile.mkdtemp()
-    with zipfile.ZipFile(filename) as handle:
-        files = handle.namelist()
-        if len(files) != 4:
-            valid = False
-        else:
-            dirname = files[0].strip("/")
-            subdir_files = [f.split("/")[-1] for f in files]
-            if "barcodes.tsv" not in subdir_files:
-                valid = False
-            elif "genes.tsv" not in subdir_files:
-                valid = False
-            elif "matrix.mtx" not in subdir_files:
-                valid = False
-            else:
-                valid = True
-        if not valid:
-            raise ValueError(
-                "Expected a single zipped folder containing 'matrix.mtx', "
-                "'genes.tsv', and 'barcodes.tsv'. Got {}".format(files))
-        handle.extractall(path=tmpdir)
-    data = load_10X(os.path.join(tmpdir, dirname))
-    shutil.rmtree(tmpdir)
-    return data
+    return scprep.io.load_10X_zip(filename=filename, sparse=sparse,
+                                  gene_labels=gene_labels,
+                                  allow_duplicates=allow_duplicates)
 
 
-@with_tables
 def load_10X_HDF5(filename, genome=None, sparse=True, gene_labels='symbol',
                   allow_duplicates=None):
     """Basic IO for HDF5 10X data produced from the 10X Cellranger pipeline.
@@ -551,36 +244,10 @@ def load_10X_HDF5(filename, genome=None, sparse=True, gene_labels='symbol',
         If sparse, data will be a pd.SparseDataFrame. Otherwise, data will
         be a pd.DataFrame.
     """
-    with tables.open_file(filename, 'r') as f:
-        if genome is None:
-            genomes = [node._v_name for node in f.list_nodes(f.root)]
-            print_genomes = ", ".join(genomes)
-            genome = genomes[0]
-            if len(genomes) > 1:
-                print("Available genomes: {}. Selecting {} by default".format(
-                    print_genomes, genome))
-        try:
-            group = f.get_node(f.root, genome)
-        except tables.NoSuchNodeError:
-            genomes = [node._v_name for node in f.list_nodes(f.root)]
-            print_genomes = ", ".join(genomes)
-            raise ValueError(
-                "Genome {} not found in {}. "
-                "Available genomes: {}".format(genome, filename, print_genomes))
-        if allow_duplicates is None:
-            allow_duplicates = not sparse
-        gene_names = _parse_10x_genes(
-            symbols=[g.decode() for g in getattr(group, 'gene_names').read()],
-            ids=[g.decode() for g in getattr(group, 'genes').read()],
-            gene_labels=gene_labels, allow_duplicates=allow_duplicates)
-        cell_names = [b.decode() for b in getattr(group, 'barcodes').read()]
-        data = getattr(group, 'data').read()
-        indices = getattr(group, 'indices').read()
-        indptr = getattr(group, 'indptr').read()
-        shape = getattr(group, 'shape').read()
-        data = sp.csc_matrix((data, indices, indptr), shape=shape)
-        data = _matrix_to_data_frame(data.T,
-                                     gene_names=gene_names,
-                                     cell_names=cell_names,
-                                     sparse=sparse)
-        return data
+    warnings.warn("magic.io is deprecated. Please use scprep.io instead. "
+                  "Read more at http://scprep.readthedocs.io",
+                  FutureWarning)
+    return scprep.io.load_10X_HDF5(filename=filename, genome=genome,
+                                   sparse=sparse,
+                                   gene_labels=gene_labels,
+                                   allow_duplicates=allow_duplicates)

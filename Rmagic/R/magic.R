@@ -39,7 +39,7 @@
 #' @param seed int or `NULL`, random state (default: `NULL`)
 #'
 #' @examples
-#' if (reticulate::py_module_available("phate")) {
+#' if (reticulate::py_module_available("magic")) {
 #'
 #' data(magic_testdata)
 #'

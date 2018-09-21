@@ -158,6 +158,6 @@ def animate_magic(data, gene_x, gene_y, gene_color=None,
         plt.close()
     elif show:
         plt.tight_layout()
-        plt.show(block=False)
+        fig.show()
 
     return ani

@@ -20,6 +20,9 @@ python/*.egg-info
 python/magic/__pycache__
 python/magic/*.pyc
 python/tutorial_notebooks/.ipynb_checkpoints
+__pycache__
+.eggs
+
 
 matlab/EMT.csv
 

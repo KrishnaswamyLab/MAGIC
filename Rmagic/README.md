@@ -1,4 +1,4 @@
-Rmagic v1.0.0
+Rmagic v1.3.0
 ================
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
@@ -236,4 +236,7 @@ ggplot(data_PHATE) +
 
 ## Help
 
-If you have any questions or require assistance using MAGIC, please contact us at <https://krishnaswamylab.org/get-help>.
+Please let us know of any issues at the [GitHub
+repo](https://github.com/KrishnaswamyLab/MAGIC/issues). If you have any
+questions or require assistance using MAGIC, please read the documentation
+by running `help(Rmagic::magic)` or contact us at <https://krishnaswamylab.org/get-help>.

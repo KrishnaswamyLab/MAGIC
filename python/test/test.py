@@ -2,9 +2,11 @@
 
 
 from __future__ import print_function, division, absolute_import
+import matplotlib as mpl
+mpl.use("agg")
 import magic
-import pandas as pd
 import numpy as np
+import scprep
 try:
     import anndata
 except (ImportError, SyntaxError):
@@ -13,23 +15,29 @@ except (ImportError, SyntaxError):
 
 
 def test_scdata():
-    scdata = pd.read_csv("../data/test_data.csv")
-    scdata_norm = magic.preprocessing.library_size_normalize(scdata)
+    scdata = scprep.io.load_csv("../data/test_data.csv")
+    scdata = scprep.filter.remove_empty_cells(scdata)
+    scdata = scprep.filter.remove_empty_genes(scdata)
+    scdata_norm = scprep.normalize.library_size_normalize(scdata)
+    scdata_norm = scprep.transform.sqrt(scdata_norm)
     assert scdata.shape == scdata_norm.shape
-    fast_magic_operator = magic.MAGIC(t='auto', a=20, k=10)
-    str_gene_magic = fast_magic_operator.fit_transform(
+    np.random.seed(42)
+    magic_op = magic.MAGIC(t='auto', a=20, k=10)
+    str_gene_magic = magic_op.fit_transform(
         scdata_norm, genes=['VIM', 'ZEB1'])
-    int_gene_magic = fast_magic_operator.fit_transform(
+    int_gene_magic = magic_op.fit_transform(
         scdata_norm, genes=[-2, -1])
     assert str_gene_magic.shape[0] == scdata_norm.shape[0]
     assert np.all(str_gene_magic == int_gene_magic)
-    pca_magic = fast_magic_operator.fit_transform(
+    pca_magic = magic_op.fit_transform(
         scdata_norm, genes="pca_only")
     assert pca_magic.shape[0] == scdata_norm.shape[0]
-    assert pca_magic.shape[1] == fast_magic_operator.n_pca
-    fast_magic = fast_magic_operator.fit_transform(scdata_norm,
-                                                   genes="all_genes")
-    assert scdata_norm.shape == fast_magic.shape
+    assert pca_magic.shape[1] == magic_op.n_pca
+    magic_all_genes = magic_op.fit_transform(scdata_norm,
+                                             genes="all_genes")
+    assert scdata_norm.shape == magic_all_genes.shape
+    dremi = magic_op.knnDREMI("VIM", "ZEB1", plot=True)
+    np.testing.assert_allclose(dremi, 1.5687165, atol=0.0000005)
 
 
 def test_anndata():

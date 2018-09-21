@@ -4,9 +4,10 @@
 \alias{magic}
 \title{Perform MAGIC on a data matrix}
 \usage{
-magic(data, genes = NULL, k = 10, alpha = 15, t = "auto", npca = 100,
-  init = NULL, t.max = 20, knn.dist.method = "euclidean", verbose = 1,
-  n.jobs = 1, seed = NULL)
+magic(data, genes = NULL, k = 10, alpha = 15, t = "auto",
+  npca = 100, init = NULL, t.max = 20,
+  knn.dist.method = "euclidean", verbose = 1, n.jobs = 1,
+  seed = NULL)
 }
 \arguments{
 \item{data}{input data matrix}
@@ -60,7 +61,7 @@ applied to single-cell RNA sequencing data, as described in
 van Dijk et al, 2018.
 }
 \examples{
-if (reticulate::py_module_available("phate")) {
+if (reticulate::py_module_available("magic")) {
 
 data(magic_testdata)
 
