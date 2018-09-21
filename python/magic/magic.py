@@ -329,20 +329,22 @@ class MAGIC(BaseEstimator):
                 tasklogger.log_debug(
                     "Reset graph due to difference in input data")
                 graph = None
-
-        if graph is not None:
-            try:
-                graph.set_params(
-                    decay=self.a, knn=self.k + 1, distance=self.knn_dist,
-                    n_jobs=self.n_jobs, verbose=self.verbose, n_pca=n_pca,
-                    thresh=1e-4, random_state=self.random_state)
-                tasklogger.log_info(
-                    "Using precomputed graph and diffusion operator...")
-            except ValueError as e:
-                # something changed that should have invalidated the graph
-                tasklogger.log_debug(
-                    "Reset graph due to {}".format(str(e)))
-                graph = None
+            elif graph is not None:
+                try:
+                    graph.set_params(
+                        decay=self.a, knn=self.k + 1, distance=self.knn_dist,
+                        n_jobs=self.n_jobs, verbose=self.verbose, n_pca=n_pca,
+                        thresh=1e-4, random_state=self.random_state)
+                except ValueError as e:
+                    # something changed that should have invalidated the graph
+                    tasklogger.log_debug(
+                        "Reset graph due to {}".format(str(e)))
+                    graph = None
+        else:
+            self.k = graph.knn - 1
+            self.alpha = graph.decay
+            self.n_pca = graph.n_pca
+            self.knn_dist = graph.distance
 
         self.X = X
 
@@ -350,7 +352,11 @@ class MAGIC(BaseEstimator):
             warnings.warn("Input matrix contains unexpressed genes. "
                           "Please remove them prior to running MAGIC.")
 
-        if graph is None:
+        if graph is not None:
+            tasklogger.log_info(
+                "Using precomputed graph and diffusion operator...")
+            self.graph = graph
+        else:
             # reset X_magic in case it was previously set
             self.X_magic = None
             tasklogger.log_start("graph and diffusion operator")
@@ -364,8 +370,6 @@ class MAGIC(BaseEstimator):
                 verbose=self.verbose,
                 random_state=self.random_state)
             tasklogger.log_complete("graph and diffusion operator")
-        else:
-            self.graph = graph
 
         return self
 
