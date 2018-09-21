@@ -2,15 +2,7 @@
 # (C) 2018 Krishnaswamy Lab GPLv2
 
 from __future__ import print_function, division
-import pandas as pd
-import scipy.io as sio
-import scipy.sparse as sp
 import warnings
-import numpy as np
-import os
-import zipfile
-import tempfile
-import shutil
 import scprep
 
 
@@ -46,7 +38,8 @@ def load_csv(filename, cell_axis='row', delimiter=',',
     warnings.warn("magic.io is deprecated. Please use scprep.io instead. "
                   "Read more at http://scprep.readthedocs.io",
                   FutureWarning)
-    return scprep.io.load_csv(filename=filename, cell_axis=cell_axis, delimiter=delimiter,
+    return scprep.io.load_csv(filename=filename, cell_axis=cell_axis,
+                              delimiter=delimiter,
                               gene_names=gene_names, cell_names=cell_names,
                               sparse=sparse, **kwargs)
 
@@ -186,7 +179,8 @@ def load_10X(data_dir, sparse=True, gene_labels='symbol',
     warnings.warn("magic.io is deprecated. Please use scprep.io instead. "
                   "Read more at http://scprep.readthedocs.io",
                   FutureWarning)
-    return scprep.io.load_10X(data_dir=data_dir, sparse=sparse, gene_labels=gene_labels,
+    return scprep.io.load_10X(data_dir=data_dir, sparse=sparse,
+                              gene_labels=gene_labels,
                               allow_duplicates=allow_duplicates)
 
 
