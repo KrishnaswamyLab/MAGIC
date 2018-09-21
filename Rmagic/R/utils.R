@@ -10,23 +10,24 @@ null_equal <- function(x, y) {
 }
 
 load_pymagic <- function(delay_load = FALSE) {
-    if (is.null(pymagic)) {
+  if (is.null(pymagic)) {
     result <- try(pymagic <<- reticulate::import("magic", delay_load = delay_load))
   } else {
     result <- try(reticulate::import("magic", delay_load = delay_load))
   }
-  if (methods::is(result, "try-error") &&
-      (length(grep("ModuleNotFoundError: No module named 'magic'", result)) > 0 ||
-        length(grep("ImportError: No module named magic", result)) > 0)) {
+  if (methods::is(result, "try-error")) {
+    if ((!delay_load) && length(grep("ModuleNotFoundError: No module named 'magic'", result)) > 0 ||
+        length(grep("ImportError: No module named magic", result)) > 0) {
       if (utils::menu(c("Yes", "No"), title="Install MAGIC Python package with reticulate?") == 1) {
         install.magic()
       }
-  } else if (length(grep("r\\-reticulate", reticulate::py_config()$python)) > 0) {
-    message("Consider removing the 'r-reticulate' environment by running:")
-    if (grep("virtualenvs", reticulate::py_config()$python)) {
-      message("reticulate::virtualenv_remove('r-reticulate')")
-    } else {
-      message("reticulate::conda_remove('r-reticulate')")
+    } else if (length(grep("r\\-reticulate", reticulate::py_config()$python)) > 0) {
+      message("Consider removing the 'r-reticulate' environment by running:")
+      if (grep("virtualenvs", reticulate::py_config()$python)) {
+        message("reticulate::virtualenv_remove('r-reticulate')")
+      } else {
+        message("reticulate::conda_remove('r-reticulate')")
+      }
     }
   }
 }
