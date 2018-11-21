@@ -180,13 +180,13 @@ magic <- function(data,
   result <- operator$fit_transform(data,
                                    genes = genes,
                                    t_max = t.max)
+  colnames(result) <- gene_names
+  rownames(result) <- rownames(data)
   if (use_seurat) {
     seurat_obj@data <- t(result)
     return(seurat_obj)
   } else {
     result <- as.data.frame(result)
-    colnames(result) <- gene_names
-    rownames(result) <- rownames(data)
     result <- list("result" = result, "operator" = operator,
                    "params" = params)
     class(result) <- c("magic", "list")
