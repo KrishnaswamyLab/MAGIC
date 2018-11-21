@@ -24,3 +24,14 @@ test_magic <- function() {
            scale_colour_viridis(option="B")
   ggsave('EMT_data_R_after_magic.png', plot=p_m, width=5, height=5)
 }
+
+test_seurat <- function() {
+  data(magic_testdata)
+
+  seurat_obj <- Seurat::CreateSeuratObject(raw.data=t(magic_testdata))
+
+  # run MAGIC
+  data_MAGIC <- magic(magic_testdata, seed = 42)
+  seurat_MAGIC <- magic(seurat_obj, seed = 42)
+  stopifnot(all(data_MAGIC$result == t(seurat_MAGIC@data)))
+}
