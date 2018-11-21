@@ -1,5 +1,5 @@
 ---
-title : Rmagic v1.3.0
+title : Rmagic v1.4.0
 output: github_document
 toc: true
 ---
