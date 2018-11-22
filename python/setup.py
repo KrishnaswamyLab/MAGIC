@@ -8,6 +8,7 @@ install_requires = [
     'scipy>=1.1.0',
     'matplotlib',
     'scikit-learn>=0.19.1',
+    'future',
     'tasklogger>=0.4.0',
     'graphtools>=0.2.0',
     'scprep>=0.8.1'
