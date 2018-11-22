@@ -50,7 +50,7 @@ Installation with pip
 
 To install with ``pip``, run the following from a terminal::
 
-   pip install --user git+git://github.com/KrishnaswamyLab/MAGIC.git#subdirectory=python
+   pip install --user magic-impute
 
 Installation from GitHub
 ------------------------
