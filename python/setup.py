@@ -8,9 +8,9 @@ install_requires = [
     'scipy>=1.1.0',
     'matplotlib',
     'scikit-learn>=0.19.1',
-    'tasklogger>=0.2.1',
-    'graphtools>=0.1.9',
-    'scprep>=0.7.1'
+    'tasklogger>=0.4.0',
+    'graphtools>=0.2.0',
+    'scprep>=0.8.1'
 ]
 
 test_requires = [
