@@ -5,7 +5,7 @@
 #' applied to single-cell RNA sequencing data, as described in
 #' van Dijk et al, 2018.
 #'
-#' @param data input data matrix
+#' @param data input data matrix or Seurat object
 #' @param genes character or integer vector, default: NULL
 #' vector of column names or column indices for which to return smoothed data
 #' If 'all_genes' or NULL, the entire smoothed matrix is returned
@@ -37,6 +37,11 @@
 #' For n_jobs below -1, (n.cpus + 1 + n.jobs) are used. Thus for
 #' n_jobs = -2, all CPUs but one are used
 #' @param seed int or `NULL`, random state (default: `NULL`)
+#'
+#' @return If a Seurat object is passed, a Seurat object is returned. Otherwise, a "magic" object containing:
+#'  * **result**: matrix containing smoothed expression values
+#'  * **operator**: The MAGIC operator (python magic.MAGIC object)
+#'  * **params**: Parameters passed to magic
 #'
 #' @examples
 #' if (reticulate::py_module_available("magic")) {
@@ -113,7 +118,12 @@ magic <- function(data,
   if (is.numeric(verbose)) {
     verbose <- as.integer(verbose)
   }
-  if (!methods::is(data, "Matrix")) {
+  use_seurat <- FALSE
+  if (methods::is(data, "seurat")) {
+    seurat_obj <- data
+    use_seurat <- TRUE
+    data <- t(data@data)
+  } else if (!methods::is(data, "Matrix")) {
     data <- as.matrix(data)
   }
   if (is.null(genes) || is.na(genes)) {
@@ -170,13 +180,18 @@ magic <- function(data,
   result <- operator$fit_transform(data,
                                    genes = genes,
                                    t_max = t.max)
-  result <- as.data.frame(result)
   colnames(result) <- gene_names
   rownames(result) <- rownames(data)
-  result <- list("result" = result, "operator" = operator,
-                 "params" = params)
-  class(result) <- c("magic", "list")
-  return(result)
+  if (use_seurat) {
+    seurat_obj@data <- t(result)
+    return(seurat_obj)
+  } else {
+    result <- as.data.frame(result)
+    result <- list("result" = result, "operator" = operator,
+                   "params" = params)
+    class(result) <- c("magic", "list")
+    return(result)
+  }
 }
 
 

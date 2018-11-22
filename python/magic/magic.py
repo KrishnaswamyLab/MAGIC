@@ -521,8 +521,24 @@ class MAGIC(BaseEstimator):
             If given, provides a precomputed kernel matrix with which to
             perform diffusion.
 
-        kwargs : further arguments for `PHATE.transform()`
-            Keyword arguments as specified in :func:`~phate.PHATE.transform`
+        genes : list or {"all_genes", "pca_only"}, optional (default: None)
+            List of genes, either as integer indices or column names
+            if input data is a pandas DataFrame. If "all_genes", the entire
+            smoothed matrix is returned. If "pca_only", PCA on the smoothed
+            data is returned. If None, the entire matrix is also
+            returned, but a warning may be raised if the resultant matrix
+            is very large.
+
+        t_max : int, optional, default: 20
+            maximum t to test if `t` is set to 'auto'
+
+        plot_optimal_t : boolean, optional, default: False
+            If true and `t` is set to 'auto', plot the disparity used to
+            select t
+
+        ax : matplotlib.axes.Axes, optional
+            If given and `plot_optimal_t` is true, plot will be drawn
+            on the given axis.
 
         Returns
         -------
