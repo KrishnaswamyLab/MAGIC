@@ -36,7 +36,7 @@ load_pymagic <- function(delay_load = FALSE) {
         message("reticulate::conda_remove('r-reticulate')")
       }
     }
-  } else {
+  } else if (!delay_load) {
     # successful load
     version <- strsplit(pymagic$`__version__`, '\\.')[[1]]
     major_version <- 1
