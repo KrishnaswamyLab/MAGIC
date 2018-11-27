@@ -14,12 +14,13 @@ Imports:
     methods,
     stats,
     reticulate (>= 1.4),
+    Seurat (>= 3.0.0),
     ggplot2
 Suggests:
-  	readr,
+    readr,
     viridis,
-  	phateR
+    phateR
 License: GPL-2 | file LICENSE
 LazyData: true
-RoxygenNote: 6.1.0
+RoxygenNote: 6.1.1
 Encoding: UTF-8
