@@ -60,9 +60,9 @@ class MAGIC(BaseEstimator):
         roughly log(n_samples) time.
 
     knn_dist : string, optional, default: 'euclidean'
-        recommended values: 'euclidean', 'cosine'
-        Any metric from `scipy.spatial.distance` can be used
-        distance metric for building kNN graph.
+        Distance metric for building kNN graph. Recommended values:
+        'euclidean', 'cosine'. Any metric from `scipy.spatial.distance` can be
+        used. Custom distance functions of form `f(x, y) = d` are also accepted
 
     n_jobs : integer, optional, default: 1
         The number of jobs to use for the computation.
@@ -178,13 +178,14 @@ class MAGIC(BaseEstimator):
                            a=self.a)
         utils.check_if_not('auto', utils.check_positive, utils.check_int,
                            t=self.t)
-        utils.check_in(['euclidean', 'cosine', 'correlation',
-                        'cityblock', 'l1', 'l2', 'manhattan', 'braycurtis',
-                        'canberra', 'chebyshev', 'dice', 'hamming', 'jaccard',
-                        'kulsinski', 'mahalanobis', 'matching', 'minkowski',
-                        'rogerstanimoto', 'russellrao', 'seuclidean',
-                        'sokalmichener', 'sokalsneath', 'sqeuclidean', 'yule'],
-                       knn_dist=self.knn_dist)
+        if not callable(self.knn_dist):
+            utils.check_in(['euclidean', 'cosine', 'correlation',
+                            'cityblock', 'l1', 'l2', 'manhattan', 'braycurtis',
+                            'canberra', 'chebyshev', 'dice', 'hamming', 'jaccard',
+                            'kulsinski', 'mahalanobis', 'matching', 'minkowski',
+                            'rogerstanimoto', 'russellrao', 'seuclidean',
+                            'sokalmichener', 'sokalsneath', 'sqeuclidean', 'yule'],
+                           knn_dist=self.knn_dist)
 
     def _set_graph_params(self, **params):
         try:
