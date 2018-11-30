@@ -28,10 +28,11 @@ test_magic <- function() {
 test_seurat <- function() {
   data(magic_testdata)
 
-  seurat_obj <- Seurat::CreateSeuratObject(raw.data=t(magic_testdata))
+  # seurat_obj <- Seurat::CreateSeuratObject(raw.data=t(magic_testdata))
+  seurat_obj <- Seurat::CreateSeuratObject(counts = t(x = magic_testdata))
 
   # run MAGIC
-  data_MAGIC <- magic(magic_testdata, seed = 42)
-  seurat_MAGIC <- magic(seurat_obj, seed = 42)
-  stopifnot(all(data_MAGIC$result == t(seurat_MAGIC@data)))
+  data_MAGIC <- magic(data = magic_testdata, seed = 42)
+  seurat_obj <- magic(data = seurat_obj, seed = 42)
+  stopifnot(all(data_MAGIC$result == t(x = Seurat::GetAssayData(object = seurat_obj, slot = 'data', assay = 'MAGIC'))))
 }

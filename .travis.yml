@@ -21,6 +21,7 @@ before_install:
   - $HOME/miniconda2/bin/pip install -q phate
   - $HOME/miniconda3/bin/pip install -q phate
   - R -e "install.packages(c('reticulate', 'devtools', 'readr', 'phateR', 'Matrix', 'ggplot2', 'viridis'), quiet=TRUE)"
+  - R -e "devtools::install_github(repo = 'satijalab/seurat', ref = 'release/3.0')"
 
 install:
   - cd python; $HOME/miniconda2/bin/pip install -q .
