@@ -245,8 +245,6 @@ magic.seurat <- function(
   return(data)
 }
 
-#' @importFrom Seurat GetAssayData CreateAssayObject DefaultAssay Tool<-
-#'
 #' @param assay Assay to use for imputation, defaults to the default assay
 #'
 #' @rdname magic
@@ -269,11 +267,14 @@ magic.Seurat <- function(
   seed = NULL,
   ...
 ) {
+  if (!requireNamespace(pacakge = 'Seurat', quietly = TRUE)) {
+    stop("Please install Seurat v3 to run MAGIC on new Seurat objects")
+  }
   if (is.null(x = assay)) {
-    assay <- DefaultAssay(object = data)
+    assay <- Seurat::DefaultAssay(object = data)
   }
   results <- magic(
-    data = t(x = GetAssayData(object = data, slot = 'data', assay = assay)),
+    data = t(x = Seurat::GetAssayData(object = data, slot = 'data', assay = assay)),
     genes = genes,
     k = k,
     alpha = alpha,
@@ -286,8 +287,8 @@ magic.Seurat <- function(
     n.jobs = n.jobs,
     seed = seed
   )
-  data[[paste0('MAGIC_', assay)]] <- CreateAssayObject(data = t(x = as.matrix(x = results$result)))
-  Tool(object = data) <- results[c('operator', 'params')]
+  data[[paste0('MAGIC_', assay)]] <- Seurat::CreateAssayObject(data = t(x = as.matrix(x = results$result)))
+  Seurat::Tool(object = data) <- results[c('operator', 'params')]
   return(data)
 }
 

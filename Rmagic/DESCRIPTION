@@ -14,9 +14,9 @@ Imports:
     methods,
     stats,
     reticulate (>= 1.4),
-    Seurat (>= 3.0.0),
     ggplot2
 Suggests:
+    Seurat (>= 3.0.0),
     readr,
     viridis,
     phateR
