@@ -267,7 +267,7 @@ magic.Seurat <- function(
   seed = NULL,
   ...
 ) {
-  if (!requireNamespace(pacakge = 'Seurat', quietly = TRUE)) {
+  if (!requireNamespace(package = 'Seurat', quietly = TRUE)) {
     stop("Please install Seurat v3 to run MAGIC on new Seurat objects")
   }
   if (is.null(x = assay)) {
