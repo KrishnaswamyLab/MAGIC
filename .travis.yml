@@ -20,6 +20,11 @@ cache:
   - directories:
     - $HOME/.cache/pip
 
+addons:
+  apt:
+    packages:
+    - python3-pip
+
 before_install:
   - pip3 install --user --upgrade pip
   - pip3 install --user -q phate
