@@ -41,7 +41,7 @@ install:
 
 script:
   - cd Rmagic; R CMD build .
-  - travis_wait 30 R CMD check *tar.gz
+  - R CMD check *tar.gz
   - cd ../python; pip install -q .[test,doc]
   - pip install -q .[test,doc]
   - python setup.py test
