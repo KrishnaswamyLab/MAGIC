@@ -6,6 +6,9 @@ sudo: required
 os:
   - linux
 
+dist:
+  - xenial
+
 r:
   - oldrel
   - release
