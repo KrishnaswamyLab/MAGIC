@@ -2,15 +2,32 @@
 % Please edit documentation in R/magic.R
 \name{magic}
 \alias{magic}
+\alias{magic.default}
+\alias{magic.seurat}
+\alias{magic.Seurat}
 \title{Perform MAGIC on a data matrix}
 \usage{
-magic(data, genes = NULL, k = 10, alpha = 15, t = "auto",
-  npca = 100, init = NULL, t.max = 20,
+magic(data, ...)
+
+\method{magic}{default}(data, genes = NULL, k = 10, alpha = 15,
+  t = "auto", npca = 100, init = NULL, t.max = 20,
   knn.dist.method = "euclidean", verbose = 1, n.jobs = 1,
-  seed = NULL)
+  seed = NULL, ...)
+
+\method{magic}{seurat}(data, genes = NULL, k = 10, alpha = 15,
+  t = "auto", npca = 100, init = NULL, t.max = 20,
+  knn.dist.method = "euclidean", verbose = 1, n.jobs = 1,
+  seed = NULL, ...)
+
+\method{magic}{Seurat}(data, assay = NULL, genes = NULL, k = 10,
+  alpha = 15, t = "auto", npca = 100, init = NULL, t.max = 20,
+  knn.dist.method = "euclidean", verbose = 1, n.jobs = 1,
+  seed = NULL, ...)
 }
 \arguments{
-\item{data}{input data matrix}
+\item{data}{input data matrix or Seurat object}
+
+\item{...}{Arguments passed to and from other methods}
 
 \item{genes}{character or integer vector, default: NULL
 vector of column names or column indices for which to return smoothed data
@@ -53,6 +70,14 @@ For n_jobs below -1, (n.cpus + 1 + n.jobs) are used. Thus for
 n_jobs = -2, all CPUs but one are used}
 
 \item{seed}{int or `NULL`, random state (default: `NULL`)}
+
+\item{assay}{Assay to use for imputation, defaults to the default assay}
+}
+\value{
+If a Seurat object is passed, a Seurat object is returned. Otherwise, a "magic" object containing:
+ * **result**: matrix containing smoothed expression values
+ * **operator**: The MAGIC operator (python magic.MAGIC object)
+ * **params**: Parameters passed to magic
 }
 \description{
 Markov Affinity-based Graph Imputation of Cells (MAGIC) is an

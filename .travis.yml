@@ -24,6 +24,7 @@ addons:
 
 before_install:
   - pip install -q phate
+  - R -e "devtools::install_github(repo = 'satijalab/seurat', ref = 'release/3.0')"
 
 r_packages:
   - reticulate

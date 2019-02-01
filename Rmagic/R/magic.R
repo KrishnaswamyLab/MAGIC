@@ -37,6 +37,7 @@
 #' For n_jobs below -1, (n.cpus + 1 + n.jobs) are used. Thus for
 #' n_jobs = -2, all CPUs but one are used
 #' @param seed int or `NULL`, random state (default: `NULL`)
+#' @param ... Arguments passed to and from other methods
 #'
 #' @return If a Seurat object is passed, a Seurat object is returned. Otherwise, a "magic" object containing:
 #'  * **result**: matrix containing smoothed expression values
@@ -74,126 +75,222 @@
 #' }
 #'
 #' @export
-magic <- function(data,
-                  genes=NULL,
-                  k = 10,
-                  alpha = 15,
-                  t = 'auto',
-                  npca=100,
-                  init=NULL,
-                  t.max=20,
-                  knn.dist.method='euclidean',
-                  verbose=1,
-                  n.jobs=1,
-                  seed=NULL) {
+#'
+magic <- function(data, ...) {
+  UseMethod(generic = 'magic', object = data)
+}
+
+#' @rdname magic
+#' @export
+#'
+magic.default <- function(
+  data,
+  genes = NULL,
+  k = 10,
+  alpha = 15,
+  t = 'auto',
+  npca = 100,
+  init = NULL,
+  t.max = 20,
+  knn.dist.method = 'euclidean',
+  verbose = 1,
+  n.jobs = 1,
+  seed = NULL,
+  ...
+) {
   # check installation
   if (!reticulate::py_module_available(module = "magic")) {
     load_pymagic()
   }
-  tryCatch(pymagic, error = function(e) load_pymagic())
-  k <- as.integer(k)
-  t.max <- as.integer(t.max)
-  n.jobs <- as.integer(n.jobs)
-
-  if (is.numeric(npca)) {
-    npca <- as.integer(npca)
-  } else if (!is.null(npca) && is.na(npca)) {
+  tryCatch(expr = pymagic, error = function(e) load_pymagic())
+  k <- as.integer(x = k)
+  t.max <- as.integer(x = t.max)
+  n.jobs <- as.integer(x = n.jobs)
+  if (is.numeric(x = npca)) {
+    npca <- as.integer(x = npca)
+  } else if (!is.null(x = npca) && is.na(x = npca)) {
     npca <- NULL
   }
-  if (is.numeric(alpha)) {
-    alpha <- as.double(alpha)
-  } else if (!is.null(alpha) && is.na(alpha)) {
+  if (is.numeric(x = alpha)) {
+    alpha <- as.double(x = alpha)
+  } else if (!is.null(x = alpha) && is.na(x = alpha)) {
     alpha <- NULL
   }
-  if (is.numeric(t)) {
-    t <- as.integer(t)
-  } else if (is.null(t) || is.na(t)) {
+  if (is.numeric(x = t)) {
+    t <- as.integer(x = t)
+  } else if (is.null(x = t) || is.na(x = t)) {
     t <- 'auto'
   }
-  if (is.numeric(seed)) {
-    seed <- as.integer(seed)
-  } else if (!is.null(seed) && is.na(seed)) {
+  if (is.numeric(x = seed)) {
+    seed <- as.integer(x = seed)
+  } else if (!is.null(x = seed) && is.na(x = seed)) {
     seed <- NULL
   }
-  if (is.numeric(verbose)) {
-    verbose <- as.integer(verbose)
+  if (is.numeric(x = verbose)) {
+    verbose <- as.integer(x = verbose)
   }
-  use_seurat <- FALSE
-  if (methods::is(data, "seurat")) {
-    seurat_obj <- data
-    use_seurat <- TRUE
-    data <- t(data@data)
-  } else if (!methods::is(data, "Matrix")) {
-    data <- as.matrix(data)
+  if (!methods::is(object = data, "Matrix")) {
+    data <- as.matrix(x = data)
   }
-  if (is.null(genes) || is.na(genes)) {
+  if (is.null(x = genes) || is.na(x = genes)) {
     genes <- NULL
-    gene_names <- colnames(data)
-  } else if (is.numeric(genes)) {
-    gene_names <- colnames(data)[genes]
-    genes <- as.integer(genes - 1)
-  } else if (length(genes) == 1 && genes == "all_genes") {
-    gene_names <- colnames(data)
-  } else if (length(genes) == 1 && genes == "pca_only") {
+    gene_names <- colnames(x = data)
+  } else if (is.numeric(x = genes)) {
+    gene_names <- colnames(x = data)[genes]
+    genes <- as.integer(x = genes - 1)
+  } else if (length(x = genes) == 1 && genes == "all_genes") {
+    gene_names <- colnames(x = data)
+  } else if (length(x = genes) == 1 && genes == "pca_only") {
     gene_names <- paste0("PC", 1:npca)
   } else {
     # character vector
-    if (!all(genes %in% colnames(data))) {
-      warning(paste0("Genes ", genes[!(genes %in% colnames(data))],
-                     " not found.", collapse=", "))
+    if (!all(genes %in% colnames(x = data))) {
+      warning(paste0("Genes ", genes[!(genes %in% colnames(data))], " not found.", collapse = ", "))
     }
-    genes <- which(colnames(data) %in% genes)
-    gene_names <- colnames(data)[genes]
-    genes <- as.integer(genes - 1)
+    genes <- which(x = colnames(x = data) %in% genes)
+    gene_names <- colnames(x = data)[genes]
+    genes <- as.integer(x = genes - 1)
   }
-
   # store parameters
-  params <- list("data" = data, "k" = k, "alpha" = alpha, "t" = t,
-                 "npca" = npca, "knn.dist.method" = knn.dist.method)
+  params <- list(
+    "data" = data,
+    "k" = k,
+    "alpha" = alpha,
+    "t" = t,
+    "npca" = npca,
+    "knn.dist.method" = knn.dist.method
+  )
   # use pre-initialized values if given
   operator <- NULL
-  if (!is.null(init)) {
+  if (!is.null(x = init)) {
     if (!methods::is(init, "magic")) {
       warning("object passed to init is not a phate object")
     } else {
       operator <- init$operator
-      operator$set_params(k = k,
-                          a = alpha,
-                          t = t,
-                          n_pca = npca,
-                          knn_dist = knn.dist.method,
-                          n_jobs = n.jobs,
-                          random_state = seed,
-                          verbose = verbose)
+      operator$set_params(
+        k = k,
+        a = alpha,
+        t = t,
+        n_pca = npca,
+        knn_dist = knn.dist.method,
+        n_jobs = n.jobs,
+        random_state = seed,
+        verbose = verbose
+      )
     }
   }
-  if (is.null(operator)) {
-    operator <- pymagic$MAGIC(k = k,
-                              a = alpha,
-                              t = t,
-                              n_pca = npca,
-                              knn_dist = knn.dist.method,
-                              n_jobs = n.jobs,
-                              random_state = seed,
-                              verbose = verbose)
+  if (is.null(x = operator)) {
+    operator <- pymagic$MAGIC(
+      k = k,
+      a = alpha,
+      t = t,
+      n_pca = npca,
+      knn_dist = knn.dist.method,
+      n_jobs = n.jobs,
+      random_state = seed,
+      verbose = verbose
+    )
   }
-  result <- operator$fit_transform(data,
-                                   genes = genes,
-                                   t_max = t.max)
-  colnames(result) <- gene_names
-  rownames(result) <- rownames(data)
-  if (use_seurat) {
-    seurat_obj@data <- t(result)
-    return(seurat_obj)
-  } else {
-    result <- as.data.frame(result)
-    result <- list("result" = result, "operator" = operator,
-                   "params" = params)
-    class(result) <- c("magic", "list")
-    return(result)
-  }
+  result <- operator$fit_transform(
+    data,
+    genes = genes,
+    t_max = t.max
+  )
+  colnames(x = result) <- gene_names
+  rownames(x = result) <- rownames(data)
+  result <- as.data.frame(x = result)
+    result <- list(
+      "result" = result,
+      "operator" = operator,
+      "params" = params
+    )
+  class(x = result) <- c("magic", "list")
+  return(result)
 }
 
+#' @rdname magic
+#' @export
+#' @method magic seurat
+#'
+magic.seurat <- function(
+  data,
+  genes = NULL,
+  k = 10,
+  alpha = 15,
+  t = 'auto',
+  npca = 100,
+  init = NULL,
+  t.max = 20,
+  knn.dist.method = 'euclidean',
+  verbose = 1,
+  n.jobs = 1,
+  seed = NULL,
+  ...
+) {
+  results <- magic(
+    data = as.matrix(x = t(x = data@data)),
+    genes = genes,
+    k = k,
+    alpha = alpha,
+    t = t,
+    npca = npca,
+    init = init,
+    t.max = t.max,
+    knn.dist.method = knn.dist.method,
+    verbose = verbose,
+    n.jobs = n.jobs,
+    seed = seed
+  )
+  data@data <- t(x = as.matrix(x = results$result))
+  return(data)
+}
+
+#' @param assay Assay to use for imputation, defaults to the default assay
+#'
+#' @rdname magic
+#' @export
+#' @method magic Seurat
+#'
+magic.Seurat <- function(
+  data,
+  assay = NULL,
+  genes = NULL,
+  k = 10,
+  alpha = 15,
+  t = 'auto',
+  npca = 100,
+  init = NULL,
+  t.max = 20,
+  knn.dist.method = 'euclidean',
+  verbose = 1,
+  n.jobs = 1,
+  seed = NULL,
+  ...
+) {
+  if (!requireNamespace(package = 'Seurat', quietly = TRUE)) {
+    stop("Please install Seurat v3 to run MAGIC on new Seurat objects")
+  }
+  if (is.null(x = assay)) {
+    assay <- Seurat::DefaultAssay(object = data)
+  }
+  results <- magic(
+    data = t(x = Seurat::GetAssayData(object = data, slot = 'data', assay = assay)),
+    genes = genes,
+    k = k,
+    alpha = alpha,
+    t = t,
+    npca = npca,
+    init = init,
+    t.max = t.max,
+    knn.dist.method = knn.dist.method,
+    verbose = verbose,
+    n.jobs = n.jobs,
+    seed = seed
+  )
+  data[[paste0('MAGIC_', assay)]] <- Seurat::CreateAssayObject(data = t(x = as.matrix(x = results$result)))
+  Seurat::Tool(object = data) <- results[c('operator', 'params')]
+  return(data)
+}
 
 #' Print a MAGIC object
 #'
