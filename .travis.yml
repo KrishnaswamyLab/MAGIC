@@ -26,6 +26,8 @@ addons:
     - python3-dev
 
 before_install:
+  - alias python=python3
+  - alias pip=pip3
   - pip install --user --upgrade pip
   - pip install --user -q phate
   - R -e "devtools::install_github(repo = 'satijalab/seurat', ref = 'release/3.0')"
