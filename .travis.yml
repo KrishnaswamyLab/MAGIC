@@ -26,7 +26,8 @@ addons:
     - python3-dev
 
 before_install:
-  - pip install --user -q phate
+  - pip install --upgrade pip
+  - pip install -q phate
   - R -e "devtools::install_github(repo = 'satijalab/seurat', ref = 'release/3.0')"
 
 r_packages:
@@ -39,13 +40,13 @@ r_packages:
   - viridis
 
 install:
-  - cd python; pip install --user -q .; cd ..
+  - cd python; pip install -q .; cd ..
   - cd ../Rmagic; R CMD INSTALL .; cd ..
 
 script:
   - cd Rmagic; R CMD build .
   - R CMD check *tar.gz
-  - cd ../python; pip install --user -q .[test,doc]
+  - cd ../python; pip install -q .[test,doc]
   - python setup.py test
   - cd doc; make html
 
