@@ -11,29 +11,39 @@ r:
   - release
   - devel
 
-env:
-  global:
-    - PATH="$HOME/miniconda2/bin:$HOME/miniconda3/bin:$PATH"
-    - RETICULATE_PYTHON="$HOME/miniconda2/bin/python"
+cache:
+  - packages
+  - apt
+  - directories:
+    - $HOME/.cache/pip
+
+addons:
+  apt:
+    packages:
+    - python3-dev
 
 before_install:
-  - chmod +x travis_setup.sh; ./travis_setup.sh
-  - $HOME/miniconda2/bin/pip install -q phate
-  - $HOME/miniconda3/bin/pip install -q phate
-  - R -e "install.packages(c('reticulate', 'devtools', 'readr', 'phateR', 'Matrix', 'ggplot2', 'viridis'), quiet=TRUE)"
+  - pip install -q phate
+
+r_packages:
+  - reticulate
+  - devtools
+  - readr
+  - phateR
+  - Matrix
+  - ggplot2
+  - viridis
 
 install:
-  - cd python; $HOME/miniconda2/bin/pip install -q .
-  - $HOME/miniconda3/bin/pip install -q .
+  - cd python; pip install -q .; cd ..
   - cd ../Rmagic; R CMD INSTALL .; cd ..
 
 script:
   - cd Rmagic; R CMD build .
   - travis_wait 30 R CMD check *tar.gz
-  - cd ../python; $HOME/miniconda2/bin/pip install -q .[test,doc]
-  - $HOME/miniconda3/bin/pip install -q .[test,doc]
-  - python2 setup.py test
-  - python3 setup.py test
+  - cd ../python; pip install -q .[test,doc]
+  - pip install -q .[test,doc]
+  - python setup.py test
   - cd doc; make html
 
 warnings_are_errors: true
