@@ -22,8 +22,8 @@ cache:
 
 before_install:
   - curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
-  - python3 get-pip.py
-  - pip3 install --user --upgrade pip
+  - sudo python3 get-pip.py
+  - sudo pip3 install --upgrade pip
   - pip3 install --user -q phate
   - R -e "devtools::install_github(repo = 'satijalab/seurat', ref = 'release/3.0')"
 
