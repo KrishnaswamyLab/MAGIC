@@ -28,7 +28,7 @@ before_install:
 
 install:
   - cd python; pip3 install --user -q .; cd ..
-  - cd ../Rmagic; R -e 'install.packages("devtools", repos="http://cloud.r-project.org")'
+  - cd Rmagic; R -e 'install.packages("devtools", repos="http://cloud.r-project.org")'
   - R -e "devtools::install_github(repo = 'satijalab/seurat', ref = 'release/3.0')"
   - R -e 'devtools::install_deps(dep = T)'; cd ..
 
