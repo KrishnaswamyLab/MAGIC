@@ -26,21 +26,13 @@ before_install:
   - sudo pip3 install --upgrade pip
   - pip3 install --user -q phate
 
-r_packages:
-  - reticulate
-  - devtools
-  - readr
-  - phateR
-  - Matrix
-  - ggplot2
-  - viridis
-
 install:
   - cd python; pip3 install --user -q .; cd ..
+  - cd ../Rmagic; R -e 'devtools::install_deps(dep = T)'
   - R -e "devtools::install_github(repo = 'satijalab/seurat', ref = 'release/3.0')"; cd ..
 
 script:
-  - R CMD build .
+  - cd Rmagic; R CMD build .
   - R CMD check *tar.gz
   - cd ../python; pip3 install --user -q .[test,doc]
   - python3 setup.py test
