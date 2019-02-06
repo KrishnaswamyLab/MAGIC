@@ -638,7 +638,7 @@ class MAGIC(BaseEstimator):
         """
         if not isinstance(data, graphtools.base.Data):
             data = graphtools.base.Data(data, n_pca=self.n_pca)
-        data_imputed = data.data_nu
+        data_imputed = scprep.utils.toarray(data.data_nu)
 
         if data_imputed.shape[1] > max_genes_compute_t:
             subsample_genes = np.random.choice(data_imputed.shape[1],
