@@ -1,6 +1,8 @@
 import numbers
 import numpy as np
 import pandas as pd
+import scprep
+from scipy import sparse
 try:
     import anndata
 except (ImportError, SyntaxError):
@@ -107,8 +109,22 @@ def matrix_is_equivalent(X, Y):
     """
     Checks matrix equivalence with numpy, scipy and pandas
     """
-    return X is Y or (isinstance(X, Y.__class__) and X.shape == Y.shape and
-                      np.sum((X != Y).sum()) == 0)
+    if X is Y:
+        return True
+    elif X.shape == Y.shape:
+        if sparse.issparse(X) or sparse.issparse(Y):
+            X = scprep.utils.to_array_or_spmatrix(X)
+            Y = scprep.utils.to_array_or_spmatrix(Y)
+        elif isinstance(X, pd.DataFrame) and isinstance(Y, pd.DataFrame):
+            return np.all(X == Y)
+        elif not (sparse.issparse(X) and sparse.issparse(Y)):
+            X = scprep.utils.toarray(X)
+            Y = scprep.utils.toarray(Y)
+            return np.allclose(X, Y)
+        else:
+            return np.allclose((X - Y).data, 0)
+    else:
+        return False
 
 
 def convert_to_same_format(data, target_data, columns=None, prevent_sparse=False):

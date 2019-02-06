@@ -41,10 +41,10 @@ class MAGIC(BaseEstimator):
     Parameters
     ----------
 
-    k : int, optional, default: 10
+    knn : int, optional, default: 10
         number of nearest neighbors on which to build kernel
 
-    a : int, optional, default: 15
+    decay : int, optional, default: 15
         sets decay rate of kernel tails.
         If None, alpha decaying kernel is not used
 
@@ -60,9 +60,9 @@ class MAGIC(BaseEstimator):
         roughly log(n_samples) time.
 
     knn_dist : string, optional, default: 'euclidean'
-        recommended values: 'euclidean', 'cosine'
-        Any metric from `scipy.spatial.distance` can be used
-        distance metric for building kNN graph.
+        Distance metric for building kNN graph. Recommended values:
+        'euclidean', 'cosine'. Any metric from `scipy.spatial.distance` can be
+        used. Custom distance functions of form `f(x, y) = d` are also accepted
 
     n_jobs : integer, optional, default: 1
         The number of jobs to use for the computation.
@@ -78,6 +78,10 @@ class MAGIC(BaseEstimator):
 
     verbose : `int` or `boolean`, optional (default: 1)
         If `True` or `> 0`, print status messages
+
+    k : Deprecated for `knn`
+
+    a : Deprecated for `decay`
 
     Attributes
     ----------
@@ -126,11 +130,15 @@ class MAGIC(BaseEstimator):
         `Cell <https://www.cell.com/cell/abstract/S0092-8674(18)30724-4>`__.
     """
 
-    def __init__(self, k=10, a=15, t='auto', n_pca=100,
+    def __init__(self, knn=10, decay=15, t='auto', n_pca=100,
                  knn_dist='euclidean', n_jobs=1, random_state=None,
-                 verbose=1):
-        self.k = k
-        self.a = a
+                 verbose=1, k=None, a=None):
+        if k is not None:
+            knn = k
+        if a is not None:
+            decay = a
+        self.knn = knn
+        self.decay = decay
         self.t = t
         self.n_pca = n_pca
         self.knn_dist = knn_dist
@@ -166,8 +174,8 @@ class MAGIC(BaseEstimator):
         ------
         ValueError : unacceptable choice of parameters
         """
-        utils.check_positive(k=self.k)
-        utils.check_int(k=self.k,
+        utils.check_positive(knn=self.knn)
+        utils.check_int(knn=self.knn,
                         n_jobs=self.n_jobs)
         # TODO: epsilon
         utils.check_between(v_min=0,
@@ -175,16 +183,17 @@ class MAGIC(BaseEstimator):
         utils.check_if_not(None, utils.check_positive, utils.check_int,
                            n_pca=self.n_pca)
         utils.check_if_not(None, utils.check_positive,
-                           a=self.a)
+                           decay=self.decay)
         utils.check_if_not('auto', utils.check_positive, utils.check_int,
                            t=self.t)
-        utils.check_in(['euclidean', 'cosine', 'correlation',
-                        'cityblock', 'l1', 'l2', 'manhattan', 'braycurtis',
-                        'canberra', 'chebyshev', 'dice', 'hamming', 'jaccard',
-                        'kulsinski', 'mahalanobis', 'matching', 'minkowski',
-                        'rogerstanimoto', 'russellrao', 'seuclidean',
-                        'sokalmichener', 'sokalsneath', 'sqeuclidean', 'yule'],
-                       knn_dist=self.knn_dist)
+        if not callable(self.knn_dist):
+            utils.check_in(['euclidean', 'cosine', 'correlation',
+                            'cityblock', 'l1', 'l2', 'manhattan', 'braycurtis',
+                            'canberra', 'chebyshev', 'dice', 'hamming', 'jaccard',
+                            'kulsinski', 'mahalanobis', 'matching', 'minkowski',
+                            'rogerstanimoto', 'russellrao', 'seuclidean',
+                            'sokalmichener', 'sokalsneath', 'sqeuclidean', 'yule'],
+                           knn_dist=self.knn_dist)
 
     def _set_graph_params(self, **params):
         try:
@@ -202,10 +211,10 @@ class MAGIC(BaseEstimator):
         Parameters
         ----------
 
-        k : int, optional, default: 10
+        knn : int, optional, default: 10
             number of nearest neighbors on which to build kernel
 
-        a : int, optional, default: 15
+        decay : int, optional, default: 15
             sets decay rate of kernel tails.
             If None, alpha decaying kernel is not used
 
@@ -240,6 +249,10 @@ class MAGIC(BaseEstimator):
         verbose : `int` or `boolean`, optional (default: 1)
             If `True` or `> 0`, print status messages
 
+        k : Deprecated for `knn`
+
+        a : Deprecated for `decay`
+
         Returns
         -------
         self
@@ -253,14 +266,22 @@ class MAGIC(BaseEstimator):
             del params['t']
 
         # kernel parameters
-        if 'k' in params and params['k'] != self.k:
-            self.k = params['k']
+        if 'k' in params and params['k'] != self.knn:
+            self.knn = params['k']
             reset_kernel = True
             del params['k']
-        if 'a' in params and params['a'] != self.a:
-            self.a = params['a']
+        if 'a' in params and params['a'] != self.decay:
+            self.decay = params['a']
             reset_kernel = True
             del params['a']
+        if 'knn' in params and params['knn'] != self.knn:
+            self.knn = params['knn']
+            reset_kernel = True
+            del params['knn']
+        if 'decay' in params and params['decay'] != self.decay:
+            self.decay = params['decay']
+            reset_kernel = True
+            del params['decay']
         if 'n_pca' in params and params['n_pca'] != self.n_pca:
             self.n_pca = params['n_pca']
             reset_kernel = True
@@ -318,6 +339,9 @@ class MAGIC(BaseEstimator):
         else:
             n_pca = self.n_pca
 
+        tasklogger.log_info("Running MAGIC on {} cells and {} genes.".format(
+            X.shape[0], X.shape[1]))
+
         if graph is None:
             graph = self.graph
             if self.X is not None and not \
@@ -332,7 +356,7 @@ class MAGIC(BaseEstimator):
             elif graph is not None:
                 try:
                     graph.set_params(
-                        decay=self.a, knn=self.k + 1, distance=self.knn_dist,
+                        decay=self.decay, knn=self.knn, distance=self.knn_dist,
                         n_jobs=self.n_jobs, verbose=self.verbose, n_pca=n_pca,
                         thresh=1e-4, random_state=self.random_state)
                 except ValueError as e:
@@ -341,7 +365,7 @@ class MAGIC(BaseEstimator):
                         "Reset graph due to {}".format(str(e)))
                     graph = None
         else:
-            self.k = graph.knn - 1
+            self.knn = graph.knn
             self.alpha = graph.decay
             self.n_pca = graph.n_pca
             self.knn_dist = graph.distance
@@ -363,8 +387,8 @@ class MAGIC(BaseEstimator):
             self.graph = graphtools.Graph(
                 X,
                 n_pca=n_pca,
-                knn=self.k + 1,
-                decay=self.a,
+                knn=self.knn,
+                decay=self.decay,
                 thresh=1e-4,
                 n_jobs=self.n_jobs,
                 verbose=self.verbose,
@@ -440,7 +464,7 @@ class MAGIC(BaseEstimator):
                     "using this method.")
 
         store_result = True
-        if X is not None and not utils.matrix_is_equivalent(X, self.X):
+        if X is not None and not utils.matrix_is_equivalent(X, self.graph.data):
             store_result = False
             graph = graphtools.base.Data(X, n_pca=self.n_pca)
             warnings.warn(UserWarning, "Running MAGIC.transform on different "

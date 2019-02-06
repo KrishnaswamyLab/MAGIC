@@ -6,33 +6,35 @@ sudo: required
 os:
   - linux
 
+dist:
+  - xenial
+
 r:
-  - oldrel
   - release
   - devel
 
-env:
-  global:
-    - PATH="$HOME/miniconda2/bin:$HOME/miniconda3/bin:$PATH"
-    - RETICULATE_PYTHON="$HOME/miniconda2/bin/python"
+cache:
+  - packages
+  - apt
+  - directories:
+    - $HOME/.cache/pip
 
 before_install:
-  - chmod +x travis_setup.sh; ./travis_setup.sh
-  - $HOME/miniconda2/bin/pip install -q phate
-  - $HOME/miniconda3/bin/pip install -q phate
-  - R -e "install.packages(c('reticulate', 'devtools', 'readr', 'phateR', 'Matrix', 'ggplot2', 'viridis'), quiet=TRUE)"
+  - curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
+  - sudo python3 get-pip.py
+  - sudo pip3 install --upgrade pip
+  - pip3 install --user -q phate
 
 install:
-  - cd python; $HOME/miniconda2/bin/pip install -q .
-  - $HOME/miniconda3/bin/pip install -q .
-  - cd ../Rmagic; R CMD INSTALL .; cd ..
+  - cd python; pip3 install --user -q .; cd ..
+  - cd Rmagic; R -e 'install.packages("devtools", repos="http://cloud.r-project.org")'
+  - R -e "devtools::install_github(repo = 'satijalab/seurat', ref = 'release/3.0')"
+  - R -e 'devtools::install_deps(dep = T)'; cd ..
 
 script:
   - cd Rmagic; R CMD build .
-  - travis_wait 30 R CMD check *tar.gz
-  - cd ../python; $HOME/miniconda2/bin/pip install -q .[test,doc]
-  - $HOME/miniconda3/bin/pip install -q .[test,doc]
-  - python2 setup.py test
+  - R CMD check *tar.gz
+  - cd ../python; pip3 install --user -q .[test,doc]
   - python3 setup.py test
   - cd doc; make html
 
