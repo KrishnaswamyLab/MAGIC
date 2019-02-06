@@ -10,7 +10,6 @@ dist:
   - xenial
 
 r:
-  - oldrel
   - release
   - devel
 
