@@ -464,7 +464,7 @@ class MAGIC(BaseEstimator):
                     "using this method.")
 
         store_result = True
-        if X is not None and not utils.matrix_is_equivalent(X, self.X):
+        if X is not None and not utils.matrix_is_equivalent(X, self.graph.data):
             store_result = False
             graph = graphtools.base.Data(X, n_pca=self.n_pca)
             warnings.warn(UserWarning, "Running MAGIC.transform on different "
