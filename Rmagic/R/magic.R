@@ -74,6 +74,24 @@
 #'
 #' }
 #'
+#' if (reticulate::py_module_available("magic") && require(Seurat)) {
+#'
+#' data(magic_testdata)
+#'
+#' # Create a Seurat object
+#' seurat_object <- CreateSeuratObject(counts = t(magic_testdata), assay="RNA")
+#' seurat_object <- NormalizeData(object = seurat_object)
+#' seurat_object <- ScaleData(object = seurat_object)
+#'
+#' # Run MAGIC and reset the active assay
+#' seurat_object <- magic(seurat_object)
+#' seurat_object@active.assay = "MAGIC_RNA"
+#'
+#' # Analyze with Seurat
+#' VlnPlot(seurat_object, features=c("VIM", "ZEB1", "CDH1"))
+#'
+#' }
+#'
 #' @export
 #'
 magic <- function(data, ...) {
@@ -287,7 +305,10 @@ magic.Seurat <- function(
     n.jobs = n.jobs,
     seed = seed
   )
-  data[[paste0('MAGIC_', assay)]] <- Seurat::CreateAssayObject(data = t(x = as.matrix(x = results$result)))
+  assay_name <- paste0('MAGIC_', assay)
+  data[[assay_name]] <- Seurat::CreateAssayObject(data = t(x = as.matrix(x = results$result)))
+  print(paste0("Added MAGIC output to ", assay_name, ". To use it, pass assay='", assay_name,
+    "' to downstream methods or set seurat_object@active.assay <- '", assay_name, "'."))
   Seurat::Tool(object = data) <- results[c('operator', 'params')]
   return(data)
 }
