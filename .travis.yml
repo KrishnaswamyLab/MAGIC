@@ -36,6 +36,17 @@ script:
   - R CMD check *tar.gz
   - cd ../python; pip3 install --user -q .[test,doc]
   - python3 setup.py test
-  - cd doc; make html
+  - cd doc; make html; cd ..
+
+deploy:
+  provider: pypi
+  user: scottgigante
+  password: ${PYPI_PASSWORD}
+  distributions: sdist bdist_wheel
+  skip_existing: true
+  skip_cleanup: true
+  on:
+    tags: true
+    branch: master
 
 warnings_are_errors: true

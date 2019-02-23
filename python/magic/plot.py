@@ -6,6 +6,8 @@ import pandas as pd
 import numpy as np
 from matplotlib import rc, animation
 import numbers
+import scprep
+from scipy import sparse
 
 from .magic import MAGIC
 from .utils import in_ipynb
@@ -112,9 +114,14 @@ def animate_magic(data, gene_x, gene_y, gene_color=None,
         fig = ax.get_figure()
         show = False
 
-    data_magic = data if isinstance(data, pd.DataFrame) else data.T
+    data_magic = scprep.select.select_cols(data, idx=genes)
+    if isinstance(data_magic, pd.SparseDataFrame):
+        data_magic = data_magic.to_dense()
+    elif sparse.issparse(data_magic):
+        data_magic = data_magic.toarray()
     c = data_magic[gene_color] if gene_color is not None else None
     sc = ax.scatter(data_magic[gene_x], data_magic[gene_y], c=c, cmap=cmap)
+    ax.set_title("t = 0")
     ax.set_xlabel(gene_x)
     ax.set_ylabel(gene_y)
     ax.set_xticks([])
@@ -139,6 +146,7 @@ def animate_magic(data, gene_x, gene_y, gene_color=None,
         sc.set_offsets(np.array([data_t[gene_x], data_t[gene_y]]).T)
         ax.set_xlim([np.min(data_t[gene_x]), np.max(data_t[gene_x])])
         ax.set_ylim([np.min(data_t[gene_y]), np.max(data_t[gene_y])])
+        ax.set_title("t = {}".format(i))
         if gene_color is not None:
             color_t = data_t[gene_color]
             color_t -= np.min(color_t)

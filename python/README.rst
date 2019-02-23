@@ -24,15 +24,18 @@ Markov Affinity-based Graph Imputation of Cells (MAGIC)
     :target: https://github.com/KrishnaswamyLab/MAGIC/
     :alt: GitHub stars
 
-Markov Affinity-based Graph Imputation of Cells (MAGIC) is an algorithm
-for denoising and imputation of single cells applied to single-cell RNA
-sequencing data, as described in Van Dijk D *et al.* (2018), *Recovering
-Gene Interactions from Single-Cell Data Using Data Diffusion*, Cell
-https://www.cell.com/cell/abstract/S0092-8674(18)30724-4.
+Markov Affinity-based Graph Imputation of Cells (MAGIC) is an algorithm for denoising high-dimensional data most commonly applied to single-cell RNA sequencing data. MAGIC learns the manifold data, using the resultant graph to smooth the features and restore the structure of the data.
+
+To see how MAGIC can be applied to single-cell RNA-seq, elucidating the epithelial-to-mesenchymal transition, read our `publication in Cell`_.
+
+`David van Dijk, et al. Recovering Gene Interactions from Single-Cell Data Using Data Diffusion. 2018. Cell.`__
+
+.. _`publication in Cell`: https://www.cell.com/cell/abstract/S0092-8674(18)30724-4
+
+__ `publication in Cell`_
 
 For R and MATLAB implementations of MAGIC, see
 https://github.com/KrishnaswamyLab/MAGIC.
-
 
 .. image:: https://raw.githubusercontent.com/KrishnaswamyLab/MAGIC/master/magic.gif
     :align: center
