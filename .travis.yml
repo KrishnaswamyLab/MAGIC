@@ -23,11 +23,14 @@ cache:
 before_install:
   - curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
   - sudo python3 get-pip.py
-  - sudo pip3 install --upgrade pip
-  - pip3 install --user -q phate
+  - mkdir -p ~/bin && export PATH=~/bin/:$PATH
+  - ln -s $(which python3) ~/bin/python
+  - ln -s $(which pip3) ~/bin/pip
+  - sudo pip install --upgrade pip
+  - pip install --user -q phate
 
 install:
-  - cd python; pip3 install --user -q .; cd ..
+  - cd python; pip install --user -q .; cd ..
   - cd Rmagic; R -e 'install.packages("devtools", repos="http://cloud.r-project.org")'
   - R -e "devtools::install_github(repo = 'satijalab/seurat', ref = 'release/3.0')"
   - R -e 'devtools::install_deps(dep = T)'; cd ..
@@ -35,9 +38,11 @@ install:
 script:
   - cd Rmagic; R CMD build .
   - R CMD check *tar.gz
-  - cd ../python; pip3 install --user -q .[test,doc]
-  - python3 setup.py test
-  - cd doc; make html; cd ..
+  - cd ../python; pip install --user -q .[test]
+  - python setup.py test
+  - pip install --user -q .[doc]
+  - cd doc; make html
+  - cd ..
 
 deploy:
   provider: pypi
