@@ -14,6 +14,11 @@ r:
   - release
   - devel
 
+addons:
+  apt:
+    packages:
+      - libhdf5-dev
+
 cache:
   - packages
   - apt
