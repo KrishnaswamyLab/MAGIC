@@ -43,7 +43,7 @@ To see how MAGIC can be applied to single-cell RNA-seq, elucidating the epitheli
     </i>
     </p>
 
-`David van Dijk, et al. **Recovering Gene Interactions from Single-Cell Data Using Data Diffusion**. 2018. *Cell*.`__
+`David van Dijk, et al. Recovering Gene Interactions from Single-Cell Data Using Data Diffusion. 2018. Cell.`__
 
 .. _`publication in Cell`: https://www.cell.com/cell/abstract/S0092-8674(18)30724-4
 
