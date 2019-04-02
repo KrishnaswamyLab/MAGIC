@@ -195,6 +195,6 @@ def has_empty_columns(data):
         return np.any(np.array(data.sum(0)) == 0)
     except AttributeError:
         if is_anndata(data):
-            return np.any(np.array(data.X.sum(0)))
+            return np.any(np.array(data.X.sum(0)) == 0)
         else:
             raise
