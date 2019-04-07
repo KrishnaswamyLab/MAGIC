@@ -152,3 +152,4 @@ You can read the MAGIC tutorial by running `help(Rmagic::magic)`. For a working 
 ## Help
 
 If you have any questions or require assistance using MAGIC, please contact us at <https://krishnaswamylab.org/get-help>.
+<https://davidvandijk.squarespace.com>
