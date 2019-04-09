@@ -467,10 +467,10 @@ class MAGIC(BaseEstimator):
         if X is not None and not utils.matrix_is_equivalent(X, self.graph.data):
             store_result = False
             graph = graphtools.base.Data(X, n_pca=self.n_pca)
-            warnings.warn(UserWarning, "Running MAGIC.transform on different "
+            warnings.warn("Running MAGIC.transform on different "
                           "data to that which was used for MAGIC.fit may not "
                           "produce sensible output, unless it comes from the "
-                          "same manifold.")
+                          "same manifold.", UserWarning)
         else:
             X = self.X
             graph = self.graph
