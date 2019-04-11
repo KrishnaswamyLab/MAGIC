@@ -480,7 +480,7 @@ class MAGIC(BaseEstimator):
                                             sparse.spmatrix)) and \
                 np.prod(X.shape) > 5000 * 20000:
             warnings.warn("Returning imputed values for all genes on a ({} x "
-                          "{}) matrix will require approximately {}GB of "
+                          "{}) matrix will require approximately {:.2f}GB of "
                           "memory. Suppress this warning with "
                           "`genes='all_genes'`".format(
                               X.shape[0], X.shape[1],
