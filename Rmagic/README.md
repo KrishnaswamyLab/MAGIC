@@ -269,10 +269,35 @@ ggplot(data_PHATE) +
 
 <img src="man/figures/README-run_phate-1.png" width="100%" />
 
-## Help
+## Issues
+
+### FAQ
+
+  - **Should genes (features) by rows or columns?**
+
+To be consistent with common functions such as PCA
+(`stats::prcomp`) and t-SNE (`Rtsne::Rtsne`), we require that cells
+(observations) be rows and genes (features) be columns of your input
+data.
+
+  - **I have installed MAGIC in Python, but Rmagic says it is not
+    installed\!**
+
+Check your `reticulate::py_discover_config("magic")` and compare it to
+the version of Python in which you installed PHATE (run `which python`
+and `which pip` in a terminal.) Chances are `reticulate` can’t find the
+right version of Python; you can fix this by adding the following line
+to your `~/.Renviron`:
+
+`PATH=/path/to/my/python`
+
+You can read more about `Renviron` at
+<https://cran.r-project.org/web/packages/startup/vignettes/startup-intro.html>.
+
+### Help
 
 Please let us know of any issues at the [GitHub
-repo](https://github.com/KrishnaswamyLab/MAGIC/issues). If you have any
-questions or require assistance using MAGIC, please read the
+repository](https://github.com/KrishnaswamyLab/MAGIC/issues). If you
+have any questions or require assistance using MAGIC, please read the
 documentation by running `help(Rmagic::magic)` or contact us at
 <https://krishnaswamylab.org/get-help>.
