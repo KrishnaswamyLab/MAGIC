@@ -9,7 +9,44 @@ null_equal <- function(x, y) {
   }
 }
 
-load_pymagic <- function(delay_load = FALSE) {
+check_pymagic_version <- function() {
+  version <- strsplit(pymagic$`__version__`, '\\.')[[1]]
+  major_version <- 1
+  minor_version <- 5
+  if (as.integer(version[1]) < major_version) {
+    warning(paste0("Python MAGIC version ", pymagic$`__version__`, " is out of date (recommended: ",
+                   major_version, ".", minor_version, "). Please update with pip ",
+                   "(e.g. pip install magic-impute) or Rmagic::install.magic()."))
+  } else if (as.integer(version[2]) < minor_version) {
+    warning(paste0("Python MAGIC version ", pymagic$`__version__`, " is out of date (recommended: ",
+                   major_version, ".", minor_version, "). Consider updating with pip ",
+                   "(e.g. pip install magic-impute) or Rmagic::install.magic()."))
+  }
+}
+
+failed_pymagic_import <- function(e) {
+  message("Error loading Python module magic")
+  message(e)
+  result <- as.character(e)
+  if (length(grep("ModuleNotFoundError: No module named 'magic'", result)) > 0 ||
+      length(grep("ImportError: No module named magic", result)) > 0) {
+    # not installed
+    if (utils::menu(c("Yes", "No"), title="Install MAGIC Python package with reticulate?") == 1) {
+      install.magic()
+    }
+  } else if (length(grep("r\\-reticulate", reticulate::py_config()$python)) > 0) {
+    # installed, but envs sometimes give weird results
+    message("Consider removing the 'r-reticulate' environment by running:")
+    if (grep("virtualenvs", reticulate::py_config()$python)) {
+      message("reticulate::virtualenv_remove('r-reticulate')")
+    } else {
+      message("reticulate::conda_remove('r-reticulate')")
+    }
+  }
+}
+
+load_pymagic <- function() {
+  delay_load = list(on_load=check_pymagic_version, on_error=failed_pymagic_import)
   # load
   if (is.null(pymagic)) {
     # first time load
@@ -17,37 +54,6 @@ load_pymagic <- function(delay_load = FALSE) {
   } else {
     # already loaded
     result <- try(reticulate::import("magic", delay_load = delay_load))
-  }
-  # check
-  if (methods::is(result, "try-error")) {
-    # failed load
-    if ((!delay_load) && length(grep("ModuleNotFoundError: No module named 'magic'", result)) > 0 ||
-        length(grep("ImportError: No module named magic", result)) > 0) {
-      # not installed
-      if (utils::menu(c("Yes", "No"), title="Install MAGIC Python package with reticulate?") == 1) {
-        install.magic()
-      }
-    } else if (length(grep("r\\-reticulate", reticulate::py_config()$python)) > 0) {
-      # installed, but envs sometimes give weird results
-      message("Consider removing the 'r-reticulate' environment by running:")
-      if (grep("virtualenvs", reticulate::py_config()$python)) {
-        message("reticulate::virtualenv_remove('r-reticulate')")
-      } else {
-        message("reticulate::conda_remove('r-reticulate')")
-      }
-    }
-  } else if (!delay_load) {
-    # successful load
-    version <- strsplit(pymagic$`__version__`, '\\.')[[1]]
-    major_version <- 1
-    minor_version <- 4
-    if (as.integer(version[1]) < major_version) {
-      stop(paste0("Python MAGIC version ", pymagic$`__version__`, " is out of date (recommended: ", 
-                  major_version, ".", minor_version, "). Please update with pip or Rmagic::install.magic()."))
-    } else if (as.integer(version[2]) < minor_version) {
-      warning(paste0("Python MAGIC version ", pymagic$`__version__`, " is out of date (recommended: ", 
-                     major_version, ".", minor_version, "). Consider updating with pip or Rmagic::install.magic()."))
-    }
   }
 }
 
@@ -94,5 +100,5 @@ pymagic <- NULL
 
 .onLoad <- function(libname, pkgname) {
   py_config <- reticulate::py_discover_config(required_module = "magic")
-  load_pymagic(delay_load = TRUE)
+  load_pymagic()
 }

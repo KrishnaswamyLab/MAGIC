@@ -9,9 +9,9 @@
 #' @param genes character or integer vector, default: NULL
 #' vector of column names or column indices for which to return smoothed data
 #' If 'all_genes' or NULL, the entire smoothed matrix is returned
-#' @param k int, optional, default: 10
+#' @param knn int, optional, default: 10
 #' number of nearest neighbors on which to build kernel
-#' @param alpha int, optional, default: 15
+#' @param decay int, optional, default: 15
 #' sets decay rate of kernel tails.
 #' If NULL, alpha decaying kernel is not used
 #' @param t int, optional, default: 'auto'
@@ -38,6 +38,8 @@
 #' n_jobs = -2, all CPUs but one are used
 #' @param seed int or `NULL`, random state (default: `NULL`)
 #' @param ... Arguments passed to and from other methods
+#' @param k Deprecated. Use `knn`.
+#' @param alpha Deprecated. Use `decay`.
 #'
 #' @return If a Seurat object is passed, a Seurat object is returned. Otherwise, a "magic" object containing:
 #'  * **result**: matrix containing smoothed expression values
@@ -104,8 +106,8 @@ magic <- function(data, ...) {
 magic.default <- function(
   data,
   genes = NULL,
-  k = 10,
-  alpha = 15,
+  knn = 10,
+  decay = 15,
   t = 'auto',
   npca = 100,
   init = NULL,
@@ -114,14 +116,22 @@ magic.default <- function(
   verbose = 1,
   n.jobs = 1,
   seed = NULL,
+  # deprecated args
+  k=NULL, alpha=NULL,
   ...
 ) {
   # check installation
-  if (!reticulate::py_module_available(module = "magic")) {
-    load_pymagic()
+  if (!reticulate::py_module_available(module = "magic") || (is.null(pymagic))) load_pymagic()
+  # check for deprecated arguments
+  if (!is.null(k)) {
+    message("Argument k is deprecated. Using knn instead.")
+    knn <- k
   }
-  tryCatch(expr = pymagic, error = function(e) load_pymagic())
-  k <- as.integer(x = k)
+  if (!is.null(alpha)) {
+    message("Argument alpha is deprecated. Using decay instead.")
+    decay <- alpha
+  }
+  knn <- as.integer(x = knn)
   t.max <- as.integer(x = t.max)
   n.jobs <- as.integer(x = n.jobs)
   if (is.numeric(x = npca)) {
@@ -129,10 +139,10 @@ magic.default <- function(
   } else if (!is.null(x = npca) && is.na(x = npca)) {
     npca <- NULL
   }
-  if (is.numeric(x = alpha)) {
-    alpha <- as.double(x = alpha)
-  } else if (!is.null(x = alpha) && is.na(x = alpha)) {
-    alpha <- NULL
+  if (is.numeric(x = decay)) {
+    decay <- as.double(x = decay)
+  } else if (!is.null(x = decay) && is.na(x = decay)) {
+    decay <- NULL
   }
   if (is.numeric(x = t)) {
     t <- as.integer(x = t)
@@ -172,8 +182,8 @@ magic.default <- function(
   # store parameters
   params <- list(
     "data" = data,
-    "k" = k,
-    "alpha" = alpha,
+    "knn" = knn,
+    "decay" = decay,
     "t" = t,
     "npca" = npca,
     "knn.dist.method" = knn.dist.method
@@ -186,8 +196,8 @@ magic.default <- function(
     } else {
       operator <- init$operator
       operator$set_params(
-        k = k,
-        a = alpha,
+        knn = knn,
+        decay = decay,
         t = t,
         n_pca = npca,
         knn_dist = knn.dist.method,
@@ -199,8 +209,8 @@ magic.default <- function(
   }
   if (is.null(x = operator)) {
     operator <- pymagic$MAGIC(
-      k = k,
-      a = alpha,
+      knn = knn,
+      decay = decay,
       t = t,
       n_pca = npca,
       knn_dist = knn.dist.method,
@@ -233,8 +243,8 @@ magic.default <- function(
 magic.seurat <- function(
   data,
   genes = NULL,
-  k = 10,
-  alpha = 15,
+  knn = 10,
+  decay = 15,
   t = 'auto',
   npca = 100,
   init = NULL,
@@ -248,8 +258,8 @@ magic.seurat <- function(
   results <- magic(
     data = as.matrix(x = t(x = data@data)),
     genes = genes,
-    k = k,
-    alpha = alpha,
+    knn = knn,
+    decay = decay,
     t = t,
     npca = npca,
     init = init,
@@ -273,8 +283,8 @@ magic.Seurat <- function(
   data,
   assay = NULL,
   genes = NULL,
-  k = 10,
-  alpha = 15,
+  knn = 10,
+  decay = 15,
   t = 'auto',
   npca = 100,
   init = NULL,
@@ -294,8 +304,8 @@ magic.Seurat <- function(
   results <- magic(
     data = t(x = Seurat::GetAssayData(object = data, slot = 'data', assay = assay)),
     genes = genes,
-    k = k,
-    alpha = alpha,
+    knn = knn,
+    decay = decay,
     t = t,
     npca = npca,
     init = init,
@@ -328,7 +338,7 @@ magic.Seurat <- function(
 #' ## MAGIC with elements
 #' ## $result : (500, 197)
 #' ## $operator : Python MAGIC operator
-#' ## $params : list with elements (data, k, alpha, t, npca, knn.dist.method)
+#' ## $params : list with elements (data, knn, decay, t, npca, knn.dist.method)
 #'
 #' }
 #' @rdname print

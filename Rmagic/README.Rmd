@@ -1,5 +1,5 @@
 ---
-title : Rmagic v1.4.0
+title : Rmagic v1.5.0
 output: github_document
 toc: true
 ---
@@ -41,7 +41,19 @@ Markov Affinity-based Graph Imputation of Cells (MAGIC) is an algorithm for deno
     * http://htmlpreview.github.io/?https://github.com/KrishnaswamyLab/MAGIC/blob/master/Rmagic/inst/examples/EMT_tutorial.html
     * http://htmlpreview.github.io/?https://github.com/KrishnaswamyLab/MAGIC/blob/master/Rmagic/inst/examples/bonemarrow_tutorial.html
 
-### Installation
+## Table of Contents
+
+  * [Installation](#installation)
+    * [Installation from CRAN and PyPi](#installation-from-cran-and-pypi)
+    * [Installation with devtools and <code>reticulate</code>](#installation-with-devtools-and-reticulate)
+    * [Installation from source](#installation-from-source)
+  * [Quick Start](#quick-start)
+  * [Tutorial](#tutorial)
+  * [Issues](#issues)
+    * [FAQ](#faq)
+    * [Help](#help)
+
+## Installation
 
 To use MAGIC, you will need to install both the R and Python packages.
 
@@ -73,6 +85,17 @@ cd ../Rmagic
 R CMD INSTALL .
 ```
 
+## Quick Start
+
+If you have loaded a data matrix `data` in R (cells on rows, genes on columns) you can run PHATE as follows:
+
+```{r quick start, eval=FALSE}
+library(phateR)
+data_phate <- phate(data)
+```
+
+## Tutorial
+
 #### Extra packages for the tutorial
 
 We'll install a couple more tools for this tutorial.
@@ -102,7 +125,7 @@ library(phateR)
 
 ### Loading data
 
-The example data is located in the MAGIC Github repository.
+The example data is located in the MAGIC R package.
 
 ```{r load_data}
 # load data
@@ -179,6 +202,34 @@ ggplot(data_PHATE) +
   labs(color="VIM")
 ```
 
-## Help
+## Issues
 
-Please let us know of any issues at the [GitHub repo](https://github.com/KrishnaswamyLab/MAGIC/issues). If you have any questions or require assistance using MAGIC, please read the documentation by running `help(Rmagic::magic)` or contact us at <https://krishnaswamylab.org/get-help>.
+### FAQ
+
+  - **Should genes (features) by rows or columns?**
+
+To be consistent with common functions such as PCA
+(`stats::prcomp`) and t-SNE (`Rtsne::Rtsne`), we require that cells
+(observations) be rows and genes (features) be columns of your input
+data.
+
+  - **I have installed MAGIC in Python, but Rmagic says it is not
+    installed!**
+
+Check your `reticulate::py_discover_config("magic")` and compare it to
+the version of Python in which you installed PHATE (run `which python`
+and `which pip` in a terminal.) Chances are `reticulate` can’t find the
+right version of Python; you can fix this by adding the following line
+to your `~/.Renviron`:
+
+`PATH=/path/to/my/python`
+
+You can read more about `Renviron` at
+<https://cran.r-project.org/web/packages/startup/vignettes/startup-intro.html>.
+
+### Help
+
+Please let us know of any issues at the [GitHub repository](https://github.com/KrishnaswamyLab/MAGIC/issues). If you
+have any questions or require assistance using MAGIC, please read the
+documentation by running `help(Rmagic::magic)` or contact us at
+<https://krishnaswamylab.org/get-help>.

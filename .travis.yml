@@ -39,7 +39,7 @@ install:
   - cd ../Rmagic; R -e 'install.packages("devtools", repos="http://cloud.r-project.org")'
   - R_VERSION=$(R -e "message(R.version[['minor']])" 2>&1 1>/dev/null | head -c 1)
   - if [ $R_VERSION -lt 5 ]; then export _R_CHECK_FORCE_SUGGESTS_="FALSE"; else R -e "devtools::install_github(repo = 'satijalab/seurat', ref = 'release/3.0')"; fi
-  - R -e 'devtools::install_deps(dep = T)'
+  - R -e 'devtools::install_deps(dep = T, upgrade="always")'
   - cd ..
 
 script:

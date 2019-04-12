@@ -467,10 +467,10 @@ class MAGIC(BaseEstimator):
         if X is not None and not utils.matrix_is_equivalent(X, self.graph.data):
             store_result = False
             graph = graphtools.base.Data(X, n_pca=self.n_pca)
-            warnings.warn(UserWarning, "Running MAGIC.transform on different "
+            warnings.warn("Running MAGIC.transform on different "
                           "data to that which was used for MAGIC.fit may not "
                           "produce sensible output, unless it comes from the "
-                          "same manifold.")
+                          "same manifold.", UserWarning)
         else:
             X = self.X
             graph = self.graph
@@ -480,7 +480,7 @@ class MAGIC(BaseEstimator):
                                             sparse.spmatrix)) and \
                 np.prod(X.shape) > 5000 * 20000:
             warnings.warn("Returning imputed values for all genes on a ({} x "
-                          "{}) matrix will require approximately {}GB of "
+                          "{}) matrix will require approximately {:.2f}GB of "
                           "memory. Suppress this warning with "
                           "`genes='all_genes'`".format(
                               X.shape[0], X.shape[1],

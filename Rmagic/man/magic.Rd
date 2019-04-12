@@ -9,18 +9,18 @@
 \usage{
 magic(data, ...)
 
-\method{magic}{default}(data, genes = NULL, k = 10, alpha = 15,
+\method{magic}{default}(data, genes = NULL, knn = 10, decay = 15,
+  t = "auto", npca = 100, init = NULL, t.max = 20,
+  knn.dist.method = "euclidean", verbose = 1, n.jobs = 1,
+  seed = NULL, k = NULL, alpha = NULL, ...)
+
+\method{magic}{seurat}(data, genes = NULL, knn = 10, decay = 15,
   t = "auto", npca = 100, init = NULL, t.max = 20,
   knn.dist.method = "euclidean", verbose = 1, n.jobs = 1,
   seed = NULL, ...)
 
-\method{magic}{seurat}(data, genes = NULL, k = 10, alpha = 15,
-  t = "auto", npca = 100, init = NULL, t.max = 20,
-  knn.dist.method = "euclidean", verbose = 1, n.jobs = 1,
-  seed = NULL, ...)
-
-\method{magic}{Seurat}(data, assay = NULL, genes = NULL, k = 10,
-  alpha = 15, t = "auto", npca = 100, init = NULL, t.max = 20,
+\method{magic}{Seurat}(data, assay = NULL, genes = NULL, knn = 10,
+  decay = 15, t = "auto", npca = 100, init = NULL, t.max = 20,
   knn.dist.method = "euclidean", verbose = 1, n.jobs = 1,
   seed = NULL, ...)
 }
@@ -33,10 +33,10 @@ magic(data, ...)
 vector of column names or column indices for which to return smoothed data
 If 'all_genes' or NULL, the entire smoothed matrix is returned}
 
-\item{k}{int, optional, default: 10
+\item{knn}{int, optional, default: 10
 number of nearest neighbors on which to build kernel}
 
-\item{alpha}{int, optional, default: 15
+\item{decay}{int, optional, default: 15
 sets decay rate of kernel tails.
 If NULL, alpha decaying kernel is not used}
 
@@ -70,6 +70,10 @@ For n_jobs below -1, (n.cpus + 1 + n.jobs) are used. Thus for
 n_jobs = -2, all CPUs but one are used}
 
 \item{seed}{int or `NULL`, random state (default: `NULL`)}
+
+\item{k}{Deprecated. Use `knn`.}
+
+\item{alpha}{Deprecated. Use `decay`.}
 
 \item{assay}{Assay to use for imputation, defaults to the default assay}
 }
@@ -112,6 +116,24 @@ if (require(ggplot2)) {
 data_magic <- magic(magic_testdata, genes="all_genes", init=data_magic)
 # Extract the smoothed data matrix to use in downstream analysis
 data_smooth <- as.matrix(data_magic)
+
+}
+
+if (reticulate::py_module_available("magic") && require(Seurat)) {
+
+data(magic_testdata)
+
+# Create a Seurat object
+seurat_object <- CreateSeuratObject(counts = t(magic_testdata), assay="RNA")
+seurat_object <- NormalizeData(object = seurat_object)
+seurat_object <- ScaleData(object = seurat_object)
+
+# Run MAGIC and reset the active assay
+seurat_object <- magic(seurat_object)
+seurat_object@active.assay = "MAGIC_RNA"
+
+# Analyze with Seurat
+VlnPlot(seurat_object, features=c("VIM", "ZEB1", "CDH1"))
 
 }
 
