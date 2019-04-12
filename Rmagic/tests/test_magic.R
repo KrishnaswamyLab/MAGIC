@@ -6,12 +6,19 @@ library(ggplot2)
 library(readr)
 library(viridis)
 
-test_magic <- function() {
+seurat_obj <- function() {
   # load data
   data <- read.csv('../../data/HMLE_TGFb_day_8_10.csv.gz')
+  
+  seurat_raw_data <- t(data)
+  rownames(seurat_raw_data) <- colnames(data)
+  colnames(seurat_raw_data) <- rownames(data)
+  seurat_obj <- Seurat::CreateSeuratObject(raw.data=seurat_raw_data)
 
   # run MAGIC
   data_MAGIC <- magic(data)
+  seurat_MAGIC <- magic(seurat_obj)
+  stopifnot(all(data_MAGIC$result == t(seurat_MAGIC@data)))
 
   # plot
   p <- ggplot(data) +
@@ -23,16 +30,4 @@ test_magic <- function() {
            geom_point(aes(VIM, CDH1, colour=ZEB1)) +
            scale_colour_viridis(option="B")
   ggsave('EMT_data_R_after_magic.png', plot=p_m, width=5, height=5)
-}
-
-test_seurat <- function() {
-  data(magic_testdata)
-
-  # seurat_obj <- Seurat::CreateSeuratObject(raw.data=t(magic_testdata))
-  seurat_obj <- Seurat::CreateSeuratObject(counts = t(x = magic_testdata))
-
-  # run MAGIC
-  data_MAGIC <- magic(data = magic_testdata, seed = 42)
-  seurat_obj <- magic(data = seurat_obj, seed = 42)
-  stopifnot(all(data_MAGIC$result == t(x = Seurat::GetAssayData(object = seurat_obj, slot = 'data', assay = 'MAGIC'))))
 }

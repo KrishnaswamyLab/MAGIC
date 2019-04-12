@@ -1,5 +1,5 @@
 ---
-title : Rmagic v1.4.0
+title : Rmagic v1.5.0
 output: github_document
 toc: true
 ---
@@ -41,7 +41,19 @@ Markov Affinity-based Graph Imputation of Cells (MAGIC) is an algorithm for deno
     * http://htmlpreview.github.io/?https://github.com/KrishnaswamyLab/MAGIC/blob/master/Rmagic/inst/examples/EMT_tutorial.html
     * http://htmlpreview.github.io/?https://github.com/KrishnaswamyLab/MAGIC/blob/master/Rmagic/inst/examples/bonemarrow_tutorial.html
 
-### Installation
+## Table of Contents
+
+  * [Installation](#installation)
+    * [Installation from CRAN and PyPi](#installation-from-cran-and-pypi)
+    * [Installation with devtools and <code>reticulate</code>](#installation-with-devtools-and-reticulate)
+    * [Installation from source](#installation-from-source)
+  * [Quick Start](#quick-start)
+  * [Tutorial](#tutorial)
+  * [Issues](#issues)
+    * [FAQ](#faq)
+    * [Help](#help)
+
+## Installation
 
 To use MAGIC, you will need to install both the R and Python packages.
 
@@ -73,6 +85,17 @@ cd ../Rmagic
 R CMD INSTALL .
 ```
 
+## Quick Start
+
+If you have loaded a data matrix `data` in R (cells on rows, genes on columns) you can run PHATE as follows:
+
+```{r quick start, eval=FALSE}
+library(phateR)
+data_phate <- phate(data)
+```
+
+## Tutorial
+
 #### Extra packages for the tutorial
 
 We'll install a couple more tools for this tutorial.
@@ -102,7 +125,7 @@ library(phateR)
 
 ### Loading data
 
-The example data is located in the MAGIC Github repository.
+The example data is located in the MAGIC R package.
 
 ```{r load_data}
 # load data
