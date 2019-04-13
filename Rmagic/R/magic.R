@@ -47,7 +47,7 @@
 #'  * **params**: Parameters passed to magic
 #'
 #' @examples
-#' if (reticulate::py_module_available("magic")) {
+#' if (pymagic_is_available()) {
 #'
 #' data(magic_testdata)
 #'
@@ -76,7 +76,7 @@
 #'
 #' }
 #'
-#' if (reticulate::py_module_available("magic") && require(Seurat)) {
+#' if (pymagic_is_available() && require(Seurat)) {
 #'
 #' data(magic_testdata)
 #'
@@ -330,7 +330,7 @@ magic.Seurat <- function(
 #' @param x A fitted MAGIC object
 #' @param ... Arguments for print()
 #' @examples
-#' if (reticulate::py_module_available("magic")) {
+#' if (pymagic_is_available()) {
 #'
 #' data(magic_testdata)
 #' data_magic <- magic(magic_testdata)
@@ -359,7 +359,7 @@ print.magic <- function(x, ...) {
 #' @param object A fitted MAGIC object
 #' @param ... Arguments for summary()
 #' @examples
-#' if (reticulate::py_module_available("magic")) {
+#' if (pymagic_is_available()) {
 #'
 #' data(magic_testdata)
 #' data_magic <- magic(magic_testdata)
@@ -413,7 +413,7 @@ as.data.frame.magic <- function(x, ...) {
 #' @param data A fitted MAGIC object
 #' @param ... Arguments for ggplot()
 #' @examples
-#' if (reticulate::py_module_available("magic") && require(ggplot2)) {
+#' if (pymagic_is_available() && require(ggplot2)) {
 #'
 #' data(magic_testdata)
 #' data_magic <- magic(magic_testdata, genes=c("VIM", "CDH1", "ZEB1"))
