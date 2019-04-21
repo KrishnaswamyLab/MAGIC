@@ -15,6 +15,8 @@ To see how MAGIC can be applied to single-cell RNA-seq, elucidating the epitheli
 
 [David van Dijk, et al. **Recovering Gene Interactions from Single-Cell Data Using Data Diffusion**. 2018. *Cell*.](https://www.cell.com/cell/abstract/S0092-8674(18)30724-4)
 
+[Website of David van Dijk: https://davidvandijk.squarespace.com](https://davidvandijk.squarespace.com)
+
 MAGIC has been implemented in Python, Matlab, and R.
 
 #### To get started immediately, check out our tutorials:  
