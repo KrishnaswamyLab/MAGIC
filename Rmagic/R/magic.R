@@ -255,22 +255,41 @@ magic.seurat <- function(
   seed = NULL,
   ...
 ) {
-  results <- magic(
-    data = as.matrix(x = t(x = data@data)),
-    genes = genes,
-    knn = knn,
-    decay = decay,
-    t = t,
-    npca = npca,
-    init = init,
-    t.max = t.max,
-    knn.dist.method = knn.dist.method,
-    verbose = verbose,
-    n.jobs = n.jobs,
-    seed = seed
-  )
-  data@data <- t(x = as.matrix(x = results$result))
-  return(data)
+  if (requireNamespace("Seurat", quietly = TRUE)) {
+    results <- magic(
+      data = as.matrix(x = t(x = data@data)),
+      genes = genes,
+      knn = knn,
+      decay = decay,
+      t = t,
+      npca = npca,
+      init = init,
+      t.max = t.max,
+      knn.dist.method = knn.dist.method,
+      verbose = verbose,
+      n.jobs = n.jobs,
+      seed = seed
+    )
+    data@data <- t(x = as.matrix(x = results$result))
+    return(data)
+  } else {
+    message("Seurat package not available. Running default MAGIC implementation.")
+    return(magic(
+      data,
+      genes = genes,
+      knn = knn,
+      decay = decay,
+      t = t,
+      npca = npca,
+      init = init,
+      t.max = t.max,
+      knn.dist.method = knn.dist.method,
+      verbose = verbose,
+      n.jobs = n.jobs,
+      seed = seed,
+      ...
+    ))
+  }
 }
 
 #' @param assay Assay to use for imputation, defaults to the default assay
@@ -295,32 +314,48 @@ magic.Seurat <- function(
   seed = NULL,
   ...
 ) {
-  if (!requireNamespace(package = 'Seurat', quietly = TRUE)) {
-    stop("Please install Seurat v3 to run MAGIC on new Seurat objects")
+  if (requireNamespace("Seurat", quietly = TRUE)) {
+    if (is.null(x = assay)) {
+      assay <- Seurat::DefaultAssay(object = data)
+    }
+    results <- magic(
+      data = t(x = Seurat::GetAssayData(object = data, slot = 'data', assay = assay)),
+      genes = genes,
+      knn = knn,
+      decay = decay,
+      t = t,
+      npca = npca,
+      init = init,
+      t.max = t.max,
+      knn.dist.method = knn.dist.method,
+      verbose = verbose,
+      n.jobs = n.jobs,
+      seed = seed
+    )
+    assay_name <- paste0('MAGIC_', assay)
+    data[[assay_name]] <- Seurat::CreateAssayObject(data = t(x = as.matrix(x = results$result)))
+    print(paste0("Added MAGIC output to ", assay_name, ". To use it, pass assay='", assay_name,
+                 "' to downstream methods or set seurat_object@active.assay <- '", assay_name, "'."))
+    Seurat::Tool(object = data) <- results[c('operator', 'params')]
+    return(data)
+  } else {
+    message("Seurat package not available. Running default MAGIC implementation.")
+    return(magic(
+      data,
+      genes = genes,
+      knn = knn,
+      decay = decay,
+      t = t,
+      npca = npca,
+      init = init,
+      t.max = t.max,
+      knn.dist.method = knn.dist.method,
+      verbose = verbose,
+      n.jobs = n.jobs,
+      seed = seed,
+      ...
+    ))
   }
-  if (is.null(x = assay)) {
-    assay <- Seurat::DefaultAssay(object = data)
-  }
-  results <- magic(
-    data = t(x = Seurat::GetAssayData(object = data, slot = 'data', assay = assay)),
-    genes = genes,
-    knn = knn,
-    decay = decay,
-    t = t,
-    npca = npca,
-    init = init,
-    t.max = t.max,
-    knn.dist.method = knn.dist.method,
-    verbose = verbose,
-    n.jobs = n.jobs,
-    seed = seed
-  )
-  assay_name <- paste0('MAGIC_', assay)
-  data[[assay_name]] <- Seurat::CreateAssayObject(data = t(x = as.matrix(x = results$result)))
-  print(paste0("Added MAGIC output to ", assay_name, ". To use it, pass assay='", assay_name,
-    "' to downstream methods or set seurat_object@active.assay <- '", assay_name, "'."))
-  Seurat::Tool(object = data) <- results[c('operator', 'params')]
-  return(data)
 }
 
 #' Print a MAGIC object
