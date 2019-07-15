@@ -103,11 +103,11 @@ if (FALSE) {
 
 ### Running MAGIC
 
-Running MAGIC is as simple as running the `magic` function. Because this dataset is rather large, we can increase `knn` from the default of 10 up to 15.
+Running MAGIC is as simple as running the `magic` function. Because this dataset is rather large, we can increase `k` from the default of 10 up to 15.
 
 ```{r run_magic}
 # run MAGIC
-data_MAGIC <- magic(data, knn=15, genes=c("VIM", "CDH1", "ZEB1"))
+data_MAGIC <- magic(data, k=15, genes=c("VIM", "CDH1", "ZEB1"))
 ```
 
 We can plot the data before and after MAGIC to visualize the results.
@@ -134,7 +134,7 @@ We can visualize the results of MAGIC on PCA with `genes="pca_only"`.
 
 ```{r run_pca}
 data_MAGIC_PCA <- magic(data, genes="pca_only", 
-                        knn=15, init=data_MAGIC)
+                        k=15, init=data_MAGIC)
 ggplot(data_MAGIC_PCA) +
   geom_point(aes(x=PC1, y=PC2, color=data_MAGIC$result$VIM)) +
   scale_color_viridis(option="B") +
@@ -148,7 +148,7 @@ We can look at the entire smoothed matrix with `genes='all_genes'`, passing the 
 
 ```{r run_magic_full_matrix}
 data_MAGIC <- magic(data, genes="all_genes", 
-                    knn=15, init=data_MAGIC)
+                    k=15, init=data_MAGIC)
 as.data.frame(data_MAGIC)[1:5, 1:10]
 ```
 
