@@ -154,7 +154,7 @@ ggsave('BMMSC_data_R_pca_colored_by_magic.png', width=5, height=5)
 We can visualize the results of MAGIC on PHATE as follows.
 
 ```{r run_phate}
-bmmsc_PHATE <- phate(bmmsc, knn=4, decay=100, t=20)
+bmmsc_PHATE <- phate(bmmsc, k=4, decay=100, t=20)
 ggplot(bmmsc_PHATE) +
   geom_point(aes(x=PHATE1, y=PHATE2, color=bmmsc_MAGIC$result$Klf1)) +
   scale_color_viridis(option="B") +
