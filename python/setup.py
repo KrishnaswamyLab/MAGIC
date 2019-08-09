@@ -3,7 +3,7 @@ import sys
 from setuptools import setup
 
 install_requires = [
-    'numpy>=1.14.0,<1.17.0',
+    'numpy>=1.14.0',
     'scipy>=1.1.0',
     'pandas>=0.21.0,<0.24',
     'matplotlib',
