@@ -15,9 +15,9 @@ except (ImportError, SyntaxError):
 
 
 def test_scdata():
-    scdata = scprep.io.load_csv("../data/test_data.csv")
-    scdata = scprep.filter.remove_empty_cells(scdata)
-    scdata = scprep.filter.remove_empty_genes(scdata)
+    scdata = scprep.io.load_csv("../data/test_data.csv", cell_names=False)
+    scdata = scprep.filter.filter_empty_cells(scdata)
+    scdata = scprep.filter.filter_empty_genes(scdata)
     scdata_norm = scprep.normalize.library_size_normalize(scdata)
     scdata_norm = scprep.transform.sqrt(scdata_norm)
     assert scdata.shape == scdata_norm.shape
