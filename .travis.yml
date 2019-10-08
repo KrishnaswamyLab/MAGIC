@@ -16,8 +16,11 @@ r:
 
 addons:
   apt:
+    sources:
+      - deadsnakes
     packages:
       - libhdf5-dev
+      - python3.6
 
 cache:
   - packages
@@ -27,10 +30,10 @@ cache:
 
 before_install:
   - curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
-  - sudo python3 get-pip.py
+  - sudo python3.6 get-pip.py
   - mkdir -p ~/bin && export PATH=~/bin/:$PATH
-  - ln -s $(which python3) ~/bin/python
-  - ln -s $(which pip3) ~/bin/pip
+  - ln -s $(which python3.6) ~/bin/python
+  - ln -s $(which pip3.6) ~/bin/pip
   - sudo pip install --upgrade pip
   - pip install --user -q phate
 
