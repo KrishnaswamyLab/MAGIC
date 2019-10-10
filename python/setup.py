@@ -4,14 +4,14 @@ from setuptools import setup
 
 install_requires = [
     'numpy>=1.14.0',
-    'pandas>=0.21.0,<0.24',
     'scipy>=1.1.0',
     'matplotlib',
     'scikit-learn>=0.19.1',
     'future',
     'tasklogger>=0.4.0',
     'graphtools>=1.0.0',
-    'scprep>=0.11.1'
+    'pandas>=0.25',
+    'scprep>=1.0',
 ]
 
 test_requires = [

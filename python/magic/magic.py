@@ -668,7 +668,8 @@ class MAGIC(BaseEstimator):
         # than those of the data matrix. (M^t) * D
         if (t_opt is not None) and \
                 (self.diff_op.shape[1] < data_imputed.shape[1]):
-            diff_op_t = np.linalg.matrix_power(self.diff_op, t_opt)
+            diff_op_t = np.linalg.matrix_power(
+                scprep.utils.toarray(self.diff_op), t_opt)
             data_imputed = diff_op_t.dot(data_imputed)
 
         # fast magic

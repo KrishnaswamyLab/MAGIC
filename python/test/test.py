@@ -15,9 +15,9 @@ except (ImportError, SyntaxError):
 
 
 def test_scdata():
-    scdata = scprep.io.load_csv("../data/test_data.csv")
-    scdata = scprep.filter.remove_empty_cells(scdata)
-    scdata = scprep.filter.remove_empty_genes(scdata)
+    scdata = scprep.io.load_csv("../data/test_data.csv", cell_names=False)
+    scdata = scprep.filter.filter_empty_cells(scdata)
+    scdata = scprep.filter.filter_empty_genes(scdata)
     scdata_norm = scprep.normalize.library_size_normalize(scdata)
     scdata_norm = scprep.transform.sqrt(scdata_norm)
     assert scdata.shape == scdata_norm.shape
@@ -37,7 +37,7 @@ def test_scdata():
                                              genes="all_genes")
     assert scdata_norm.shape == magic_all_genes.shape
     dremi = magic_op.knnDREMI("VIM", "ZEB1", plot=True)
-    np.testing.assert_allclose(dremi, 1.5687165, atol=0.0000005)
+    np.testing.assert_allclose(dremi, 1.573619, atol=0.0000005)
 
 
 def test_anndata():
