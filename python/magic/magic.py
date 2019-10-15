@@ -29,6 +29,8 @@ except ImportError:
     # anndata not installed
     pass
 
+_logger = tasklogger.get_tasklogger("graphtools")
+
 
 class MAGIC(BaseEstimator):
     """MAGIC operator which performs dimensionality reduction.
@@ -339,7 +341,7 @@ class MAGIC(BaseEstimator):
         else:
             n_pca = self.n_pca
 
-        tasklogger.log_info("Running MAGIC on {} cells and {} genes.".format(
+        _logger.info("Running MAGIC on {} cells and {} genes.".format(
             X.shape[0], X.shape[1]))
 
         if graph is None:
@@ -350,7 +352,7 @@ class MAGIC(BaseEstimator):
                 If the same data is used, we can reuse existing kernel and
                 diffusion matrices. Otherwise we have to recompute.
                 """
-                tasklogger.log_debug(
+                _logger.debug(
                     "Reset graph due to difference in input data")
                 graph = None
             elif graph is not None:
@@ -361,7 +363,7 @@ class MAGIC(BaseEstimator):
                         thresh=1e-4, random_state=self.random_state)
                 except ValueError as e:
                     # something changed that should have invalidated the graph
-                    tasklogger.log_debug(
+                    _logger.debug(
                         "Reset graph due to {}".format(str(e)))
                     graph = None
         else:
@@ -377,23 +379,22 @@ class MAGIC(BaseEstimator):
                           "Please remove them prior to running MAGIC.")
 
         if graph is not None:
-            tasklogger.log_info(
+            _logger.info(
                 "Using precomputed graph and diffusion operator...")
             self.graph = graph
         else:
             # reset X_magic in case it was previously set
             self.X_magic = None
-            tasklogger.log_start("graph and diffusion operator")
-            self.graph = graphtools.Graph(
-                X,
-                n_pca=n_pca,
-                knn=self.knn,
-                decay=self.decay,
-                thresh=1e-4,
-                n_jobs=self.n_jobs,
-                verbose=self.verbose,
-                random_state=self.random_state)
-            tasklogger.log_complete("graph and diffusion operator")
+            with _logger.task("graph and diffusion operator"):
+                self.graph = graphtools.Graph(
+                    X,
+                    n_pca=n_pca,
+                    knn=self.knn,
+                    decay=self.decay,
+                    thresh=1e-4,
+                    n_jobs=self.n_jobs,
+                    verbose=self.verbose,
+                    random_state=self.random_state)
 
         return self
 
@@ -569,10 +570,9 @@ class MAGIC(BaseEstimator):
         X_magic : array, shape=[n_samples, n_genes]
             The gene expression values after diffusion
         """
-        tasklogger.log_start('MAGIC')
-        self.fit(X, graph=graph)
-        X_magic = self.transform(**kwargs)
-        tasklogger.log_complete('MAGIC')
+        with _logger.task('MAGIC'):
+            self.fit(X, graph=graph)
+            X_magic = self.transform(**kwargs)
         return X_magic
 
     def _calculate_error(self, data, data_prev=None, weights=None,
@@ -660,78 +660,75 @@ class MAGIC(BaseEstimator):
         else:
             t_opt = self.t
 
-        tasklogger.log_start("imputation")
+        with _logger.task("imputation"):
 
-        # classic magic
-        # the diffusion matrix is powered when t has been specified by
-        # the user, and the dimensions of the diffusion matrix are lesser
-        # than those of the data matrix. (M^t) * D
-        if (t_opt is not None) and \
-                (self.diff_op.shape[1] < data_imputed.shape[1]):
-            diff_op_t = np.linalg.matrix_power(
-                scprep.utils.toarray(self.diff_op), t_opt)
-            data_imputed = diff_op_t.dot(data_imputed)
+            # classic magic
+            # the diffusion matrix is powered when t has been specified by
+            # the user, and the dimensions of the diffusion matrix are lesser
+            # than those of the data matrix. (M^t) * D
+            if (t_opt is not None) and \
+                    (self.diff_op.shape[1] < data_imputed.shape[1]):
+                diff_op_t = np.linalg.matrix_power(
+                    scprep.utils.toarray(self.diff_op), t_opt)
+                data_imputed = diff_op_t.dot(data_imputed)
 
-        # fast magic
-        # a while loop is used when the dimensions of the diffusion matrix
-        # are greater than those of the data matrix, or when t is not specified
-        # (so as to allow for the calculation of the optimal t value)
-        else:
-            i = 0
-            while (t_opt is None and i < t_max) or \
-                    (t_opt is not None and i < t_opt):
-                i += 1
-                data_imputed = self.diff_op.dot(data_imputed)
-                if self.t == 'auto':
-                    error, data_prev = self._calculate_error(
-                        data_imputed, data_prev,
-                        weights=weights,
-                        subsample_genes=subsample_genes)
-                    error_vec.append(error)
-                    tasklogger.log_debug("{}: {}".format(i, error_vec))
-                    if error < threshold and t_opt is None:
-                        t_opt = i + 1
-                        tasklogger.log_info(
-                            "Automatically selected t = {}".format(t_opt))
-
-        tasklogger.log_complete("imputation")
+            # fast magic
+            # a while loop is used when the dimensions of the diffusion matrix
+            # are greater than those of the data matrix, or when t is not specified
+            # (so as to allow for the calculation of the optimal t value)
+            else:
+                i = 0
+                while (t_opt is None and i < t_max) or \
+                        (t_opt is not None and i < t_opt):
+                    i += 1
+                    data_imputed = self.diff_op.dot(data_imputed)
+                    if self.t == 'auto':
+                        error, data_prev = self._calculate_error(
+                            data_imputed, data_prev,
+                            weights=weights,
+                            subsample_genes=subsample_genes)
+                        error_vec.append(error)
+                        _logger.debug("{}: {}".format(i, error_vec))
+                        if error < threshold and t_opt is None:
+                            t_opt = i + 1
+                            _logger.info(
+                                "Automatically selected t = {}".format(t_opt))
 
         if plot:
             # continue to t_max
-            tasklogger.log_start("optimal t plot")
-            if t_opt is None:
-                # never converged
-                warnings.warn("optimal t > t_max ({})".format(t_max),
-                              RuntimeWarning)
-            else:
-                data_overimputed = data_imputed
-                while i < t_max:
-                    i += 1
-                    data_overimputed = self.diff_op.dot(data_overimputed)
-                    error, data_prev = self._calculate_error(
-                        data_overimputed, data_prev,
-                        weights=weights,
-                        subsample_genes=subsample_genes)
-                    error_vec.append(error)
+            with _logger.task("optimal t plot"):
+                if t_opt is None:
+                    # never converged
+                    warnings.warn("optimal t > t_max ({})".format(t_max),
+                                  RuntimeWarning)
+                else:
+                    data_overimputed = data_imputed
+                    while i < t_max:
+                        i += 1
+                        data_overimputed = self.diff_op.dot(data_overimputed)
+                        error, data_prev = self._calculate_error(
+                            data_overimputed, data_prev,
+                            weights=weights,
+                            subsample_genes=subsample_genes)
+                        error_vec.append(error)
 
-            # create axis
-            if ax is None:
-                fig, ax = plt.subplots()
-                show = True
-            else:
-                show = False
+                # create axis
+                if ax is None:
+                    fig, ax = plt.subplots()
+                    show = True
+                else:
+                    show = False
 
-            # plot
-            x = np.arange(len(error_vec)) + 1
-            ax.plot(x, error_vec)
-            if t_opt is not None:
-                ax.plot(t_opt, error_vec[t_opt - 1], 'ro', markersize=10,)
-            ax.plot(x, np.full(len(error_vec), threshold), 'k--')
-            ax.set_xlabel('t')
-            ax.set_ylabel('disparity(data_{t}, data_{t-1})')
-            ax.set_xlim([1, len(error_vec)])
-            plt.tight_layout()
-            tasklogger.log_complete("optimal t plot")
+                # plot
+                x = np.arange(len(error_vec)) + 1
+                ax.plot(x, error_vec)
+                if t_opt is not None:
+                    ax.plot(t_opt, error_vec[t_opt - 1], 'ro', markersize=10,)
+                ax.plot(x, np.full(len(error_vec), threshold), 'k--')
+                ax.set_xlabel('t')
+                ax.set_ylabel('disparity(data_{t}, data_{t-1})')
+                ax.set_xlim([1, len(error_vec)])
+                plt.tight_layout()
             if show:
                 plt.show(block=False)
 
