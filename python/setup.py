@@ -8,8 +8,8 @@ install_requires = [
     'matplotlib',
     'scikit-learn>=0.19.1',
     'future',
-    'tasklogger>=0.4.0',
-    'graphtools>=1.0.0',
+    'tasklogger>=1.0.0',
+    'graphtools>=1.3.1',
     'pandas>=0.25',
     'scprep>=1.0',
 ]
