@@ -40,6 +40,13 @@ class MAGIC(BaseEstimator):
     applied to single-cell RNA sequencing data, as described in
     van Dijk et al, 2018 [1]_.
 
+    The algorithm implemented here has changed primarily in two ways
+    compared to the algorithm described in [1]_. Firstly, we use
+    the adaptive kernel described in Moon et al, 2019 [2]_ for
+    improved stability. Secondly, data diffusion is applied
+    in the PCA space, rather than the data space, for speed and
+    memory improvements.
+
     Parameters
     ----------
 
@@ -64,6 +71,12 @@ class MAGIC(BaseEstimator):
         neighborhoods. For extremely large datasets, using
         n_pca < 20 allows neighborhoods to be calculated in
         roughly log(n_samples) time.
+
+    solver : str, optional, default: 'exact'
+        Which solver to use. "exact" uses the implementation described
+        in van Dijk et al. (2018). "approximate" uses a faster implementation
+        that performs imputation in the PCA space and then projects back to the
+        gene space. Note, the "approximate" solver may return negative values.
 
     knn_dist : string, optional, default: 'euclidean'
         Distance metric for building kNN graph. Recommended values:
@@ -134,10 +147,14 @@ class MAGIC(BaseEstimator):
     .. [1] Van Dijk D *et al.* (2018),
         *Recovering Gene Interactions from Single-Cell Data Using Data Diffusion*,
         `Cell <https://www.cell.com/cell/abstract/S0092-8674(18)30724-4>`__.
+
+    .. [2] Moon, van Dijk, Wang, Gigante *et al.* (2019),
+        *Visualizing Structure and Transitions in High-Dimensional Biological Data*,
+        `Nature Biotechnology (in press)`__.
     """
 
     def __init__(self, knn=10, knn_max=None, decay=2, t='auto', n_pca=100,
-                 knn_dist='euclidean', n_jobs=1, random_state=None,
+                 solver='exact', knn_dist='euclidean', n_jobs=1, random_state=None,
                  verbose=1, k=None, a=None):
         if k is not None:
             knn = k
@@ -151,7 +168,7 @@ class MAGIC(BaseEstimator):
         self.knn_dist = knn_dist
         self.n_jobs = n_jobs
         self.random_state = random_state
-
+        self.solver = solver
         self.graph = None
         self.X = None
         self.X_magic = None
@@ -191,6 +208,8 @@ class MAGIC(BaseEstimator):
                            decay=self.decay)
         utils.check_if_not('auto', utils.check_positive, utils.check_int,
                            t=self.t)
+        utils.check_in(['exact', 'approximate'],
+                         solver=self.solver)
         if not callable(self.knn_dist):
             utils.check_in(['euclidean', 'cosine', 'correlation',
                             'cityblock', 'l1', 'l2', 'manhattan', 'braycurtis',
@@ -301,6 +320,10 @@ class MAGIC(BaseEstimator):
             del params['knn_dist']
 
         # parameters that don't change the embedding
+        if 'solver' in params and params['solver'] != self.solver:
+            self.solver = params['solver']
+            reset_imputation = True
+            del params['solver']
         if 'n_jobs' in params:
             self.n_jobs = params['n_jobs']
             self._set_graph_params(n_jobs=params['n_jobs'])
@@ -633,8 +656,12 @@ class MAGIC(BaseEstimator):
         X_magic : array-like, shape=[n_samples, n_pca]
             Imputed data
         """
+
         if not isinstance(data, graphtools.base.Data):
-            data = graphtools.base.Data(data, n_pca=self.n_pca)
+            if self.solver == 'approximate':
+                data = graphtools.base.Data(data, n_pca=self.n_pca)
+            elif self.solver == 'exact':
+                data = graphtools.base.Data(data, n_pca=None)
         data_imputed = scprep.utils.toarray(data.data_nu)
 
         if data_imputed.shape[1] > max_genes_compute_t:

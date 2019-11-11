@@ -22,7 +22,7 @@ def test_scdata():
     scdata_norm = scprep.transform.sqrt(scdata_norm)
     assert scdata.shape == scdata_norm.shape
     np.random.seed(42)
-    magic_op = magic.MAGIC(t='auto', a=20, k=10)
+    magic_op = magic.MAGIC(t='auto', decay=20, knn=10, verbose=False)
     str_gene_magic = magic_op.fit_transform(
         scdata_norm, genes=['VIM', 'ZEB1'])
     int_gene_magic = magic_op.fit_transform(
@@ -39,6 +39,20 @@ def test_scdata():
     dremi = magic_op.knnDREMI("VIM", "ZEB1", plot=True)
     np.testing.assert_allclose(dremi, 1.573619, atol=0.0000005)
 
+    # Testing exact vs approximate solver
+    magic_op = magic.MAGIC(t='auto', decay=20, knn=10, solver='exact', verbose=False)
+    data_imputed_exact = magic_op.fit_transform(scdata_norm)
+    assert np.all(data_imputed_exact >= 0)
+
+    magic_op = magic.MAGIC(t='auto', decay=20, knn=10, solver='approximate', verbose=False)
+    #magic_op.set_params(solver='approximate')
+    data_imputed_apprx = magic_op.fit_transform(scdata_norm)
+    # make sure they're close-ish
+    assert np.allclose(data_imputed_apprx, data_imputed_exact, atol=0.05)
+    # make sure they're not identical
+    assert np.any(data_imputed_apprx != data_imputed_exact)
+
+
 
 def test_anndata():
     try:
@@ -47,7 +61,8 @@ def test_anndata():
         # anndata not installed
         return
     scdata = anndata.read_csv("../data/test_data.csv")
-    fast_magic_operator = magic.MAGIC(t='auto', a=None, k=10)
+    fast_magic_operator = magic.MAGIC(t='auto', solver='approximate',
+            decay=None, knn=10, verbose=False)
     sc_magic = fast_magic_operator.fit_transform(
         scdata, genes="all_genes")
     assert np.all(sc_magic.var_names == scdata.var_names)
