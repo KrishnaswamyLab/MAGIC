@@ -51,7 +51,7 @@ def test_all_genes():
     magic_all_genes = magic_op.fit_transform(scdata_norm, genes="all_genes")
     assert scdata_norm.shape == magic_all_genes.shape
     int_gene_magic2 = magic_op.transform(scdata_norm, genes=[-2, -1])
-    np.testing.assert_allclose(int_gene_magic, int_gene_magic2, atol=0.003)
+    np.testing.assert_allclose(int_gene_magic, int_gene_magic2, rtol=0.003)
 
 
 def test_all_genes_approx():
