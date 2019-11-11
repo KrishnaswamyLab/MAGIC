@@ -10,8 +10,10 @@
 #' vector of column names or column indices for which to return smoothed data
 #' If 'all_genes' or NULL, the entire smoothed matrix is returned
 #' @param knn int, optional, default: 10
-#' number of nearest neighbors on which to build kernel
-#' @param decay int, optional, default: 15
+#' number of nearest neighbors on which to compute bandwidth
+#' @param knn.max int, optional, default: NULL
+#' maximum number of neighbors for each point. If NULL, defaults to 3*knn
+#' @param decay int, optional, default: 2
 #' sets decay rate of kernel tails.
 #' If NULL, alpha decaying kernel is not used
 #' @param t int, optional, default: 'auto'
@@ -107,7 +109,8 @@ magic.default <- function(
   data,
   genes = NULL,
   knn = 10,
-  decay = 15,
+  knn.max = NULL,
+  decay = 2,
   t = 'auto',
   npca = 100,
   init = NULL,
@@ -183,6 +186,7 @@ magic.default <- function(
   params <- list(
     "data" = data,
     "knn" = knn,
+    "knn.max" = knn.max,
     "decay" = decay,
     "t" = t,
     "npca" = npca,
@@ -197,6 +201,7 @@ magic.default <- function(
       operator <- init$operator
       operator$set_params(
         knn = knn,
+        knn_max = knn.max,
         decay = decay,
         t = t,
         n_pca = npca,
@@ -210,6 +215,7 @@ magic.default <- function(
   if (is.null(x = operator)) {
     operator <- pymagic$MAGIC(
       knn = knn,
+      knn_max = knn.max,
       decay = decay,
       t = t,
       n_pca = npca,
@@ -244,7 +250,8 @@ magic.seurat <- function(
   data,
   genes = NULL,
   knn = 10,
-  decay = 15,
+  knn.max = NULL,
+  decay = 2,
   t = 'auto',
   npca = 100,
   init = NULL,
@@ -260,6 +267,7 @@ magic.seurat <- function(
       data = as.matrix(x = t(x = data@data)),
       genes = genes,
       knn = knn,
+      knn.max = knn.max,
       decay = decay,
       t = t,
       npca = npca,
@@ -278,6 +286,7 @@ magic.seurat <- function(
       data,
       genes = genes,
       knn = knn,
+      knn.max = knn.max,
       decay = decay,
       t = t,
       npca = npca,
@@ -303,7 +312,8 @@ magic.Seurat <- function(
   assay = NULL,
   genes = NULL,
   knn = 10,
-  decay = 15,
+  knn.max = NULL,
+  decay = 2,
   t = 'auto',
   npca = 100,
   init = NULL,
@@ -322,6 +332,7 @@ magic.Seurat <- function(
       data = t(x = Seurat::GetAssayData(object = data, slot = 'data', assay = assay)),
       genes = genes,
       knn = knn,
+      knn.max = knn.max,
       decay = decay,
       t = t,
       npca = npca,
@@ -344,6 +355,7 @@ magic.Seurat <- function(
       data,
       genes = genes,
       knn = knn,
+      knn.max = knn.max,
       decay = decay,
       t = t,
       npca = npca,
