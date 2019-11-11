@@ -40,13 +40,6 @@ class MAGIC(BaseEstimator):
     applied to single-cell RNA sequencing data, as described in
     van Dijk et al, 2018 [1]_.
 
-    The algorithm implemented here has changed primarily in two ways
-    compared to the algorithm described in [1]_. Firstly, we use
-    the adaptive kernel described in Moon et al, 2019 [2]_ for
-    improved stability. Secondly, data diffusion is applied
-    in the PCA space, rather than the data space, for speed and
-    memory improvements.
-
     Parameters
     ----------
 
@@ -74,7 +67,7 @@ class MAGIC(BaseEstimator):
 
     solver : str, optional, default: 'exact'
         Which solver to use. "exact" uses the implementation described
-        in van Dijk et al. (2018). "approximate" uses a faster implementation
+        in van Dijk et al. (2018) [1]_. "approximate" uses a faster implementation
         that performs imputation in the PCA space and then projects back to the
         gene space. Note, the "approximate" solver may return negative values.
 
@@ -147,10 +140,6 @@ class MAGIC(BaseEstimator):
     .. [1] Van Dijk D *et al.* (2018),
         *Recovering Gene Interactions from Single-Cell Data Using Data Diffusion*,
         `Cell <https://www.cell.com/cell/abstract/S0092-8674(18)30724-4>`__.
-
-    .. [2] Moon, van Dijk, Wang, Gigante *et al.* (2019),
-        *Visualizing Structure and Transitions in High-Dimensional Biological Data*,
-        `Nature Biotechnology (in press)`__.
     """
 
     def __init__(
