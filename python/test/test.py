@@ -23,15 +23,19 @@ def test_scdata():
     scdata_norm = scprep.normalize.library_size_normalize(scdata)
     scdata_norm = scprep.transform.sqrt(scdata_norm)
     assert scdata.shape == scdata_norm.shape
-    np.random.seed(42)
     magic_op = magic.MAGIC(t="auto", decay=20, knn=10, verbose=False)
     str_gene_magic = magic_op.fit_transform(scdata_norm, genes=["VIM", "ZEB1"])
-    int_gene_magic = magic_op.fit_transform(scdata_norm, genes=[-2, -1])
+    int_gene_magic = magic_op.fit_transform(
+        scdata_norm, graph=magic_op.graph, genes=[-2, -1]
+    )
     assert str_gene_magic.shape[0] == scdata_norm.shape[0]
-    assert np.all(str_gene_magic == int_gene_magic)
+    np.testing.assert_array_equal(str_gene_magic, int_gene_magic)
     pca_magic = magic_op.fit_transform(scdata_norm, genes="pca_only")
     assert pca_magic.shape[0] == scdata_norm.shape[0]
     assert pca_magic.shape[1] == magic_op.n_pca
+
+    # test DREMI: need numerical precision here
+    magic_op.set_params(random_state=42)
     magic_all_genes = magic_op.fit_transform(scdata_norm, genes="all_genes")
     assert scdata_norm.shape == magic_all_genes.shape
     dremi = magic_op.knnDREMI("VIM", "ZEB1", plot=True)
