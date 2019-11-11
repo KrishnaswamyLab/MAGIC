@@ -497,7 +497,7 @@ class MAGIC(BaseEstimator):
             genes = None
         elif isinstance(genes, str) and genes == "pca_only":
             if not hasattr(self.graph, "data_pca"):
-                raise RuntimeError("Cannot return PCA as PCA is not" " performed.")
+                raise RuntimeError("Cannot return PCA as PCA is not performed.")
         elif genes is not None:
             genes = np.array([genes]).flatten()
             if not issubclass(genes.dtype.type, numbers.Integral):
@@ -568,8 +568,8 @@ class MAGIC(BaseEstimator):
                 )
 
         if X is not None and not utils.matrix_is_equivalent(X, self.graph.data):
+            extrapolation = True
             store_result = False
-            graph = graphtools.base.Data(X, n_pca=self.n_pca)
             warnings.warn(
                 "Running MAGIC.transform on different "
                 "data to that which was used for MAGIC.fit may not "
@@ -578,26 +578,56 @@ class MAGIC(BaseEstimator):
                 UserWarning,
             )
         else:
+            extrapolation = False
             X = self.X
-            graph = self.graph
+            data = self.graph
             store_result = True
 
         genes = self._parse_genes(X, genes)
 
+        if isinstance(genes, str) and genes == "pca_only":
+            # have to use PCA to return it
+            solver = "approximate"
+        else:
+            if genes is not None and self.X_magic is None:
+                if len(genes) < self.graph.data_nu.shape[1]:
+                    # faster to skip PCA
+                    solver = "exact"
+                    store_result = False
+            else:
+                solver = self.solver
+
         if store_result and self.X_magic is not None:
             X_magic = self.X_magic
         else:
-            X_magic = self._impute(graph, t_max=t_max, plot=plot_optimal_t, ax=ax)
+            if extrapolation:
+                n_pca = self.n_pca if solver == "approximate" else None
+                data = graphtools.base.Data(X, n_pca=n_pca)
+            if solver == "approximate":
+                # select PCs
+                X_input = data.data_nu
+            else:
+                X_input = scprep.utils.to_array_or_spmatrix(data.data)
+                if genes is not None and not (
+                    isinstance(genes, str) and genes != "pca_only"
+                ):
+                    X_input = scprep.select.select_cols(X_input, idx=genes)
+            X_magic = self._impute(X_input, t_max=t_max, plot=plot_optimal_t, ax=ax)
             if store_result:
                 self.X_magic = X_magic
 
+        print(X_magic.shape)
         # return selected genes
         if isinstance(genes, str) and genes == "pca_only":
             X_magic = PCA().fit_transform(X_magic)
             genes = ["PC{}".format(i + 1) for i in range(X_magic.shape[1])]
-        else:
-            X_magic = graph.inverse_transform(X_magic, columns=genes)
-            # convert back to pandas dataframe, if necessary
+        elif solver == "approximate":
+            X_magic = data.inverse_transform(X_magic, columns=genes)
+        elif genes is not None and len(genes) != X_magic.shape[1]:
+            # select genes
+            X_magic = scprep.select.select_cols(X_magic, idx=genes)
+
+        # convert back to pandas dataframe, if necessary
         X_magic = utils.convert_to_same_format(
             X_magic, X, columns=genes, prevent_sparse=True
         )
@@ -696,7 +726,7 @@ class MAGIC(BaseEstimator):
 
         Parameters
         ----------
-        data : graphtools.Graph, graphtools.Data or array-like
+        data : array-like
             Input data
         t_max : int, optional (default: 20)
             Maximum value of t to consider for optimal t selection
@@ -716,13 +746,7 @@ class MAGIC(BaseEstimator):
         X_magic : array-like, shape=[n_samples, n_pca]
             Imputed data
         """
-
-        if not isinstance(data, graphtools.base.Data):
-            if self.solver == "approximate":
-                data = graphtools.base.Data(data, n_pca=self.n_pca)
-            elif self.solver == "exact":
-                data = graphtools.base.Data(data, n_pca=None)
-        data_imputed = scprep.utils.toarray(data.data_nu)
+        data_imputed = scprep.utils.toarray(data)
 
         if data_imputed.shape[1] > max_genes_compute_t:
             subsample_genes = np.random.choice(
