@@ -68,6 +68,12 @@ class MAGIC(BaseEstimator):
         n_pca < 20 allows neighborhoods to be calculated in
         roughly log(n_samples) time.
 
+    solver : str, optional, default: 'exact'
+        Which solver to use. "exact" uses the implementation described
+        in van Dijk et al. (2018). "approximate" uses a faster implementation
+        that performs imputation in the PCA space and then projects back to the
+        gene space. Note, the "appropriate" solver may return negative values.
+
     knn_dist : string, optional, default: 'euclidean'
         Distance metric for building kNN graph. Recommended values:
         'euclidean', 'cosine'. Any metric from `scipy.spatial.distance` can be
@@ -144,8 +150,8 @@ class MAGIC(BaseEstimator):
     """
 
     def __init__(self, knn=10, decay=15, t='auto', n_pca=100,
-                 knn_dist='euclidean', n_jobs=1, random_state=None,
-                 verbose=1, k=None, a=None):
+                 solver='exact', knn_dist='euclidean', n_jobs=1,
+                 random_state=None, verbose=1, k=None, a=None):
         if k is not None:
             knn = k
         if a is not None:
@@ -157,7 +163,7 @@ class MAGIC(BaseEstimator):
         self.knn_dist = knn_dist
         self.n_jobs = n_jobs
         self.random_state = random_state
-
+        self.solver = solver
         self.graph = None
         self.X = None
         self.X_magic = None
@@ -199,6 +205,8 @@ class MAGIC(BaseEstimator):
                            decay=self.decay)
         utils.check_if_not('auto', utils.check_positive, utils.check_int,
                            t=self.t)
+        utils.check_in(['exact', 'approximate'],
+                         solver=self.solver)
         if not callable(self.knn_dist):
             utils.check_in(['euclidean', 'cosine', 'correlation',
                             'cityblock', 'l1', 'l2', 'manhattan', 'braycurtis',
@@ -305,6 +313,10 @@ class MAGIC(BaseEstimator):
             del params['knn_dist']
 
         # parameters that don't change the embedding
+        if 'solver' in params and params['solver'] != self.solver:
+            self.solver = params['solver']
+            reset_imputation = True
+            del params['solver']
         if 'n_jobs' in params:
             self.n_jobs = params['n_jobs']
             self._set_graph_params(n_jobs=params['n_jobs'])
@@ -647,8 +659,12 @@ class MAGIC(BaseEstimator):
         X_magic : array-like, shape=[n_samples, n_pca]
             Imputed data
         """
+
         if not isinstance(data, graphtools.base.Data):
-            data = graphtools.base.Data(data, n_pca=self.n_pca)
+            if self.solver == 'approximate':
+                data = graphtools.base.Data(data, n_pca=self.n_pca)
+            elif self.solver == 'exact':
+                data = graphtools.base.Data(data, n_pca=None)
         data_imputed = scprep.utils.toarray(data.data_nu)
 
         if data_imputed.shape[1] > max_genes_compute_t:
