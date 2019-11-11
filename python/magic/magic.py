@@ -660,11 +660,10 @@ class MAGIC(BaseEstimator):
             Imputed data
         """
 
-        if self.solver == 'approximate':
-            if not isinstance(data, graphtools.base.Data):
+        if not isinstance(data, graphtools.base.Data):
+            if self.solver == 'approximate':
                 data = graphtools.base.Data(data, n_pca=self.n_pca)
-        elif self.solver == 'exact':
-            if not isinstance(data, graphtools.base.Data):
+            elif self.solver == 'exact':
                 data = graphtools.base.Data(data, n_pca=None)
         data_imputed = scprep.utils.toarray(data.data_nu)
 
