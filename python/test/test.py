@@ -80,6 +80,9 @@ def test_solver():
         t="auto", decay=20, knn=10, solver="exact", verbose=False, random_state=42
     )
     data_imputed_exact = magic_op.fit_transform(scdata_norm)
+    # should have exactly as many genes stored
+    assert magic_op.X_magic.shape[1] == scdata_norm.shape[1]
+    # should be nonzero
     assert np.all(data_imputed_exact >= 0)
 
     magic_op = magic.MAGIC(
@@ -93,6 +96,8 @@ def test_solver():
     )
     # magic_op.set_params(solver='approximate')
     data_imputed_apprx = magic_op.fit_transform(scdata_norm)
+    # should have n_pca genes stored
+    assert magic_op.X_magic.shape[1] == 150
     # make sure they're close-ish
     np.testing.assert_allclose(data_imputed_apprx, data_imputed_exact, atol=0.15)
     # make sure they're not identical
