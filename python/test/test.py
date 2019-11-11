@@ -46,17 +46,17 @@ def test_pca_only():
 
 
 def test_all_genes():
-    magic_op = magic.MAGIC(t="auto", decay=20, knn=10, verbose=False)
+    magic_op = magic.MAGIC(t="auto", decay=20, knn=10, verbose=False, random_state=42)
     int_gene_magic = magic_op.fit_transform(scdata_norm, genes=[-2, -1])
     magic_all_genes = magic_op.fit_transform(scdata_norm, genes="all_genes")
     assert scdata_norm.shape == magic_all_genes.shape
     int_gene_magic2 = magic_op.transform(scdata_norm, genes=[-2, -1])
-    np.testing.assert_allclose(int_gene_magic, int_gene_magic2, rtol=0.003)
+    np.testing.assert_allclose(int_gene_magic, int_gene_magic2, rtol=0.015)
 
 
 def test_all_genes_approx():
     magic_op = magic.MAGIC(
-        t="auto", decay=20, knn=10, verbose=False, solver="approximate"
+        t="auto", decay=20, knn=10, verbose=False, solver="approximate", random_state=42
     )
     int_gene_magic = magic_op.fit_transform(scdata_norm, genes=[-2, -1])
     magic_all_genes = magic_op.fit_transform(scdata_norm, genes="all_genes")
