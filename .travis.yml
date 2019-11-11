@@ -46,8 +46,8 @@ install:
 script:
   - cd Rmagic; R CMD build .
   - R CMD check *tar.gz
-  - cd ../python; if [ "$TRAVIS_PYTHON_VERSION" != "3.5" ]; then black . --check --diff; fi
-  - pip install --user -q .[test]
+  - cd ../python; pip install --user -q .[test]
+  - if [ "$TRAVIS_PYTHON_VERSION" != "3.5" ]; then black . --check --diff; fi
   - python setup.py test
   - pip install --user -q .[doc]
   - cd doc; make html; cd ..
