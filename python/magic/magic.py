@@ -616,7 +616,6 @@ class MAGIC(BaseEstimator):
             if store_result:
                 self.X_magic = X_magic
 
-        print(X_magic.shape)
         # return selected genes
         if isinstance(genes, str) and genes == "pca_only":
             X_magic = PCA().fit_transform(X_magic)
