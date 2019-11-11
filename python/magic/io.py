@@ -6,9 +6,15 @@ import warnings
 import scprep
 
 
-def load_csv(filename, cell_axis='row', delimiter=',',
-             gene_names=True, cell_names=True,
-             sparse=False, **kwargs):
+def load_csv(
+    filename,
+    cell_axis="row",
+    delimiter=",",
+    gene_names=True,
+    cell_names=True,
+    sparse=False,
+    **kwargs
+):
     """Load a csv file
 
     Parameters
@@ -35,18 +41,31 @@ def load_csv(filename, cell_axis='row', delimiter=',',
     -------
     data : pd.DataFrame
     """
-    warnings.warn("magic.io is deprecated. Please use scprep.io instead. "
-                  "Read more at http://scprep.readthedocs.io",
-                  FutureWarning)
-    return scprep.io.load_csv(filename=filename, cell_axis=cell_axis,
-                              delimiter=delimiter,
-                              gene_names=gene_names, cell_names=cell_names,
-                              sparse=sparse, **kwargs)
+    warnings.warn(
+        "magic.io is deprecated. Please use scprep.io instead. "
+        "Read more at http://scprep.readthedocs.io",
+        FutureWarning,
+    )
+    return scprep.io.load_csv(
+        filename=filename,
+        cell_axis=cell_axis,
+        delimiter=delimiter,
+        gene_names=gene_names,
+        cell_names=cell_names,
+        sparse=sparse,
+        **kwargs
+    )
 
 
-def load_tsv(filename, cell_axis='row', delimiter='\t',
-             gene_names=True, cell_names=True,
-             sparse=False, **kwargs):
+def load_tsv(
+    filename,
+    cell_axis="row",
+    delimiter="\t",
+    gene_names=True,
+    cell_names=True,
+    sparse=False,
+    **kwargs
+):
     """Load a tsv file
 
     Parameters
@@ -73,15 +92,32 @@ def load_tsv(filename, cell_axis='row', delimiter='\t',
     -------
     data : pd.DataFrame
     """
-    return load_csv(filename, cell_axis=cell_axis, delimiter=delimiter,
-                    gene_names=gene_names, cell_names=cell_names,
-                    sparse=sparse, **kwargs)
+    return load_csv(
+        filename,
+        cell_axis=cell_axis,
+        delimiter=delimiter,
+        gene_names=gene_names,
+        cell_names=cell_names,
+        sparse=sparse,
+        **kwargs
+    )
 
 
-def load_fcs(filename, gene_names=True, cell_names=True,
-             sparse=None,
-             metadata_channels=['Time', 'Event_length', 'DNA1', 'DNA2',
-                                'Cisplatin', 'beadDist', 'bead1']):
+def load_fcs(
+    filename,
+    gene_names=True,
+    cell_names=True,
+    sparse=None,
+    metadata_channels=[
+        "Time",
+        "Event_length",
+        "DNA1",
+        "DNA2",
+        "Cisplatin",
+        "beadDist",
+        "bead1",
+    ],
+):
     """Load a fcs file
 
     Parameters
@@ -104,17 +140,21 @@ def load_fcs(filename, gene_names=True, cell_names=True,
     -------
     data : pd.DataFrame
     """
-    warnings.warn("magic.io is deprecated. Please use scprep.io instead. "
-                  "Read more at http://scprep.readthedocs.io",
-                  FutureWarning)
-    return scprep.io.load_fcs(filename=filename, gene_names=gene_names,
-                              cell_names=cell_names,
-                              sparse=sparse,
-                              metadata_channels=metadata_channels)
+    warnings.warn(
+        "magic.io is deprecated. Please use scprep.io instead. "
+        "Read more at http://scprep.readthedocs.io",
+        FutureWarning,
+    )
+    return scprep.io.load_fcs(
+        filename=filename,
+        gene_names=gene_names,
+        cell_names=cell_names,
+        sparse=sparse,
+        metadata_channels=metadata_channels,
+    )
 
 
-def load_mtx(mtx_file, cell_axis='row',
-             gene_names=None, cell_names=None, sparse=None):
+def load_mtx(mtx_file, cell_axis="row", gene_names=None, cell_names=None, sparse=None):
     """Load a mtx file
 
     Parameters
@@ -136,16 +176,21 @@ def load_mtx(mtx_file, cell_axis='row',
     -------
     data : pd.DataFrame
     """
-    warnings.warn("magic.io is deprecated. Please use scprep.io instead. "
-                  "Read more at http://scprep.readthedocs.io",
-                  FutureWarning)
-    return scprep.io.load_mtx(mtx_file=mtx_file, cell_axis=cell_axis,
-                              gene_names=gene_names, cell_names=cell_names,
-                              sparse=sparse)
+    warnings.warn(
+        "magic.io is deprecated. Please use scprep.io instead. "
+        "Read more at http://scprep.readthedocs.io",
+        FutureWarning,
+    )
+    return scprep.io.load_mtx(
+        mtx_file=mtx_file,
+        cell_axis=cell_axis,
+        gene_names=gene_names,
+        cell_names=cell_names,
+        sparse=sparse,
+    )
 
 
-def load_10X(data_dir, sparse=True, gene_labels='symbol',
-             allow_duplicates=None):
+def load_10X(data_dir, sparse=True, gene_labels="symbol", allow_duplicates=None):
     """Basic IO for 10X data produced from the 10X Cellranger pipeline.
 
     A default run of the `cellranger count` command will generate gene-barcode
@@ -176,16 +221,20 @@ def load_10X(data_dir, sparse=True, gene_labels='symbol',
     data: pandas.DataFrame shape = (n_cell, n_genes)
         imported data matrix
     """
-    warnings.warn("magic.io is deprecated. Please use scprep.io instead. "
-                  "Read more at http://scprep.readthedocs.io",
-                  FutureWarning)
-    return scprep.io.load_10X(data_dir=data_dir, sparse=sparse,
-                              gene_labels=gene_labels,
-                              allow_duplicates=allow_duplicates)
+    warnings.warn(
+        "magic.io is deprecated. Please use scprep.io instead. "
+        "Read more at http://scprep.readthedocs.io",
+        FutureWarning,
+    )
+    return scprep.io.load_10X(
+        data_dir=data_dir,
+        sparse=sparse,
+        gene_labels=gene_labels,
+        allow_duplicates=allow_duplicates,
+    )
 
 
-def load_10X_zip(filename, sparse=True, gene_labels='symbol',
-                 allow_duplicates=None):
+def load_10X_zip(filename, sparse=True, gene_labels="symbol", allow_duplicates=None):
     """Basic IO for zipped 10X data produced from the 10X Cellranger pipeline.
 
     Runs `load_10X` after unzipping the data contained in `filename`
@@ -210,13 +259,17 @@ def load_10X_zip(filename, sparse=True, gene_labels='symbol',
     data: pandas.DataFrame shape = (n_cell, n_genes)
         imported data matrix
     """
-    return scprep.io.load_10X_zip(filename=filename, sparse=sparse,
-                                  gene_labels=gene_labels,
-                                  allow_duplicates=allow_duplicates)
+    return scprep.io.load_10X_zip(
+        filename=filename,
+        sparse=sparse,
+        gene_labels=gene_labels,
+        allow_duplicates=allow_duplicates,
+    )
 
 
-def load_10X_HDF5(filename, genome=None, sparse=True, gene_labels='symbol',
-                  allow_duplicates=None):
+def load_10X_HDF5(
+    filename, genome=None, sparse=True, gene_labels="symbol", allow_duplicates=None
+):
     """Basic IO for HDF5 10X data produced from the 10X Cellranger pipeline.
 
     Equivalent to `load_10X` but for HDF5 format.
@@ -244,10 +297,15 @@ def load_10X_HDF5(filename, genome=None, sparse=True, gene_labels='symbol',
         If sparse, data will be a pd.SparseDataFrame. Otherwise, data will
         be a pd.DataFrame.
     """
-    warnings.warn("magic.io is deprecated. Please use scprep.io instead. "
-                  "Read more at http://scprep.readthedocs.io",
-                  FutureWarning)
-    return scprep.io.load_10X_HDF5(filename=filename, genome=genome,
-                                   sparse=sparse,
-                                   gene_labels=gene_labels,
-                                   allow_duplicates=allow_duplicates)
+    warnings.warn(
+        "magic.io is deprecated. Please use scprep.io instead. "
+        "Read more at http://scprep.readthedocs.io",
+        FutureWarning,
+    )
+    return scprep.io.load_10X_HDF5(
+        filename=filename,
+        genome=genome,
+        sparse=sparse,
+        gene_labels=gene_labels,
+        allow_duplicates=allow_duplicates,
+    )

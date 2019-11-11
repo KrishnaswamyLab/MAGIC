@@ -153,9 +153,21 @@ class MAGIC(BaseEstimator):
         `Nature Biotechnology (in press)`__.
     """
 
-    def __init__(self, knn=10, knn_max=None, decay=2, t='auto', n_pca=100,
-                 solver='exact', knn_dist='euclidean', n_jobs=1, random_state=None,
-                 verbose=1, k=None, a=None):
+    def __init__(
+        self,
+        knn=10,
+        knn_max=None,
+        decay=2,
+        t="auto",
+        n_pca=100,
+        solver="exact",
+        knn_dist="euclidean",
+        n_jobs=1,
+        random_state=None,
+        verbose=1,
+        k=None,
+        a=None,
+    ):
         if k is not None:
             knn = k
         if a is not None:
@@ -183,9 +195,11 @@ class MAGIC(BaseEstimator):
         if self.graph is not None:
             return self.graph.diff_op
         else:
-            raise NotFittedError("This MAGIC instance is not fitted yet. Call "
-                                 "'fit' with appropriate arguments before "
-                                 "using this method.")
+            raise NotFittedError(
+                "This MAGIC instance is not fitted yet. Call "
+                "'fit' with appropriate arguments before "
+                "using this method."
+            )
 
     def _check_params(self):
         """Check MAGIC parameters
@@ -199,25 +213,48 @@ class MAGIC(BaseEstimator):
         ValueError : unacceptable choice of parameters
         """
         utils.check_positive(knn=self.knn)
-        utils.check_int(knn=self.knn,
-                        n_jobs=self.n_jobs)
+        utils.check_int(knn=self.knn, n_jobs=self.n_jobs)
         # TODO: epsilon
-        utils.check_if_not(None, utils.check_positive, utils.check_int,
-                           n_pca=self.n_pca, knn_max=self.knn_max)
-        utils.check_if_not(None, utils.check_positive,
-                           decay=self.decay)
-        utils.check_if_not('auto', utils.check_positive, utils.check_int,
-                           t=self.t)
-        utils.check_in(['exact', 'approximate'],
-                         solver=self.solver)
+        utils.check_if_not(
+            None,
+            utils.check_positive,
+            utils.check_int,
+            n_pca=self.n_pca,
+            knn_max=self.knn_max,
+        )
+        utils.check_if_not(None, utils.check_positive, decay=self.decay)
+        utils.check_if_not("auto", utils.check_positive, utils.check_int, t=self.t)
+        utils.check_in(["exact", "approximate"], solver=self.solver)
         if not callable(self.knn_dist):
-            utils.check_in(['euclidean', 'cosine', 'correlation',
-                            'cityblock', 'l1', 'l2', 'manhattan', 'braycurtis',
-                            'canberra', 'chebyshev', 'dice', 'hamming', 'jaccard',
-                            'kulsinski', 'mahalanobis', 'matching', 'minkowski',
-                            'rogerstanimoto', 'russellrao', 'seuclidean',
-                            'sokalmichener', 'sokalsneath', 'sqeuclidean', 'yule'],
-                           knn_dist=self.knn_dist)
+            utils.check_in(
+                [
+                    "euclidean",
+                    "cosine",
+                    "correlation",
+                    "cityblock",
+                    "l1",
+                    "l2",
+                    "manhattan",
+                    "braycurtis",
+                    "canberra",
+                    "chebyshev",
+                    "dice",
+                    "hamming",
+                    "jaccard",
+                    "kulsinski",
+                    "mahalanobis",
+                    "matching",
+                    "minkowski",
+                    "rogerstanimoto",
+                    "russellrao",
+                    "seuclidean",
+                    "sokalmichener",
+                    "sokalsneath",
+                    "sqeuclidean",
+                    "yule",
+                ],
+                knn_dist=self.knn_dist,
+            )
 
     def _set_graph_params(self, **params):
         try:
@@ -284,59 +321,59 @@ class MAGIC(BaseEstimator):
         reset_kernel = False
         reset_imputation = False
         # diff potential parameters
-        if 't' in params and params['t'] != self.t:
-            self.t = params['t']
+        if "t" in params and params["t"] != self.t:
+            self.t = params["t"]
             reset_imputation = True
-            del params['t']
+            del params["t"]
 
         # kernel parameters
-        if 'k' in params and params['k'] != self.knn:
-            self.knn = params['k']
+        if "k" in params and params["k"] != self.knn:
+            self.knn = params["k"]
             reset_kernel = True
-            del params['k']
-        if 'a' in params and params['a'] != self.decay:
-            self.decay = params['a']
+            del params["k"]
+        if "a" in params and params["a"] != self.decay:
+            self.decay = params["a"]
             reset_kernel = True
-            del params['a']
-        if 'knn' in params and params['knn'] != self.knn:
-            self.knn = params['knn']
+            del params["a"]
+        if "knn" in params and params["knn"] != self.knn:
+            self.knn = params["knn"]
             reset_kernel = True
-            del params['knn']
-        if 'knn_max' in params and params['knn_max'] != self.knn_max:
-            self.knn = params['knn_max']
+            del params["knn"]
+        if "knn_max" in params and params["knn_max"] != self.knn_max:
+            self.knn = params["knn_max"]
             reset_kernel = True
-            del params['knn_max']
-        if 'decay' in params and params['decay'] != self.decay:
-            self.decay = params['decay']
+            del params["knn_max"]
+        if "decay" in params and params["decay"] != self.decay:
+            self.decay = params["decay"]
             reset_kernel = True
-            del params['decay']
-        if 'n_pca' in params and params['n_pca'] != self.n_pca:
-            self.n_pca = params['n_pca']
+            del params["decay"]
+        if "n_pca" in params and params["n_pca"] != self.n_pca:
+            self.n_pca = params["n_pca"]
             reset_kernel = True
-            del params['n_pca']
-        if 'knn_dist' in params and params['knn_dist'] != self.knn_dist:
-            self.knn_dist = params['knn_dist']
+            del params["n_pca"]
+        if "knn_dist" in params and params["knn_dist"] != self.knn_dist:
+            self.knn_dist = params["knn_dist"]
             reset_kernel = True
-            del params['knn_dist']
+            del params["knn_dist"]
 
         # parameters that don't change the embedding
-        if 'solver' in params and params['solver'] != self.solver:
-            self.solver = params['solver']
+        if "solver" in params and params["solver"] != self.solver:
+            self.solver = params["solver"]
             reset_imputation = True
-            del params['solver']
-        if 'n_jobs' in params:
-            self.n_jobs = params['n_jobs']
-            self._set_graph_params(n_jobs=params['n_jobs'])
-            del params['n_jobs']
-        if 'random_state' in params:
-            self.random_state = params['random_state']
-            self._set_graph_params(random_state=params['random_state'])
-            del params['random_state']
-        if 'verbose' in params:
-            self.verbose = params['verbose']
+            del params["solver"]
+        if "n_jobs" in params:
+            self.n_jobs = params["n_jobs"]
+            self._set_graph_params(n_jobs=params["n_jobs"])
+            del params["n_jobs"]
+        if "random_state" in params:
+            self.random_state = params["random_state"]
+            self._set_graph_params(random_state=params["random_state"])
+            del params["random_state"]
+        if "verbose" in params:
+            self.verbose = params["verbose"]
             tasklogger.set_level(self.verbose)
-            self._set_graph_params(verbose=params['verbose'])
-            del params['verbose']
+            self._set_graph_params(verbose=params["verbose"])
+            del params["verbose"]
 
         if reset_kernel:
             # can't reset the graph kernel without making a new graph
@@ -370,36 +407,40 @@ class MAGIC(BaseEstimator):
             n_pca = None
         else:
             n_pca = self.n_pca
-        
+
         knn_max = self.knn_max
         if knn_max is None:
             knn_max = max(X.shape[0], self.knn * 3)
 
-        _logger.info("Running MAGIC on {} cells and {} genes.".format(
-            X.shape[0], X.shape[1]))
+        _logger.info(
+            "Running MAGIC on {} cells and {} genes.".format(X.shape[0], X.shape[1])
+        )
 
         if graph is None:
             graph = self.graph
-            if self.X is not None and not \
-                    utils.matrix_is_equivalent(X, self.X):
+            if self.X is not None and not utils.matrix_is_equivalent(X, self.X):
                 """
                 If the same data is used, we can reuse existing kernel and
                 diffusion matrices. Otherwise we have to recompute.
                 """
-                _logger.debug(
-                    "Reset graph due to difference in input data")
+                _logger.debug("Reset graph due to difference in input data")
                 graph = None
             elif graph is not None:
                 try:
                     graph.set_params(
-                        decay=self.decay, knn=self.knn, knn_max=self.knn_max, 
+                        decay=self.decay,
+                        knn=self.knn,
+                        knn_max=self.knn_max,
                         distance=self.knn_dist,
-                        n_jobs=self.n_jobs, verbose=self.verbose, n_pca=n_pca,
-                        thresh=1e-4, random_state=self.random_state)
+                        n_jobs=self.n_jobs,
+                        verbose=self.verbose,
+                        n_pca=n_pca,
+                        thresh=1e-4,
+                        random_state=self.random_state,
+                    )
                 except ValueError as e:
                     # something changed that should have invalidated the graph
-                    _logger.debug(
-                        "Reset graph due to {}".format(str(e)))
+                    _logger.debug("Reset graph due to {}".format(str(e)))
                     graph = None
         else:
             self.knn = graph.knn
@@ -411,12 +452,13 @@ class MAGIC(BaseEstimator):
         self.X = X
 
         if utils.has_empty_columns(X):
-            warnings.warn("Input matrix contains unexpressed genes. "
-                          "Please remove them prior to running MAGIC.")
+            warnings.warn(
+                "Input matrix contains unexpressed genes. "
+                "Please remove them prior to running MAGIC."
+            )
 
         if graph is not None:
-            _logger.info(
-                "Using precomputed graph and diffusion operator...")
+            _logger.info("Using precomputed graph and diffusion operator...")
             self.graph = graph
         else:
             # reset X_magic in case it was previously set
@@ -431,27 +473,31 @@ class MAGIC(BaseEstimator):
                     thresh=1e-4,
                     n_jobs=self.n_jobs,
                     verbose=self.verbose,
-                    random_state=self.random_state)
+                    random_state=self.random_state,
+                )
 
         return self
 
     def _parse_genes(self, X, genes):
-        if genes is None and isinstance(X, (pd.SparseDataFrame,
-                                            sparse.spmatrix)) and \
-                np.prod(X.shape) > 5000 * 20000:
-            warnings.warn("Returning imputed values for all genes on a ({} x "
-                          "{}) matrix will require approximately {:.2f}GB of "
-                          "memory. Suppress this warning with "
-                          "`genes='all_genes'`".format(
-                              X.shape[0], X.shape[1],
-                              np.prod(X.shape) * 8 / (1024**3)),
-                          UserWarning)
+        if (
+            genes is None
+            and isinstance(X, (pd.SparseDataFrame, sparse.spmatrix))
+            and np.prod(X.shape) > 5000 * 20000
+        ):
+            warnings.warn(
+                "Returning imputed values for all genes on a ({} x "
+                "{}) matrix will require approximately {:.2f}GB of "
+                "memory. Suppress this warning with "
+                "`genes='all_genes'`".format(
+                    X.shape[0], X.shape[1], np.prod(X.shape) * 8 / (1024 ** 3)
+                ),
+                UserWarning,
+            )
         if isinstance(genes, str) and genes == "all_genes":
             genes = None
         elif isinstance(genes, str) and genes == "pca_only":
             if not hasattr(self.graph, "data_pca"):
-                raise RuntimeError("Cannot return PCA as PCA is not"
-                                   " performed.")
+                raise RuntimeError("Cannot return PCA as PCA is not" " performed.")
         elif genes is not None:
             genes = np.array([genes]).flatten()
             if not issubclass(genes.dtype.type, numbers.Integral):
@@ -464,16 +510,18 @@ class MAGIC(BaseEstimator):
                     raise ValueError(
                         "Non-integer gene names only valid with pd.DataFrame "
                         "or anndata.AnnData input. "
-                        "X is a {}, genes = {}".format(type(X).__name__,
-                                                       genes))
+                        "X is a {}, genes = {}".format(type(X).__name__, genes)
+                    )
                 if not np.all(np.isin(genes, gene_names)):
-                    warnings.warn("genes {} missing from input data".format(
-                        genes[~np.isin(genes, gene_names)]))
+                    warnings.warn(
+                        "genes {} missing from input data".format(
+                            genes[~np.isin(genes, gene_names)]
+                        )
+                    )
                 genes = np.argwhere(np.isin(gene_names, genes)).reshape(-1)
         return genes
-    
-    def transform(self, X=None, genes=None, t_max=20,
-                  plot_optimal_t=False, ax=None):
+
+    def transform(self, X=None, genes=None, t_max=20, plot_optimal_t=False, ax=None):
         """Computes the values of genes after diffusion
 
         Parameters
@@ -516,15 +564,19 @@ class MAGIC(BaseEstimator):
                 raise NotFittedError(
                     "This MAGIC instance is not fitted yet. Call "
                     "'fit' with appropriate arguments before "
-                    "using this method.")
+                    "using this method."
+                )
 
         if X is not None and not utils.matrix_is_equivalent(X, self.graph.data):
             store_result = False
             graph = graphtools.base.Data(X, n_pca=self.n_pca)
-            warnings.warn("Running MAGIC.transform on different "
-                          "data to that which was used for MAGIC.fit may not "
-                          "produce sensible output, unless it comes from the "
-                          "same manifold.", UserWarning)
+            warnings.warn(
+                "Running MAGIC.transform on different "
+                "data to that which was used for MAGIC.fit may not "
+                "produce sensible output, unless it comes from the "
+                "same manifold.",
+                UserWarning,
+            )
         else:
             X = self.X
             graph = self.graph
@@ -535,8 +587,7 @@ class MAGIC(BaseEstimator):
         if store_result and self.X_magic is not None:
             X_magic = self.X_magic
         else:
-            X_magic = self._impute(graph, t_max=t_max,
-                                   plot=plot_optimal_t, ax=ax)
+            X_magic = self._impute(graph, t_max=t_max, plot=plot_optimal_t, ax=ax)
             if store_result:
                 self.X_magic = X_magic
 
@@ -547,8 +598,9 @@ class MAGIC(BaseEstimator):
         else:
             X_magic = graph.inverse_transform(X_magic, columns=genes)
             # convert back to pandas dataframe, if necessary
-        X_magic = utils.convert_to_same_format(X_magic, X, columns=genes,
-                                               prevent_sparse=True)
+        X_magic = utils.convert_to_same_format(
+            X_magic, X, columns=genes, prevent_sparse=True
+        )
         return X_magic
 
     def fit_transform(self, X, graph=None, **kwargs):
@@ -590,13 +642,14 @@ class MAGIC(BaseEstimator):
         X_magic : array, shape=[n_samples, n_genes]
             The gene expression values after diffusion
         """
-        with _logger.task('MAGIC'):
+        with _logger.task("MAGIC"):
             self.fit(X, graph=graph)
             X_magic = self.transform(**kwargs)
         return X_magic
 
-    def _calculate_error(self, data, data_prev=None, weights=None,
-                         subsample_genes=None):
+    def _calculate_error(
+        self, data, data_prev=None, weights=None, subsample_genes=None
+    ):
         """Calculates difference before and after diffusion
 
         Parameters
@@ -630,8 +683,15 @@ class MAGIC(BaseEstimator):
             error = None
         return error, data
 
-    def _impute(self, data, t_max=20, plot=False, ax=None,
-                max_genes_compute_t=500, threshold=0.001):
+    def _impute(
+        self,
+        data,
+        t_max=20,
+        plot=False,
+        ax=None,
+        max_genes_compute_t=500,
+        threshold=0.001,
+    ):
         """Peform MAGIC imputation
 
         Parameters
@@ -658,27 +718,29 @@ class MAGIC(BaseEstimator):
         """
 
         if not isinstance(data, graphtools.base.Data):
-            if self.solver == 'approximate':
+            if self.solver == "approximate":
                 data = graphtools.base.Data(data, n_pca=self.n_pca)
-            elif self.solver == 'exact':
+            elif self.solver == "exact":
                 data = graphtools.base.Data(data, n_pca=None)
         data_imputed = scprep.utils.toarray(data.data_nu)
 
         if data_imputed.shape[1] > max_genes_compute_t:
-            subsample_genes = np.random.choice(data_imputed.shape[1],
-                                               max_genes_compute_t,
-                                               replace=False)
+            subsample_genes = np.random.choice(
+                data_imputed.shape[1], max_genes_compute_t, replace=False
+            )
         else:
             subsample_genes = None
         if hasattr(data, "data_pca"):
             weights = None  # data.data_pca.explained_variance_ratio_
         else:
             weights = None
-        if self.t == 'auto':
+        if self.t == "auto":
             _, data_prev = self._calculate_error(
-                data_imputed, data_prev=None,
+                data_imputed,
+                data_prev=None,
                 weights=weights,
-                subsample_genes=subsample_genes)
+                subsample_genes=subsample_genes,
+            )
             error_vec = []
             t_opt = None
         else:
@@ -690,10 +752,10 @@ class MAGIC(BaseEstimator):
             # the diffusion matrix is powered when t has been specified by
             # the user, and the dimensions of the diffusion matrix are lesser
             # than those of the data matrix. (M^t) * D
-            if (t_opt is not None) and \
-                    (self.diff_op.shape[1] < data_imputed.shape[1]):
+            if (t_opt is not None) and (self.diff_op.shape[1] < data_imputed.shape[1]):
                 diff_op_t = np.linalg.matrix_power(
-                    scprep.utils.toarray(self.diff_op), t_opt)
+                    scprep.utils.toarray(self.diff_op), t_opt
+                )
                 data_imputed = diff_op_t.dot(data_imputed)
 
             # fast magic
@@ -702,38 +764,43 @@ class MAGIC(BaseEstimator):
             # (so as to allow for the calculation of the optimal t value)
             else:
                 i = 0
-                while (t_opt is None and i < t_max) or \
-                        (t_opt is not None and i < t_opt):
+                while (t_opt is None and i < t_max) or (
+                    t_opt is not None and i < t_opt
+                ):
                     i += 1
                     data_imputed = self.diff_op.dot(data_imputed)
-                    if self.t == 'auto':
+                    if self.t == "auto":
                         error, data_prev = self._calculate_error(
-                            data_imputed, data_prev,
+                            data_imputed,
+                            data_prev,
                             weights=weights,
-                            subsample_genes=subsample_genes)
+                            subsample_genes=subsample_genes,
+                        )
                         error_vec.append(error)
                         _logger.debug("{}: {}".format(i, error_vec))
                         if error < threshold and t_opt is None:
                             t_opt = i + 1
-                            _logger.info(
-                                "Automatically selected t = {}".format(t_opt))
+                            _logger.info("Automatically selected t = {}".format(t_opt))
 
         if plot:
             # continue to t_max
             with _logger.task("optimal t plot"):
                 if t_opt is None:
                     # never converged
-                    warnings.warn("optimal t > t_max ({})".format(t_max),
-                                  RuntimeWarning)
+                    warnings.warn(
+                        "optimal t > t_max ({})".format(t_max), RuntimeWarning
+                    )
                 else:
                     data_overimputed = data_imputed
                     while i < t_max:
                         i += 1
                         data_overimputed = self.diff_op.dot(data_overimputed)
                         error, data_prev = self._calculate_error(
-                            data_overimputed, data_prev,
+                            data_overimputed,
+                            data_prev,
                             weights=weights,
-                            subsample_genes=subsample_genes)
+                            subsample_genes=subsample_genes,
+                        )
                         error_vec.append(error)
 
                 # create axis
@@ -747,10 +814,12 @@ class MAGIC(BaseEstimator):
                 x = np.arange(len(error_vec)) + 1
                 ax.plot(x, error_vec)
                 if t_opt is not None:
-                    ax.plot(t_opt, error_vec[t_opt - 1], 'ro', markersize=10,)
-                ax.plot(x, np.full(len(error_vec), threshold), 'k--')
-                ax.set_xlabel('t')
-                ax.set_ylabel('disparity(data_{t}, data_{t-1})')
+                    ax.plot(
+                        t_opt, error_vec[t_opt - 1], "ro", markersize=10,
+                    )
+                ax.plot(x, np.full(len(error_vec), threshold), "k--")
+                ax.set_xlabel("t")
+                ax.set_ylabel("disparity(data_{t}, data_{t-1})")
                 ax.set_xlim([1, len(error_vec)])
                 plt.tight_layout()
             if show:
@@ -758,9 +827,9 @@ class MAGIC(BaseEstimator):
 
         return data_imputed
 
-    def knnDREMI(self, gene_x, gene_y,
-                 k=10, n_bins=20, n_mesh=3, n_jobs=1,
-                 plot=False, **kwargs):
+    def knnDREMI(
+        self, gene_x, gene_y, k=10, n_bins=20, n_mesh=3, n_jobs=1, plot=False, **kwargs
+    ):
         """Calculate kNN-DREMI on MAGIC output
 
         Calculates k-Nearest Neighbor conditional Density Resampled Estimate of
@@ -795,7 +864,13 @@ class MAGIC(BaseEstimator):
         """
         data = self.transform(genes=[gene_x, gene_y])
         dremi = scprep.stats.knnDREMI(
-            data[gene_x], data[gene_y],
-            k=k, n_bins=n_bins, n_mesh=n_mesh, n_jobs=n_jobs,
-            plot=plot, **kwargs)
+            data[gene_x],
+            data[gene_y],
+            k=k,
+            n_bins=n_bins,
+            n_mesh=n_mesh,
+            n_jobs=n_jobs,
+            plot=plot,
+            **kwargs
+        )
         return dremi

@@ -18,25 +18,33 @@ def _validate_gene(gene, data):
         if not isinstance(data, pd.DataFrame):
             raise ValueError(
                 "Non-integer gene names only valid with pd.DataFrame "
-                "input. X is a {}, gene = {}".format(
-                    type(data).__name__,
-                    gene))
+                "input. X is a {}, gene = {}".format(type(data).__name__, gene)
+            )
         if gene not in data.columns:
             raise ValueError("gene {} not found".format(gene))
     elif gene is not None and not isinstance(gene, numbers.Integral):
-        raise TypeError(
-            "Expected int or str. Got {}".format(type(gene).__name__))
+        raise TypeError("Expected int or str. Got {}".format(type(gene).__name__))
     return gene
 
 
-def animate_magic(data, gene_x, gene_y, gene_color=None,
-                  t_max=20,
-                  operator=None,
-                  filename=None,
-                  ax=None, figsize=None, s=1, cmap='inferno',
-                  interval=200, dpi=100, ipython_html="jshtml",
-                  verbose=False,
-                  **kwargs):
+def animate_magic(
+    data,
+    gene_x,
+    gene_y,
+    gene_color=None,
+    t_max=20,
+    operator=None,
+    filename=None,
+    ax=None,
+    figsize=None,
+    s=1,
+    cmap="inferno",
+    interval=200,
+    dpi=100,
+    ipython_html="jshtml",
+    verbose=False,
+    **kwargs
+):
     """Animate a gene-gene relationship with increased diffusion
 
     Parameters
@@ -81,16 +89,17 @@ def animate_magic(data, gene_x, gene_y, gene_color=None,
     if in_ipynb():
         # credit to
         # http://tiao.io/posts/notebooks/save-matplotlib-animations-as-gifs/
-        rc('animation', html=ipython_html)
+        rc("animation", html=ipython_html)
 
     if filename is not None:
         if filename.endswith(".gif"):
-            writer = 'imagemagick'
+            writer = "imagemagick"
         elif filename.endswith(".mp4"):
             writer = "ffmpeg"
         else:
             raise ValueError(
-                "filename must end in .gif or .mp4. Got {}".format(filename))
+                "filename must end in .gif or .mp4. Got {}".format(filename)
+            )
 
     if operator is None:
         operator = MAGIC(verbose=verbose, **kwargs).fit(data)
@@ -141,8 +150,7 @@ def animate_magic(data, gene_x, gene_y, gene_color=None,
 
     def animate(i):
         data_t = data_magic[i]
-        data_t = data_t if isinstance(
-            data, pd.DataFrame) else data_t.T
+        data_t = data_t if isinstance(data, pd.DataFrame) else data_t.T
         sc.set_offsets(np.array([data_t[gene_x], data_t[gene_y]]).T)
         ax.set_xlim([np.min(data_t[gene_x]), np.max(data_t[gene_x])])
         ax.set_ylim([np.min(data_t[gene_y]), np.max(data_t[gene_y])])
@@ -155,8 +163,13 @@ def animate_magic(data, gene_x, gene_y, gene_color=None,
         return ax
 
     ani = animation.FuncAnimation(
-        fig, animate, init_func=init,
-        frames=range(t_max + 1), interval=interval, blit=False)
+        fig,
+        animate,
+        init_func=init,
+        frames=range(t_max + 1),
+        interval=interval,
+        blit=False,
+    )
 
     if filename is not None:
         ani.save(filename, writer=writer, dpi=dpi)

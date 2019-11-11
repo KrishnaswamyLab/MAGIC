@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd
 import scprep
 from scipy import sparse
+
 try:
     import anndata
 except (ImportError, SyntaxError):
@@ -19,8 +20,7 @@ def check_positive(**params):
     """
     for p in params:
         if params[p] <= 0:
-            raise ValueError(
-                "Expected {} > 0, got {}".format(p, params[p]))
+            raise ValueError("Expected {} > 0, got {}".format(p, params[p]))
 
 
 def check_int(**params):
@@ -32,8 +32,7 @@ def check_int(**params):
     """
     for p in params:
         if not isinstance(params[p], numbers.Integral):
-            raise ValueError(
-                "Expected {} integer, got {}".format(p, params[p]))
+            raise ValueError("Expected {} integer, got {}".format(p, params[p]))
 
 
 def check_if_not(x, *checks, **params):
@@ -79,7 +78,9 @@ def check_in(choices, **params):
         if params[p] not in choices:
             raise ValueError(
                 "{} value {} not recognized. Choose from {}".format(
-                    p, params[p], choices))
+                    p, params[p], choices
+                )
+            )
 
 
 def check_between(v_min, v_max, **params):
@@ -101,8 +102,10 @@ def check_between(v_min, v_max, **params):
     """
     for p in params:
         if params[p] < v_min or params[p] > v_max:
-            raise ValueError("Expected {} between {} and {}, "
-                             "got {}".format(p, v_min, v_max, params[p]))
+            raise ValueError(
+                "Expected {} between {} and {}, "
+                "got {}".format(p, v_min, v_max, params[p])
+            )
 
 
 def matrix_is_equivalent(X, Y):
@@ -174,8 +177,10 @@ def in_ipynb():
 
     Credit to https://stackoverflow.com/a/24937408/3996580
     """
-    __VALID_NOTEBOOKS = ["<class 'google.colab._shell.Shell'>",
-                         "<class 'ipykernel.zmqshell.ZMQInteractiveShell'>"]
+    __VALID_NOTEBOOKS = [
+        "<class 'google.colab._shell.Shell'>",
+        "<class 'ipykernel.zmqshell.ZMQInteractiveShell'>",
+    ]
     try:
         return str(type(get_ipython())) in __VALID_NOTEBOOKS
     except NameError:
