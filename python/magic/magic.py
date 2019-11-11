@@ -44,9 +44,13 @@ class MAGIC(BaseEstimator):
     ----------
 
     knn : int, optional, default: 10
-        number of nearest neighbors on which to build kernel
+        number of nearest neighbors from which to compute kernel bandwidth
 
-    decay : int, optional, default: 15
+    knn_max : int, optional, default: None
+        maximum number of nearest neighbors with nonzero connection.
+        If `None`, will be set to 3 * `knn`
+
+    decay : int, optional, default: 2
         sets decay rate of kernel tails.
         If None, alpha decaying kernel is not used
 
@@ -132,7 +136,7 @@ class MAGIC(BaseEstimator):
         `Cell <https://www.cell.com/cell/abstract/S0092-8674(18)30724-4>`__.
     """
 
-    def __init__(self, knn=10, decay=15, t='auto', n_pca=100,
+    def __init__(self, knn=10, knn_max=None, decay=2, t='auto', n_pca=100,
                  knn_dist='euclidean', n_jobs=1, random_state=None,
                  verbose=1, k=None, a=None):
         if k is not None:
@@ -140,6 +144,7 @@ class MAGIC(BaseEstimator):
         if a is not None:
             decay = a
         self.knn = knn
+        self.knn_max = knn_max
         self.decay = decay
         self.t = t
         self.n_pca = n_pca
@@ -180,10 +185,8 @@ class MAGIC(BaseEstimator):
         utils.check_int(knn=self.knn,
                         n_jobs=self.n_jobs)
         # TODO: epsilon
-        utils.check_between(v_min=0,
-                            v_max=100)
         utils.check_if_not(None, utils.check_positive, utils.check_int,
-                           n_pca=self.n_pca)
+                           n_pca=self.n_pca, knn_max=self.knn_max)
         utils.check_if_not(None, utils.check_positive,
                            decay=self.decay)
         utils.check_if_not('auto', utils.check_positive, utils.check_int,
@@ -280,6 +283,10 @@ class MAGIC(BaseEstimator):
             self.knn = params['knn']
             reset_kernel = True
             del params['knn']
+        if 'knn_max' in params and params['knn_max'] != self.knn_max:
+            self.knn = params['knn_max']
+            reset_kernel = True
+            del params['knn_max']
         if 'decay' in params and params['decay'] != self.decay:
             self.decay = params['decay']
             reset_kernel = True
@@ -340,6 +347,10 @@ class MAGIC(BaseEstimator):
             n_pca = None
         else:
             n_pca = self.n_pca
+        
+        knn_max = self.knn_max
+        if knn_max is None:
+            knn_max = max(X.shape[0], self.knn * 3)
 
         _logger.info("Running MAGIC on {} cells and {} genes.".format(
             X.shape[0], X.shape[1]))
@@ -358,7 +369,8 @@ class MAGIC(BaseEstimator):
             elif graph is not None:
                 try:
                     graph.set_params(
-                        decay=self.decay, knn=self.knn, distance=self.knn_dist,
+                        decay=self.decay, knn=self.knn, knn_max=self.knn_max, 
+                        distance=self.knn_dist,
                         n_jobs=self.n_jobs, verbose=self.verbose, n_pca=n_pca,
                         thresh=1e-4, random_state=self.random_state)
                 except ValueError as e:
@@ -368,6 +380,7 @@ class MAGIC(BaseEstimator):
                     graph = None
         else:
             self.knn = graph.knn
+            self.knn_max = graph.knn_max
             self.alpha = graph.decay
             self.n_pca = graph.n_pca
             self.knn_dist = graph.distance
@@ -390,6 +403,7 @@ class MAGIC(BaseEstimator):
                     X,
                     n_pca=n_pca,
                     knn=self.knn,
+                    knn_max=self.knn_max,
                     decay=self.decay,
                     thresh=1e-4,
                     n_jobs=self.n_jobs,
@@ -398,6 +412,43 @@ class MAGIC(BaseEstimator):
 
         return self
 
+    def _parse_genes(self, X, genes):
+        if genes is None and isinstance(X, (pd.SparseDataFrame,
+                                            sparse.spmatrix)) and \
+                np.prod(X.shape) > 5000 * 20000:
+            warnings.warn("Returning imputed values for all genes on a ({} x "
+                          "{}) matrix will require approximately {:.2f}GB of "
+                          "memory. Suppress this warning with "
+                          "`genes='all_genes'`".format(
+                              X.shape[0], X.shape[1],
+                              np.prod(X.shape) * 8 / (1024**3)),
+                          UserWarning)
+        if isinstance(genes, str) and genes == "all_genes":
+            genes = None
+        elif isinstance(genes, str) and genes == "pca_only":
+            if not hasattr(self.graph, "data_pca"):
+                raise RuntimeError("Cannot return PCA as PCA is not"
+                                   " performed.")
+        elif genes is not None:
+            genes = np.array([genes]).flatten()
+            if not issubclass(genes.dtype.type, numbers.Integral):
+                # gene names
+                if isinstance(X, pd.DataFrame):
+                    gene_names = X.columns
+                elif utils.is_anndata(X):
+                    gene_names = X.var_names
+                else:
+                    raise ValueError(
+                        "Non-integer gene names only valid with pd.DataFrame "
+                        "or anndata.AnnData input. "
+                        "X is a {}, genes = {}".format(type(X).__name__,
+                                                       genes))
+                if not np.all(np.isin(genes, gene_names)):
+                    warnings.warn("genes {} missing from input data".format(
+                        genes[~np.isin(genes, gene_names)]))
+                genes = np.argwhere(np.isin(gene_names, genes)).reshape(-1)
+        return genes
+    
     def transform(self, X=None, genes=None, t_max=20,
                   plot_optimal_t=False, ax=None):
         """Computes the values of genes after diffusion
@@ -435,26 +486,6 @@ class MAGIC(BaseEstimator):
         X_magic : array, shape=[n_samples, n_genes]
             The gene expression values after diffusion
         """
-        try:
-            if isinstance(X, anndata.AnnData):
-                if (genes is None or (isinstance(genes, str)
-                                      and genes in ['all_genes', 'pca_only'])):
-                    # special names
-                    pass
-                else:
-                    # ensure the genes is a 1D ndarray
-                    genes = np.array([genes]).flatten()
-                    if issubclass(genes.dtype.type, numbers.Integral):
-                        # integer indices
-                        pass
-                    else:
-                        # names
-                        genes = np.argwhere(np.isin(X.var_names,
-                                                    genes)).flatten()
-        except NameError:
-            # anndata not installed
-            pass
-
         if self.graph is None:
             if self.X is not None:
                 self.fit(self.X)
@@ -464,7 +495,6 @@ class MAGIC(BaseEstimator):
                     "'fit' with appropriate arguments before "
                     "using this method.")
 
-        store_result = True
         if X is not None and not utils.matrix_is_equivalent(X, self.graph.data):
             store_result = False
             graph = graphtools.base.Data(X, n_pca=self.n_pca)
@@ -477,40 +507,7 @@ class MAGIC(BaseEstimator):
             graph = self.graph
             store_result = True
 
-        if genes is None and isinstance(X, (pd.SparseDataFrame,
-                                            sparse.spmatrix)) and \
-                np.prod(X.shape) > 5000 * 20000:
-            warnings.warn("Returning imputed values for all genes on a ({} x "
-                          "{}) matrix will require approximately {:.2f}GB of "
-                          "memory. Suppress this warning with "
-                          "`genes='all_genes'`".format(
-                              X.shape[0], X.shape[1],
-                              np.prod(X.shape) * 8 / (1024**3)),
-                          UserWarning)
-        if isinstance(genes, str) and genes == "all_genes":
-            genes = None
-        elif isinstance(genes, str) and genes == "pca_only":
-            if not hasattr(self.graph, "data_pca"):
-                raise RuntimeError("Cannot return PCA as PCA is not"
-                                   " performed.")
-        elif genes is not None:
-            genes = np.array([genes]).flatten()
-            if not issubclass(genes.dtype.type, numbers.Integral):
-                # gene names
-                if isinstance(X, pd.DataFrame):
-                    gene_names = X.columns
-                elif utils.is_anndata(X):
-                    gene_names = X.var_names
-                else:
-                    raise ValueError(
-                        "Non-integer gene names only valid with pd.DataFrame "
-                        "or anndata.AnnData input. "
-                        "X is a {}, genes = {}".format(type(X).__name__,
-                                                       genes))
-                if not np.all(np.isin(genes, gene_names)):
-                    warnings.warn("genes {} missing from input data".format(
-                        genes[~np.isin(genes, gene_names)]))
-                genes = np.argwhere(np.isin(gene_names, genes)).reshape(-1)
+        genes = self._parse_genes(X, genes)
 
         if store_result and self.X_magic is not None:
             X_magic = self.X_magic
