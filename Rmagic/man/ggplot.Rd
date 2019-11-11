@@ -15,7 +15,7 @@
 Passes the smoothed data matrix to ggplot
 }
 \examples{
-if (reticulate::py_module_available("magic") && require(ggplot2)) {
+if (pymagic_is_available() && require(ggplot2)) {
 
 data(magic_testdata)
 data_magic <- magic(magic_testdata, genes=c("VIM", "CDH1", "ZEB1"))
