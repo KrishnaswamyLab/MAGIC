@@ -50,7 +50,7 @@ class MAGIC(BaseEstimator):
         maximum number of nearest neighbors with nonzero connection.
         If `None`, will be set to 3 * `knn`
 
-    decay : int, optional, default: 15
+    decay : int, optional, default: 2
         sets decay rate of kernel tails.
         If None, alpha decaying kernel is not used
 
@@ -146,7 +146,7 @@ class MAGIC(BaseEstimator):
         self,
         knn=10,
         knn_max=None,
-        decay=15,
+        decay=2,
         t="auto",
         n_pca=100,
         solver="exact",
@@ -176,6 +176,17 @@ class MAGIC(BaseEstimator):
         self._check_params()
         self.verbose = verbose
         tasklogger.set_level(verbose)
+
+    @property
+    def knn_max(self):
+        if self._knn_max is not None:
+            return self._knn_max
+        else:
+            return self.knn * 3
+
+    @knn_max.setter
+    def knn_max(self, value):
+        self._knn_max = value
 
     @property
     def diff_op(self):
@@ -396,10 +407,6 @@ class MAGIC(BaseEstimator):
             n_pca = None
         else:
             n_pca = self.n_pca
-
-        knn_max = self.knn_max
-        if knn_max is None:
-            knn_max = max(X.shape[0], self.knn * 3)
 
         _logger.info(
             "Running MAGIC on {} cells and {} genes.".format(X.shape[0], X.shape[1])
