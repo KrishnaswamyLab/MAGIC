@@ -162,7 +162,7 @@ class MAGIC(BaseEstimator):
         if a is not None:
             decay = a
         self.knn = knn
-        self.knn_max = knn_max
+        self._knn_max = knn_max
         self.decay = decay
         self.t = t
         self.n_pca = n_pca
@@ -176,6 +176,13 @@ class MAGIC(BaseEstimator):
         self._check_params()
         self.verbose = verbose
         tasklogger.set_level(verbose)
+
+    @property
+    def knn_max(self):
+        if self._knn_max is not None:
+            return self._knn_max
+        else:
+            return self.knn * 3
 
     @property
     def diff_op(self):
@@ -397,10 +404,6 @@ class MAGIC(BaseEstimator):
         else:
             n_pca = self.n_pca
 
-        knn_max = self.knn_max
-        if knn_max is None:
-            knn_max = max(X.shape[0], self.knn * 3)
-
         _logger.info(
             "Running MAGIC on {} cells and {} genes.".format(X.shape[0], X.shape[1])
         )
@@ -419,7 +422,7 @@ class MAGIC(BaseEstimator):
                     graph.set_params(
                         decay=self.decay,
                         knn=self.knn,
-                        knn_max=knn_max,
+                        knn_max=self.knn_max,
                         distance=self.knn_dist,
                         n_jobs=self.n_jobs,
                         verbose=self.verbose,
