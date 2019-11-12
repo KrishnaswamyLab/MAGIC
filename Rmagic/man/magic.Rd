@@ -9,20 +9,20 @@
 \usage{
 magic(data, ...)
 
-\method{magic}{default}(data, genes = NULL, knn = 10, decay = 15,
-  t = "auto", npca = 100, init = NULL, t.max = 20,
+\method{magic}{default}(data, genes = NULL, knn = 10, knn.max = NULL,
+  decay = 2, t = "auto", npca = 100, init = NULL, t.max = 20,
   knn.dist.method = "euclidean", verbose = 1, n.jobs = 1,
   seed = NULL, k = NULL, alpha = NULL, ...)
 
-\method{magic}{seurat}(data, genes = NULL, knn = 10, decay = 15,
-  t = "auto", npca = 100, init = NULL, t.max = 20,
+\method{magic}{seurat}(data, genes = NULL, knn = 10, knn.max = NULL,
+  decay = 2, t = "auto", npca = 100, init = NULL, t.max = 20,
   knn.dist.method = "euclidean", verbose = 1, n.jobs = 1,
   seed = NULL, ...)
 
 \method{magic}{Seurat}(data, assay = NULL, genes = NULL, knn = 10,
-  decay = 15, t = "auto", npca = 100, init = NULL, t.max = 20,
-  knn.dist.method = "euclidean", verbose = 1, n.jobs = 1,
-  seed = NULL, ...)
+  knn.max = NULL, decay = 2, t = "auto", npca = 100, init = NULL,
+  t.max = 20, knn.dist.method = "euclidean", verbose = 1,
+  n.jobs = 1, seed = NULL, ...)
 }
 \arguments{
 \item{data}{input data matrix or Seurat object}
@@ -34,9 +34,12 @@ vector of column names or column indices for which to return smoothed data
 If 'all_genes' or NULL, the entire smoothed matrix is returned}
 
 \item{knn}{int, optional, default: 10
-number of nearest neighbors on which to build kernel}
+number of nearest neighbors on which to compute bandwidth}
 
-\item{decay}{int, optional, default: 15
+\item{knn.max}{int, optional, default: NULL
+maximum number of neighbors for each point. If NULL, defaults to 3*knn}
+
+\item{decay}{int, optional, default: 2
 sets decay rate of kernel tails.
 If NULL, alpha decaying kernel is not used}
 
@@ -90,7 +93,7 @@ applied to single-cell RNA sequencing data, as described in
 van Dijk et al, 2018.
 }
 \examples{
-if (reticulate::py_module_available("magic")) {
+if (pymagic_is_available()) {
 
 data(magic_testdata)
 
@@ -119,7 +122,7 @@ data_smooth <- as.matrix(data_magic)
 
 }
 
-if (reticulate::py_module_available("magic") && require(Seurat)) {
+if (pymagic_is_available() && require(Seurat)) {
 
 data(magic_testdata)
 

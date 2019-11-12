@@ -15,7 +15,7 @@
 Summarize a MAGIC object
 }
 \examples{
-if (reticulate::py_module_available("magic")) {
+if (pymagic_is_available()) {
 
 data(magic_testdata)
 data_magic <- magic(magic_testdata)

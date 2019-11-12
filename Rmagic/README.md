@@ -1,4 +1,4 @@
-Rmagic v1.5.0
+Rmagic
 ================
 
 true
