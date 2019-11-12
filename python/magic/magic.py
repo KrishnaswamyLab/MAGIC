@@ -162,7 +162,7 @@ class MAGIC(BaseEstimator):
         if a is not None:
             decay = a
         self.knn = knn
-        self._knn_max = knn_max
+        self.knn_max = knn_max
         self.decay = decay
         self.t = t
         self.n_pca = n_pca
