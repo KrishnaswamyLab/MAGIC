@@ -50,7 +50,7 @@ class MAGIC(BaseEstimator):
         maximum number of nearest neighbors with nonzero connection.
         If `None`, will be set to 3 * `knn`
 
-    decay : int, optional, default: 15
+    decay : int, optional, default: 2
         sets decay rate of kernel tails.
         If None, alpha decaying kernel is not used
 
@@ -146,7 +146,7 @@ class MAGIC(BaseEstimator):
         self,
         knn=10,
         knn_max=None,
-        decay=15,
+        decay=2,
         t="auto",
         n_pca=100,
         solver="exact",
@@ -419,7 +419,7 @@ class MAGIC(BaseEstimator):
                     graph.set_params(
                         decay=self.decay,
                         knn=self.knn,
-                        knn_max=self.knn_max,
+                        knn_max=knn_max,
                         distance=self.knn_dist,
                         n_jobs=self.n_jobs,
                         verbose=self.verbose,
