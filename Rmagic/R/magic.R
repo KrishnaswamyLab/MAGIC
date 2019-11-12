@@ -13,7 +13,7 @@
 #' number of nearest neighbors on which to compute bandwidth
 #' @param knn.max int, optional, default: NULL
 #' maximum number of neighbors for each point. If NULL, defaults to 3*knn
-#' @param decay int, optional, default: 15
+#' @param decay int, optional, default: 2
 #' sets decay rate of kernel tails.
 #' If NULL, alpha decaying kernel is not used
 #' @param t int, optional, default: 'auto'
@@ -110,7 +110,7 @@ magic.default <- function(
   genes = NULL,
   knn = 10,
   knn.max = NULL,
-  decay = 15,
+  decay = 2,
   t = 'auto',
   npca = 100,
   init = NULL,
@@ -251,7 +251,7 @@ magic.seurat <- function(
   genes = NULL,
   knn = 10,
   knn.max = NULL,
-  decay = 15,
+  decay = 2,
   t = 'auto',
   npca = 100,
   init = NULL,
@@ -313,7 +313,7 @@ magic.Seurat <- function(
   genes = NULL,
   knn = 10,
   knn.max = NULL,
-  decay = 15,
+  decay = 2,
   t = 'auto',
   npca = 100,
   init = NULL,
