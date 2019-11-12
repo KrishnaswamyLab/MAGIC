@@ -185,7 +185,7 @@ class MAGIC(BaseEstimator):
         self.X_magic = None
         self._check_params()
         self.verbose = verbose
-        tasklogger.set_level(verbose)
+        _logger.set_level(verbose)
 
     @property
     def knn_max(self):
