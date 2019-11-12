@@ -25,14 +25,6 @@ MAGIC has been implemented in Python, Matlab, and R.
 * [Epithelial-to-Mesenchymal Transition Tutorial](http://htmlpreview.github.io/?https://github.com/KrishnaswamyLab/MAGIC/blob/master/Rmagic/inst/examples/emt_tutorial.html)  
 * [Bone Marrow Tutorial](http://htmlpreview.github.io/?https://github.com/KrishnaswamyLab/MAGIC/blob/master/Rmagic/inst/examples/bonemarrow_tutorial.html)  
 
-
-<p align="center">
-<img src="https://raw.githubusercontent.com/KrishnaswamyLab/MAGIC/master/magic.gif"/>
-<br>
-<i>Magic reveals the interaction between Vimentin (VIM), Cadherin-1 (CDH1), and Zinc finger E-box-binding homeobox 1 (ZEB1, encoded by colors).
-</i>
-</p>
-
 ### Table of Contents
 
   * [Python](#python)
