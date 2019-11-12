@@ -71,7 +71,7 @@ def test_dremi():
     magic_op.set_params(random_state=42)
     magic_op.fit(scdata_norm)
     dremi = magic_op.knnDREMI("VIM", "ZEB1", plot=True)
-    np.testing.assert_allclose(dremi, 1.591713, atol=0.0000005)
+    np.testing.assert_allclose(dremi, 1.466004, atol=0.0000005)
 
 
 def test_solver():
