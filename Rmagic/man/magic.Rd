@@ -10,19 +10,19 @@
 magic(data, ...)
 
 \method{magic}{default}(data, genes = NULL, knn = 10, knn.max = NULL,
-  decay = 15, t = "auto", npca = 100, init = NULL, t.max = 20,
+  decay = 2, t = "auto", npca = 100, init = NULL, t.max = 20,
   knn.dist.method = "euclidean", verbose = 1, n.jobs = 1,
   seed = NULL, k = NULL, alpha = NULL, ...)
 
 \method{magic}{seurat}(data, genes = NULL, knn = 10, knn.max = NULL,
-  decay = 15, t = "auto", npca = 100, init = NULL, t.max = 20,
+  decay = 2, t = "auto", npca = 100, init = NULL, t.max = 20,
   knn.dist.method = "euclidean", verbose = 1, n.jobs = 1,
   seed = NULL, ...)
 
 \method{magic}{Seurat}(data, assay = NULL, genes = NULL, knn = 10,
-  knn.max = NULL, decay = 15, t = "auto", npca = 100,
-  init = NULL, t.max = 20, knn.dist.method = "euclidean",
-  verbose = 1, n.jobs = 1, seed = NULL, ...)
+  knn.max = NULL, decay = 2, t = "auto", npca = 100, init = NULL,
+  t.max = 20, knn.dist.method = "euclidean", verbose = 1,
+  n.jobs = 1, seed = NULL, ...)
 }
 \arguments{
 \item{data}{input data matrix or Seurat object}
@@ -39,7 +39,7 @@ number of nearest neighbors on which to compute bandwidth}
 \item{knn.max}{int, optional, default: NULL
 maximum number of neighbors for each point. If NULL, defaults to 3*knn}
 
-\item{decay}{int, optional, default: 15
+\item{decay}{int, optional, default: 2
 sets decay rate of kernel tails.
 If NULL, alpha decaying kernel is not used}
 
