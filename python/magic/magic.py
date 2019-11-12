@@ -158,8 +158,18 @@ class MAGIC(BaseEstimator):
         a=None,
     ):
         if k is not None:
+            warnings.warn(
+                "Parameter `k` is deprecated and will be removed"
+                " in a future version. Use `knn` instead",
+                FutureWarning,
+            )
             knn = k
         if a is not None:
+            warnings.warn(
+                "Parameter `a` is deprecated and will be removed"
+                " in a future version. Use `decay` instead",
+                FutureWarning,
+            )
             decay = a
         self.knn = knn
         self.knn_max = knn_max
@@ -328,10 +338,20 @@ class MAGIC(BaseEstimator):
 
         # kernel parameters
         if "k" in params and params["k"] != self.knn:
+            warnings.warn(
+                "Parameter `k` is deprecated and will be removed"
+                " in a future version. Use `knn` instead",
+                FutureWarning,
+            )
             self.knn = params["k"]
             reset_kernel = True
             del params["k"]
         if "a" in params and params["a"] != self.decay:
+            warnings.warn(
+                "Parameter `a` is deprecated and will be removed"
+                " in a future version. Use `decay` instead",
+                FutureWarning,
+            )
             self.decay = params["a"]
             reset_kernel = True
             del params["a"]
