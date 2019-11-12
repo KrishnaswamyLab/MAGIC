@@ -184,6 +184,10 @@ class MAGIC(BaseEstimator):
         else:
             return self.knn * 3
 
+    @knn_max.setter
+    def knn_max(self, value):
+        self._knn_max = value
+
     @property
     def diff_op(self):
         """The diffusion operator calculated from the data
