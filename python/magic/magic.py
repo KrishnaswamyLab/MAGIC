@@ -43,18 +43,18 @@ class MAGIC(BaseEstimator):
     Parameters
     ----------
 
-    knn : int, optional, default: 10
+    knn : int, optional, default: 5
         number of nearest neighbors from which to compute kernel bandwidth
 
     knn_max : int, optional, default: None
         maximum number of nearest neighbors with nonzero connection.
         If `None`, will be set to 3 * `knn`
 
-    decay : int, optional, default: 2
+    decay : int, optional, default: 1
         sets decay rate of kernel tails.
         If None, alpha decaying kernel is not used
 
-    t : int, optional, default: 'auto'
+    t : int, optional, default: 3
         power to which the diffusion operator is powered.
         This sets the level of diffusion. If 'auto', t is selected
         according to the Procrustes disparity of the diffused data
@@ -144,10 +144,10 @@ class MAGIC(BaseEstimator):
 
     def __init__(
         self,
-        knn=10,
+        knn=5,
         knn_max=None,
-        decay=2,
-        t="auto",
+        decay=1,
+        t=3,
         n_pca=100,
         solver="exact",
         knn_dist="euclidean",
@@ -282,14 +282,14 @@ class MAGIC(BaseEstimator):
         Parameters
         ----------
 
-        knn : int, optional, default: 10
+        knn : int, optional, default: 5
             number of nearest neighbors on which to build kernel
 
-        decay : int, optional, default: 15
+        decay : int, optional, default: 1
             sets decay rate of kernel tails.
             If None, alpha decaying kernel is not used
 
-        t : int, optional, default: 'auto'
+        t : int, optional, default: 3
             power to which the diffusion operator is powered.
             This sets the level of diffusion. If 'auto', t is selected
             according to the R squared of the diffused data
