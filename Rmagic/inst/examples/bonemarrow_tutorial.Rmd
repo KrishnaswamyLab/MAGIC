@@ -123,7 +123,7 @@ As you can see, the gene-gene relationships are much clearer after MAGIC. These 
 
 ### Rerunning MAGIC with new parameters
 
-The data is a little too smooth - we can decrease `t` from the automatic value to reduce the amount of diffusion. We pass the original result to the argument `init` to avoid recomputing intermediate steps.
+The data is a little too smooth - we can increase `t` from the default value of 3 to increase the amount of diffusion. We pass the original result to the argument `init` to avoid recomputing intermediate steps.
 
 ```{r decrease_t}
 bmmsc_MAGIC <- magic(bmmsc, genes=c("Mpo", "Klf1", "Ifitm1"), 
@@ -141,7 +141,7 @@ We can visualize the results of MAGIC on PCA with `genes="pca_only"`.
 ```{r run_pca}
 bmmsc_MAGIC_PCA <- magic(bmmsc, genes="pca_only", 
                          t=4, init=bmmsc_MAGIC)
-ggplot(bmmsc_MAGIC_PCA) +
+# ggplot(bmmsc_MAGIC_PCA) +
   geom_point(aes(x=PC1, y=PC2, color=bmmsc_MAGIC$result$Klf1)) +
   scale_color_viridis(option="B") +
   labs(color="Klf1")
@@ -154,7 +154,7 @@ ggsave('BMMSC_data_R_pca_colored_by_magic.png', width=5, height=5)
 We can visualize the results of MAGIC on PHATE as follows.
 
 ```{r run_phate}
-bmmsc_PHATE <- phate(bmmsc, knn=4, decay=100, t=20)
+bmmsc_PHATE <- phate(bmmsc)
 ggplot(bmmsc_PHATE) +
   geom_point(aes(x=PHATE1, y=PHATE2, color=bmmsc_MAGIC$result$Klf1)) +
   scale_color_viridis(option="B") +
