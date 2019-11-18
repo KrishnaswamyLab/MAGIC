@@ -178,6 +178,17 @@ class MAGIC(BaseEstimator):
         tasklogger.set_level(verbose)
 
     @property
+    def knn_max(self):
+        if self._knn_max is not None:
+            return self._knn_max
+        else:
+            return self.knn * 3
+
+    @knn_max.setter
+    def knn_max(self, value):
+        self._knn_max = value
+
+    @property
     def diff_op(self):
         """The diffusion operator calculated from the data
         """
@@ -396,10 +407,6 @@ class MAGIC(BaseEstimator):
             n_pca = None
         else:
             n_pca = self.n_pca
-
-        knn_max = self.knn_max
-        if knn_max is None:
-            knn_max = max(X.shape[0], self.knn * 3)
 
         _logger.info(
             "Running MAGIC on {} cells and {} genes.".format(X.shape[0], X.shape[1])
