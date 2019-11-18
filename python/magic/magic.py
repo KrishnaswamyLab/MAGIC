@@ -634,7 +634,8 @@ class MAGIC(BaseEstimator):
                 _logger.warning(
                     "Running MAGIC with `solver='exact'` on "
                     "{}-dimensional data may take a long time. "
-                    "Consider using `solver='approximate'`.".format(X_input.shape[1])
+                    "Consider denoising specific genes with `genes=<list-like>` or using "
+                    "`solver='approximate'`.".format(X_input.shape[1])
                 )
             X_magic = self._impute(X_input, t_max=t_max, plot=plot_optimal_t, ax=ax)
             if store_result:
