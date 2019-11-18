@@ -604,14 +604,16 @@ class MAGIC(BaseEstimator):
         if isinstance(genes, str) and genes == "pca_only":
             # have to use PCA to return it
             solver = "approximate"
+        elif (
+            genes is not None
+            and self.X_magic is None
+            and len(genes) < self.graph.data_nu.shape[1]
+        ):
+            # faster to skip PCA
+            solver = "exact"
+            store_result = False
         else:
-            if genes is not None and self.X_magic is None:
-                if len(genes) < self.graph.data_nu.shape[1]:
-                    # faster to skip PCA
-                    solver = "exact"
-                    store_result = False
-            else:
-                solver = self.solver
+            solver = self.solver
 
         if store_result and self.X_magic is not None:
             X_magic = self.X_magic
@@ -628,6 +630,12 @@ class MAGIC(BaseEstimator):
                     isinstance(genes, str) and genes != "pca_only"
                 ):
                     X_input = scprep.select.select_cols(X_input, idx=genes)
+            if solver == "exact" and X_input.shape[1] > 6000:
+                _logger.warning(
+                    "Running MAGIC with `solver='exact'` on "
+                    "{}-dimensional data may take a long time. "
+                    "Consider using `solver='approximate'`.".format(X_input.shape[1])
+                )
             X_magic = self._impute(X_input, t_max=t_max, plot=plot_optimal_t, ax=ax)
             if store_result:
                 self.X_magic = X_magic
