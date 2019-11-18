@@ -9,18 +9,18 @@
 \usage{
 magic(data, ...)
 
-\method{magic}{default}(data, genes = NULL, knn = 10, knn.max = NULL,
-  decay = 2, t = "auto", npca = 100, init = NULL, t.max = 20,
+\method{magic}{default}(data, genes = NULL, knn = 5, knn.max = NULL,
+  decay = 1, t = 3, npca = 100, init = NULL, t.max = 20,
   knn.dist.method = "euclidean", verbose = 1, n.jobs = 1,
   seed = NULL, k = NULL, alpha = NULL, ...)
 
-\method{magic}{seurat}(data, genes = NULL, knn = 10, knn.max = NULL,
-  decay = 2, t = "auto", npca = 100, init = NULL, t.max = 20,
+\method{magic}{seurat}(data, genes = NULL, knn = 5, knn.max = NULL,
+  decay = 1, t = 3, npca = 100, init = NULL, t.max = 20,
   knn.dist.method = "euclidean", verbose = 1, n.jobs = 1,
   seed = NULL, ...)
 
-\method{magic}{Seurat}(data, assay = NULL, genes = NULL, knn = 10,
-  knn.max = NULL, decay = 2, t = "auto", npca = 100, init = NULL,
+\method{magic}{Seurat}(data, assay = NULL, genes = NULL, knn = 5,
+  knn.max = NULL, decay = 1, t = 3, npca = 100, init = NULL,
   t.max = 20, knn.dist.method = "euclidean", verbose = 1,
   n.jobs = 1, seed = NULL, ...)
 }
@@ -33,17 +33,17 @@ magic(data, ...)
 vector of column names or column indices for which to return smoothed data
 If 'all_genes' or NULL, the entire smoothed matrix is returned}
 
-\item{knn}{int, optional, default: 10
+\item{knn}{int, optional, default: 5
 number of nearest neighbors on which to compute bandwidth}
 
 \item{knn.max}{int, optional, default: NULL
 maximum number of neighbors for each point. If NULL, defaults to 3*knn}
 
-\item{decay}{int, optional, default: 2
+\item{decay}{int, optional, default: 1
 sets decay rate of kernel tails.
 If NULL, alpha decaying kernel is not used}
 
-\item{t}{int, optional, default: 'auto'
+\item{t}{int, optional, default: 3
 power to which the diffusion operator is powered
 sets the level of diffusion. If 'auto', t is selected according to the
 Procrustes disparity of the diffused data.'}

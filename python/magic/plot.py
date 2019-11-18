@@ -33,6 +33,7 @@ def animate_magic(
     gene_y,
     gene_color=None,
     t_max=20,
+    delay=2,
     operator=None,
     filename=None,
     ax=None,
@@ -59,6 +60,8 @@ def animate_magic(
         Gene to color by. If None, no color vector is used
     t_max : int, optional (default: 20)
         maximum value of t to include in the animation
+    delay : int, optional (default: 5)
+        number of frames to dwell on the first frame before applying MAGIC
     operator : magic.MAGIC, optional (default: None)
         precomputed MAGIC operator. If None, one is created.
     filename : str, optional (default: None)
@@ -149,11 +152,16 @@ def animate_magic(
         return ax
 
     def animate(i):
+        i = max(i - delay, 0)
         data_t = data_magic[i]
         data_t = data_t if isinstance(data, pd.DataFrame) else data_t.T
         sc.set_offsets(np.array([data_t[gene_x], data_t[gene_y]]).T)
-        ax.set_xlim([np.min(data_t[gene_x]), np.max(data_t[gene_x])])
-        ax.set_ylim([np.min(data_t[gene_y]), np.max(data_t[gene_y])])
+        xlim = np.min(data_t[gene_x]), np.max(data_t[gene_x])
+        xrange = xlim[1] - xlim[0]
+        ax.set_xlim(xlim[0] - xrange / 10, xlim[1] + xrange / 10)
+        ylim = np.min(data_t[gene_y]), np.max(data_t[gene_y])
+        yrange = ylim[1] - ylim[0]
+        ax.set_ylim(ylim[0] - yrange / 10, ylim[1] + yrange / 10)
         ax.set_title("t = {}".format(i))
         if gene_color is not None:
             color_t = data_t[gene_color]
@@ -166,7 +174,7 @@ def animate_magic(
         fig,
         animate,
         init_func=init,
-        frames=range(t_max + 1),
+        frames=range(t_max + delay + 1),
         interval=interval,
         blit=False,
     )

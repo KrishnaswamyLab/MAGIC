@@ -43,18 +43,18 @@ class MAGIC(BaseEstimator):
     Parameters
     ----------
 
-    knn : int, optional, default: 10
+    knn : int, optional, default: 5
         number of nearest neighbors from which to compute kernel bandwidth
 
     knn_max : int, optional, default: None
         maximum number of nearest neighbors with nonzero connection.
         If `None`, will be set to 3 * `knn`
 
-    decay : int, optional, default: 2
+    decay : int, optional, default: 1
         sets decay rate of kernel tails.
         If None, alpha decaying kernel is not used
 
-    t : int, optional, default: 'auto'
+    t : int, optional, default: 3
         power to which the diffusion operator is powered.
         This sets the level of diffusion. If 'auto', t is selected
         according to the Procrustes disparity of the diffused data
@@ -144,10 +144,10 @@ class MAGIC(BaseEstimator):
 
     def __init__(
         self,
-        knn=10,
+        knn=5,
         knn_max=None,
-        decay=2,
-        t="auto",
+        decay=1,
+        t=3,
         n_pca=100,
         solver="exact",
         knn_dist="euclidean",
@@ -158,8 +158,18 @@ class MAGIC(BaseEstimator):
         a=None,
     ):
         if k is not None:
+            warnings.warn(
+                "Parameter `k` is deprecated and will be removed"
+                " in a future version. Use `knn` instead",
+                FutureWarning,
+            )
             knn = k
         if a is not None:
+            warnings.warn(
+                "Parameter `a` is deprecated and will be removed"
+                " in a future version. Use `decay` instead",
+                FutureWarning,
+            )
             decay = a
         self.knn = knn
         self.knn_max = knn_max
@@ -175,7 +185,7 @@ class MAGIC(BaseEstimator):
         self.X_magic = None
         self._check_params()
         self.verbose = verbose
-        tasklogger.set_level(verbose)
+        _logger.set_level(verbose)
 
     @property
     def knn_max(self):
@@ -272,14 +282,14 @@ class MAGIC(BaseEstimator):
         Parameters
         ----------
 
-        knn : int, optional, default: 10
+        knn : int, optional, default: 5
             number of nearest neighbors on which to build kernel
 
-        decay : int, optional, default: 15
+        decay : int, optional, default: 1
             sets decay rate of kernel tails.
             If None, alpha decaying kernel is not used
 
-        t : int, optional, default: 'auto'
+        t : int, optional, default: 3
             power to which the diffusion operator is powered.
             This sets the level of diffusion. If 'auto', t is selected
             according to the R squared of the diffused data
@@ -328,10 +338,20 @@ class MAGIC(BaseEstimator):
 
         # kernel parameters
         if "k" in params and params["k"] != self.knn:
+            warnings.warn(
+                "Parameter `k` is deprecated and will be removed"
+                " in a future version. Use `knn` instead",
+                FutureWarning,
+            )
             self.knn = params["k"]
             reset_kernel = True
             del params["k"]
         if "a" in params and params["a"] != self.decay:
+            warnings.warn(
+                "Parameter `a` is deprecated and will be removed"
+                " in a future version. Use `decay` instead",
+                FutureWarning,
+            )
             self.decay = params["a"]
             reset_kernel = True
             del params["a"]
@@ -584,14 +604,16 @@ class MAGIC(BaseEstimator):
         if isinstance(genes, str) and genes == "pca_only":
             # have to use PCA to return it
             solver = "approximate"
+        elif (
+            genes is not None
+            and self.X_magic is None
+            and len(genes) < self.graph.data_nu.shape[1]
+        ):
+            # faster to skip PCA
+            solver = "exact"
+            store_result = False
         else:
-            if genes is not None and self.X_magic is None:
-                if len(genes) < self.graph.data_nu.shape[1]:
-                    # faster to skip PCA
-                    solver = "exact"
-                    store_result = False
-            else:
-                solver = self.solver
+            solver = self.solver
 
         if store_result and self.X_magic is not None:
             X_magic = self.X_magic
@@ -608,6 +630,13 @@ class MAGIC(BaseEstimator):
                     isinstance(genes, str) and genes != "pca_only"
                 ):
                     X_input = scprep.select.select_cols(X_input, idx=genes)
+            if solver == "exact" and X_input.shape[1] > 6000:
+                _logger.warning(
+                    "Running MAGIC with `solver='exact'` on "
+                    "{}-dimensional data may take a long time. "
+                    "Consider denoising specific genes with `genes=<list-like>` or using "
+                    "`solver='approximate'`.".format(X_input.shape[1])
+                )
             X_magic = self._impute(X_input, t_max=t_max, plot=plot_optimal_t, ax=ax)
             if store_result:
                 self.X_magic = X_magic

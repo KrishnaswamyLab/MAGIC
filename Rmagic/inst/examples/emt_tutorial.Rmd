@@ -103,11 +103,11 @@ if (FALSE) {
 
 ### Running MAGIC
 
-Running MAGIC is as simple as running the `magic` function. Because this dataset is rather large, we can increase `knn` from the default of 10 up to 15.
+Running MAGIC is as simple as running the `magic` function. Because this dataset is rather small, we can decrease `knn` from the default of 5 down to 3.
 
 ```{r run_magic}
 # run MAGIC
-data_MAGIC <- magic(data, knn=15, genes=c("VIM", "CDH1", "ZEB1"))
+data_MAGIC <- magic(data, knn=3, genes=c("VIM", "CDH1", "ZEB1"))
 ```
 
 We can plot the data before and after MAGIC to visualize the results.
