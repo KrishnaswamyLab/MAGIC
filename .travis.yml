@@ -44,6 +44,7 @@ install:
   - cd ..
 
 script:
+  - python -c "import magic"
   - cd Rmagic; R CMD build .
   - R CMD check *tar.gz
   - cd ../python; pip install --user -q .[test]
