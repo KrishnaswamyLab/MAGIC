@@ -10,18 +10,22 @@ null_equal <- function(x, y) {
 }
 
 check_pymagic_version <- function() {
-  version <- strsplit(pymagic$`__version__`, '\\.')[[1]]
-  major_version <- 1
-  minor_version <- 5
-  if (as.integer(version[1]) < major_version) {
+  pyversion <- strsplit(pymagic$`__version__`, '\\.')[[1]]
+  rversion <- strsplit(as.character(packageVersion("Rmagic")), '\\.')[[1]]
+  major_version <- as.integer(rversion[1])
+  minor_version <- as.integer(rversion[2])
+  if (as.integer(pyversion[1]) < major_version) {
     warning(paste0("Python MAGIC version ", pymagic$`__version__`, " is out of date (recommended: ",
                    major_version, ".", minor_version, "). Please update with pip ",
-                   "(e.g. pip install magic-impute) or Rmagic::install.magic()."))
-  } else if (as.integer(version[2]) < minor_version) {
+                   "(e.g. pip install --upgrade magic-impute) or Rmagic::install.magic()."))
+    return(FALSE)
+  } else if (as.integer(pyversion[2]) < minor_version) {
     warning(paste0("Python MAGIC version ", pymagic$`__version__`, " is out of date (recommended: ",
                    major_version, ".", minor_version, "). Consider updating with pip ",
-                   "(e.g. pip install magic-impute) or Rmagic::install.magic()."))
+                   "(e.g. pip install --upgrade magic-impute) or Rmagic::install.magic()."))
+    return(FALSE)
   }
+  return(TRUE)
 }
 
 failed_pymagic_import <- function(e) {
@@ -37,7 +41,7 @@ failed_pymagic_import <- function(e) {
   } else if (length(grep("r\\-reticulate", reticulate::py_config()$python)) > 0) {
     # installed, but envs sometimes give weird results
     message("Consider removing the 'r-reticulate' environment by running:")
-    if (grep("virtualenvs", reticulate::py_config()$python)) {
+    if (length(grep("virtualenvs", reticulate::py_config()$python)) > 0) {
       message("reticulate::virtualenv_remove('r-reticulate')")
     } else {
       message("reticulate::conda_remove('r-reticulate')")
@@ -66,7 +70,8 @@ load_pymagic <- function() {
 #' @export
 pymagic_is_available <- function() {
   tryCatch({
-    reticulate::py_module_available("magic")$MAGIC
+    reticulate::import("magic")$MAGIC
+    check_pymagic_version()
   },
   error = function(e) {
     FALSE
