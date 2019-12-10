@@ -9,20 +9,59 @@
 \usage{
 magic(data, ...)
 
-\method{magic}{default}(data, genes = NULL, knn = 5, knn.max = NULL,
-  decay = 1, t = 3, npca = 100, init = NULL, t.max = 20,
-  knn.dist.method = "euclidean", verbose = 1, n.jobs = 1,
-  seed = NULL, k = NULL, alpha = NULL, ...)
+\method{magic}{default}(
+  data,
+  genes = NULL,
+  knn = 5,
+  knn.max = NULL,
+  decay = 1,
+  t = 3,
+  npca = 100,
+  init = NULL,
+  t.max = 20,
+  knn.dist.method = "euclidean",
+  verbose = 1,
+  n.jobs = 1,
+  seed = NULL,
+  k = NULL,
+  alpha = NULL,
+  ...
+)
 
-\method{magic}{seurat}(data, genes = NULL, knn = 5, knn.max = NULL,
-  decay = 1, t = 3, npca = 100, init = NULL, t.max = 20,
-  knn.dist.method = "euclidean", verbose = 1, n.jobs = 1,
-  seed = NULL, ...)
+\method{magic}{seurat}(
+  data,
+  genes = NULL,
+  knn = 5,
+  knn.max = NULL,
+  decay = 1,
+  t = 3,
+  npca = 100,
+  init = NULL,
+  t.max = 20,
+  knn.dist.method = "euclidean",
+  verbose = 1,
+  n.jobs = 1,
+  seed = NULL,
+  ...
+)
 
-\method{magic}{Seurat}(data, assay = NULL, genes = NULL, knn = 5,
-  knn.max = NULL, decay = 1, t = 3, npca = 100, init = NULL,
-  t.max = 20, knn.dist.method = "euclidean", verbose = 1,
-  n.jobs = 1, seed = NULL, ...)
+\method{magic}{Seurat}(
+  data,
+  assay = NULL,
+  genes = NULL,
+  knn = 5,
+  knn.max = NULL,
+  decay = 1,
+  t = 3,
+  npca = 100,
+  init = NULL,
+  t.max = 20,
+  knn.dist.method = "euclidean",
+  verbose = 1,
+  n.jobs = 1,
+  seed = NULL,
+  ...
+)
 }
 \arguments{
 \item{data}{input data matrix or Seurat object}

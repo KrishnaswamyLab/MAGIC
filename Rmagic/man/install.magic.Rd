@@ -4,8 +4,13 @@
 \alias{install.magic}
 \title{Install MAGIC Python Package}
 \usage{
-install.magic(envname = "r-reticulate", method = "auto",
-  conda = "auto", pip = TRUE, ...)
+install.magic(
+  envname = "r-reticulate",
+  method = "auto",
+  conda = "auto",
+  pip = TRUE,
+  ...
+)
 }
 \arguments{
 \item{envname}{Name of environment to install packages into}

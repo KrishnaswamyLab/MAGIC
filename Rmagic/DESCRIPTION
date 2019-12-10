@@ -1,7 +1,7 @@
 Package: Rmagic
 Type: Package
 Title: MAGIC - Markov Affinity-Based Graph Imputation of Cells
-Version: 2.0.3
+Version: 2.0.3.999
 Authors@R: c(person(given = "David", family = "van Dijk", email = "davidvandijk@gmail.com", role = c("aut")),
 		         person(given = 'Scott', family = 'Gigante', email = 'scott.gigante@yale.edu', role = 'cre', 
 		                comment = c(ORCID = '0000-0002-4544-2764')))
@@ -22,5 +22,5 @@ Suggests:
     phateR
 License: GPL-2 | file LICENSE
 LazyData: true
-RoxygenNote: 6.1.1
+RoxygenNote: 7.0.2
 Encoding: UTF-8
