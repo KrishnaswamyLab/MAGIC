@@ -21,6 +21,11 @@
 #' sets the level of diffusion. If 'auto', t is selected according to the
 #' Procrustes disparity of the diffused data.'
 #' @param npca number of PCA components that should be used; default: 100.
+#' @param solver str, optional, default: 'exact'
+#' Which solver to use. "exact" uses the implementation described
+#' in van Dijk et al. (2018). "approximate" uses a faster implementation
+#' that performs imputation in the PCA space and then projects back to the
+#' gene space. Note, the "approximate" solver may return negative values.
 #' @param init magic object, optional
 #' object to use for initialization. Avoids recomputing
 #' intermediate steps if parameters are the same.
@@ -113,6 +118,7 @@ magic.default <- function(
   decay = 1,
   t = 3,
   npca = 100,
+  solver = 'exact',
   init = NULL,
   t.max = 20,
   knn.dist.method = 'euclidean',
@@ -190,6 +196,7 @@ magic.default <- function(
     "decay" = decay,
     "t" = t,
     "npca" = npca,
+    "solver" = solver,
     "knn.dist.method" = knn.dist.method
   )
   # use pre-initialized values if given
@@ -205,6 +212,7 @@ magic.default <- function(
         decay = decay,
         t = t,
         n_pca = npca,
+        solver = solver,
         knn_dist = knn.dist.method,
         n_jobs = n.jobs,
         random_state = seed,
@@ -219,10 +227,12 @@ magic.default <- function(
       decay = decay,
       t = t,
       n_pca = npca,
+      solver = solver,
       knn_dist = knn.dist.method,
       n_jobs = n.jobs,
       random_state = seed,
-      verbose = verbose
+      verbose = verbose,
+      ...
     )
   }
   result <- operator$fit_transform(
@@ -254,6 +264,7 @@ magic.seurat <- function(
   decay = 1,
   t = 3,
   npca = 100,
+  solver = "exact",
   init = NULL,
   t.max = 20,
   knn.dist.method = 'euclidean',
@@ -271,12 +282,14 @@ magic.seurat <- function(
       decay = decay,
       t = t,
       npca = npca,
+      solver = solver,
       init = init,
       t.max = t.max,
       knn.dist.method = knn.dist.method,
       verbose = verbose,
       n.jobs = n.jobs,
-      seed = seed
+      seed = seed,
+      ...
     )
     data@data <- t(x = as.matrix(x = results$result))
     return(data)
@@ -290,6 +303,7 @@ magic.seurat <- function(
       decay = decay,
       t = t,
       npca = npca,
+      solver = solver,
       init = init,
       t.max = t.max,
       knn.dist.method = knn.dist.method,
@@ -316,6 +330,7 @@ magic.Seurat <- function(
   decay = 1,
   t = 3,
   npca = 100,
+  solver = 'exact',
   init = NULL,
   t.max = 20,
   knn.dist.method = 'euclidean',
@@ -336,12 +351,14 @@ magic.Seurat <- function(
       decay = decay,
       t = t,
       npca = npca,
+      solver = solver,
       init = init,
       t.max = t.max,
       knn.dist.method = knn.dist.method,
       verbose = verbose,
       n.jobs = n.jobs,
-      seed = seed
+      seed = seed,
+      ...
     )
     assay_name <- paste0('MAGIC_', assay)
     data[[assay_name]] <- Seurat::CreateAssayObject(data = t(x = as.matrix(x = results$result)))
