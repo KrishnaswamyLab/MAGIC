@@ -20,7 +20,7 @@ addons:
       - deadsnakes
     packages:
       - libhdf5-dev
-      - python3.6
+      - python3.6-dev
 
 cache:
   - packages
