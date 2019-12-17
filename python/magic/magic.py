@@ -360,7 +360,7 @@ class MAGIC(BaseEstimator):
             reset_kernel = True
             del params["knn"]
         if "knn_max" in params and params["knn_max"] != self.knn_max:
-            self.knn = params["knn_max"]
+            self.knn_max = params["knn_max"]
             reset_kernel = True
             del params["knn_max"]
         if "decay" in params and params["decay"] != self.decay:
