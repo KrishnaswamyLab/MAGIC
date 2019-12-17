@@ -40,6 +40,7 @@ before_install:
 install:
   - cd python; pip install --user -q .
   - cd ../Rmagic; R -e 'install.packages("devtools", repos="http://cloud.r-project.org")'
+  - R -e 'install.packages("BiocManager", repos="http://cloud.r-project.org"); BiocManager::install("multtest")'
   - R -e 'devtools::install_deps(dep = T, upgrade="always")'
   - cd ..
 
