@@ -17,6 +17,7 @@ magic(data, ...)
   decay = 1,
   t = 3,
   npca = 100,
+  solver = "exact",
   init = NULL,
   t.max = 20,
   knn.dist.method = "euclidean",
@@ -36,6 +37,7 @@ magic(data, ...)
   decay = 1,
   t = 3,
   npca = 100,
+  solver = "exact",
   init = NULL,
   t.max = 20,
   knn.dist.method = "euclidean",
@@ -54,6 +56,7 @@ magic(data, ...)
   decay = 1,
   t = 3,
   npca = 100,
+  solver = "exact",
   init = NULL,
   t.max = 20,
   knn.dist.method = "euclidean",
@@ -88,6 +91,12 @@ sets the level of diffusion. If 'auto', t is selected according to the
 Procrustes disparity of the diffused data.'}
 
 \item{npca}{number of PCA components that should be used; default: 100.}
+
+\item{solver}{str, optional, default: 'exact'
+Which solver to use. "exact" uses the implementation described
+in van Dijk et al. (2018). "approximate" uses a faster implementation
+that performs imputation in the PCA space and then projects back to the
+gene space. Note, the "approximate" solver may return negative values.}
 
 \item{init}{magic object, optional
 object to use for initialization. Avoids recomputing
