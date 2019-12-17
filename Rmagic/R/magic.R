@@ -348,7 +348,7 @@ magic.Seurat <- function(
     assay_name <- paste0('MAGIC_', assay)
     data[[assay_name]] <- Seurat::CreateAssayObject(data = t(x = as.matrix(x = results$result)))
     print(paste0("Added MAGIC output to ", assay_name, ". To use it, pass assay='", assay_name,
-                 "' to downstream methods or set seurat_object@active.assay <- '", assay_name, "'."))
+                 "' to downstream methods or set DefaultAssay(seurat_object) <- '", assay_name, "'."))
     Seurat::Tool(object = data) <- results[c('operator', 'params')]
     return(data)
   } else {
