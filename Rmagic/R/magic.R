@@ -140,32 +140,16 @@ magic.default <- function(
     message("Argument alpha is deprecated. Using decay instead.")
     decay <- alpha
   }
-  knn <- as.integer(x = knn)
-  t.max <- as.integer(x = t.max)
-  n.jobs <- as.integer(x = n.jobs)
-  if (is.numeric(x = npca)) {
-    npca <- as.integer(x = npca)
-  } else if (!is.null(x = npca) && is.na(x = npca)) {
-    npca <- NULL
-  }
-  if (is.numeric(x = decay)) {
-    decay <- as.double(x = decay)
-  } else if (!is.null(x = decay) && is.na(x = decay)) {
-    decay <- NULL
-  }
-  if (is.numeric(x = t)) {
-    t <- as.integer(x = t)
-  } else if (is.null(x = t) || is.na(x = t)) {
-    t <- 'auto'
-  }
-  if (is.numeric(x = seed)) {
-    seed <- as.integer(x = seed)
-  } else if (!is.null(x = seed) && is.na(x = seed)) {
-    seed <- NULL
-  }
-  if (is.numeric(x = verbose)) {
-    verbose <- as.integer(x = verbose)
-  }
+  # validate parameters
+  knn <- check.int(x = knn)
+  t.max <- check.int(x = t.max)
+  n.jobs <- check.int(x = n.jobs)
+  npca <- check.int.or.null(npca)
+  knn.max <- check.int.or.null(knn.max)
+  seed <- check.int.or.null(seed)
+  verbose <- check.int.or.null(verbose)
+  decay <- check.double.or.null(decay)
+  t <- check.int.or.string(t, 'auto')
   if (!methods::is(object = data, "Matrix")) {
     data <- as.matrix(x = data)
   }
@@ -216,7 +200,8 @@ magic.default <- function(
         knn_dist = knn.dist.method,
         n_jobs = n.jobs,
         random_state = seed,
-        verbose = verbose
+        verbose = verbose,
+        ...
       )
     }
   }
