@@ -460,10 +460,14 @@ class MAGIC(BaseEstimator):
                     graph = None
         else:
             self.knn = graph.knn
-            self.knn_max = graph.knn_max
             self.alpha = graph.decay
             self.n_pca = graph.n_pca
             self.knn_dist = graph.distance
+            try:
+                self.knn_max = graph.knn_max
+            except AttributeError:
+                # not all graphs have knn_max
+                self.knn_max = None
 
         self.X = X
 
