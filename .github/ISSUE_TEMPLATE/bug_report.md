@@ -21,7 +21,7 @@ Please include the full traceback of any errors
 
 **System information:**
 
-Output of `MAGIC.__version__`:
+Output of `magic.__version__`:
 
 ```
 If you are running MAGIC in R or Python, please run magic.__version__ and paste the results here.
@@ -53,7 +53,7 @@ You can do this with `R -e 'library(Rmagic); sessionInfo()'`
 
 </details>
 
-Output of `reticulate::py_disc()`:
+Output of `reticulate::py_discover_config(required_module = "magic")`:
 
 <details>
 
@@ -61,6 +61,18 @@ Output of `reticulate::py_disc()`:
 If you are running MAGIC in R, please run `reticulate::py_discover_config(required_module = "magic")` and paste the results here.
 
 You can do this with `R -e 'reticulate::py_discover_config(required_module = "magic")'`
+```
+
+</details>
+
+Output of `Rmagic::check_pymagic_version()`:
+
+<details>
+
+```
+If you are running MAGIC in R, please run `Rmagic::check_pymagic_version()` and paste the results here.
+
+You can do this with `R -e 'Rmagic::check_pymagic_version()'`
 ```
 
 </details>
