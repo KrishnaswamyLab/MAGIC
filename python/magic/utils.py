@@ -132,11 +132,11 @@ def matrix_is_equivalent(X, Y):
 
 def convert_to_same_format(data, target_data, columns=None, prevent_sparse=False):
     # create new data object
-    if isinstance(target_data, pd.SparseDataFrame):
+    if scprep.utils.is_sparse_dataframe(target_data):
         if prevent_sparse:
             data = pd.DataFrame(data)
         else:
-            data = pd.SparseDataFrame(data)
+            data = scprep.utils.SparseDataFrame(data)
         pandas = True
     elif isinstance(target_data, pd.DataFrame):
         data = pd.DataFrame(data)
