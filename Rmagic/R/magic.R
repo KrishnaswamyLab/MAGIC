@@ -21,6 +21,11 @@
 #' sets the level of diffusion. If 'auto', t is selected according to the
 #' Procrustes disparity of the diffused data.'
 #' @param npca number of PCA components that should be used; default: 100.
+#' @param solver str, optional, default: 'exact'
+#' Which solver to use. "exact" uses the implementation described
+#' in van Dijk et al. (2018). "approximate" uses a faster implementation
+#' that performs imputation in the PCA space and then projects back to the
+#' gene space. Note, the "approximate" solver may return negative values.
 #' @param init magic object, optional
 #' object to use for initialization. Avoids recomputing
 #' intermediate steps if parameters are the same.
@@ -113,6 +118,7 @@ magic.default <- function(
   decay = 1,
   t = 3,
   npca = 100,
+  solver = 'exact',
   init = NULL,
   t.max = 20,
   knn.dist.method = 'euclidean',
@@ -134,32 +140,16 @@ magic.default <- function(
     message("Argument alpha is deprecated. Using decay instead.")
     decay <- alpha
   }
-  knn <- as.integer(x = knn)
-  t.max <- as.integer(x = t.max)
-  n.jobs <- as.integer(x = n.jobs)
-  if (is.numeric(x = npca)) {
-    npca <- as.integer(x = npca)
-  } else if (!is.null(x = npca) && is.na(x = npca)) {
-    npca <- NULL
-  }
-  if (is.numeric(x = decay)) {
-    decay <- as.double(x = decay)
-  } else if (!is.null(x = decay) && is.na(x = decay)) {
-    decay <- NULL
-  }
-  if (is.numeric(x = t)) {
-    t <- as.integer(x = t)
-  } else if (is.null(x = t) || is.na(x = t)) {
-    t <- 'auto'
-  }
-  if (is.numeric(x = seed)) {
-    seed <- as.integer(x = seed)
-  } else if (!is.null(x = seed) && is.na(x = seed)) {
-    seed <- NULL
-  }
-  if (is.numeric(x = verbose)) {
-    verbose <- as.integer(x = verbose)
-  }
+  # validate parameters
+  knn <- check.int(x = knn)
+  t.max <- check.int(x = t.max)
+  n.jobs <- check.int(x = n.jobs)
+  npca <- check.int.or.null(npca)
+  knn.max <- check.int.or.null(knn.max)
+  seed <- check.int.or.null(seed)
+  verbose <- check.int.or.null(verbose)
+  decay <- check.double.or.null(decay)
+  t <- check.int.or.string(t, 'auto')
   if (!methods::is(object = data, "Matrix")) {
     data <- as.matrix(x = data)
   }
@@ -190,6 +180,7 @@ magic.default <- function(
     "decay" = decay,
     "t" = t,
     "npca" = npca,
+    "solver" = solver,
     "knn.dist.method" = knn.dist.method
   )
   # use pre-initialized values if given
@@ -205,10 +196,12 @@ magic.default <- function(
         decay = decay,
         t = t,
         n_pca = npca,
+        solver = solver,
         knn_dist = knn.dist.method,
         n_jobs = n.jobs,
         random_state = seed,
-        verbose = verbose
+        verbose = verbose,
+        ...
       )
     }
   }
@@ -219,10 +212,12 @@ magic.default <- function(
       decay = decay,
       t = t,
       n_pca = npca,
+      solver = solver,
       knn_dist = knn.dist.method,
       n_jobs = n.jobs,
       random_state = seed,
-      verbose = verbose
+      verbose = verbose,
+      ...
     )
   }
   result <- operator$fit_transform(
@@ -254,6 +249,7 @@ magic.seurat <- function(
   decay = 1,
   t = 3,
   npca = 100,
+  solver = "exact",
   init = NULL,
   t.max = 20,
   knn.dist.method = 'euclidean',
@@ -271,12 +267,14 @@ magic.seurat <- function(
       decay = decay,
       t = t,
       npca = npca,
+      solver = solver,
       init = init,
       t.max = t.max,
       knn.dist.method = knn.dist.method,
       verbose = verbose,
       n.jobs = n.jobs,
-      seed = seed
+      seed = seed,
+      ...
     )
     data@data <- t(x = as.matrix(x = results$result))
     return(data)
@@ -290,6 +288,7 @@ magic.seurat <- function(
       decay = decay,
       t = t,
       npca = npca,
+      solver = solver,
       init = init,
       t.max = t.max,
       knn.dist.method = knn.dist.method,
@@ -316,6 +315,7 @@ magic.Seurat <- function(
   decay = 1,
   t = 3,
   npca = 100,
+  solver = 'exact',
   init = NULL,
   t.max = 20,
   knn.dist.method = 'euclidean',
@@ -336,17 +336,19 @@ magic.Seurat <- function(
       decay = decay,
       t = t,
       npca = npca,
+      solver = solver,
       init = init,
       t.max = t.max,
       knn.dist.method = knn.dist.method,
       verbose = verbose,
       n.jobs = n.jobs,
-      seed = seed
+      seed = seed,
+      ...
     )
     assay_name <- paste0('MAGIC_', assay)
     data[[assay_name]] <- Seurat::CreateAssayObject(data = t(x = as.matrix(x = results$result)))
     print(paste0("Added MAGIC output to ", assay_name, ". To use it, pass assay='", assay_name,
-                 "' to downstream methods or set seurat_object@active.assay <- '", assay_name, "'."))
+                 "' to downstream methods or set DefaultAssay(seurat_object) <- '", assay_name, "'."))
     Seurat::Tool(object = data) <- results[c('operator', 'params')]
     return(data)
   } else {

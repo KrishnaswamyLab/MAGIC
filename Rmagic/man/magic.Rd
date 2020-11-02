@@ -9,20 +9,62 @@
 \usage{
 magic(data, ...)
 
-\method{magic}{default}(data, genes = NULL, knn = 5, knn.max = NULL,
-  decay = 1, t = 3, npca = 100, init = NULL, t.max = 20,
-  knn.dist.method = "euclidean", verbose = 1, n.jobs = 1,
-  seed = NULL, k = NULL, alpha = NULL, ...)
+\method{magic}{default}(
+  data,
+  genes = NULL,
+  knn = 5,
+  knn.max = NULL,
+  decay = 1,
+  t = 3,
+  npca = 100,
+  solver = "exact",
+  init = NULL,
+  t.max = 20,
+  knn.dist.method = "euclidean",
+  verbose = 1,
+  n.jobs = 1,
+  seed = NULL,
+  k = NULL,
+  alpha = NULL,
+  ...
+)
 
-\method{magic}{seurat}(data, genes = NULL, knn = 5, knn.max = NULL,
-  decay = 1, t = 3, npca = 100, init = NULL, t.max = 20,
-  knn.dist.method = "euclidean", verbose = 1, n.jobs = 1,
-  seed = NULL, ...)
+\method{magic}{seurat}(
+  data,
+  genes = NULL,
+  knn = 5,
+  knn.max = NULL,
+  decay = 1,
+  t = 3,
+  npca = 100,
+  solver = "exact",
+  init = NULL,
+  t.max = 20,
+  knn.dist.method = "euclidean",
+  verbose = 1,
+  n.jobs = 1,
+  seed = NULL,
+  ...
+)
 
-\method{magic}{Seurat}(data, assay = NULL, genes = NULL, knn = 5,
-  knn.max = NULL, decay = 1, t = 3, npca = 100, init = NULL,
-  t.max = 20, knn.dist.method = "euclidean", verbose = 1,
-  n.jobs = 1, seed = NULL, ...)
+\method{magic}{Seurat}(
+  data,
+  assay = NULL,
+  genes = NULL,
+  knn = 5,
+  knn.max = NULL,
+  decay = 1,
+  t = 3,
+  npca = 100,
+  solver = "exact",
+  init = NULL,
+  t.max = 20,
+  knn.dist.method = "euclidean",
+  verbose = 1,
+  n.jobs = 1,
+  seed = NULL,
+  ...
+)
 }
 \arguments{
 \item{data}{input data matrix or Seurat object}
@@ -49,6 +91,12 @@ sets the level of diffusion. If 'auto', t is selected according to the
 Procrustes disparity of the diffused data.'}
 
 \item{npca}{number of PCA components that should be used; default: 100.}
+
+\item{solver}{str, optional, default: 'exact'
+Which solver to use. "exact" uses the implementation described
+in van Dijk et al. (2018). "approximate" uses a faster implementation
+that performs imputation in the PCA space and then projects back to the
+gene space. Note, the "approximate" solver may return negative values.}
 
 \item{init}{magic object, optional
 object to use for initialization. Avoids recomputing

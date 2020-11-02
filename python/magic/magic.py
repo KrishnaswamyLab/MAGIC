@@ -200,8 +200,7 @@ class MAGIC(BaseEstimator):
 
     @property
     def diff_op(self):
-        """The diffusion operator calculated from the data
-        """
+        """The diffusion operator calculated from the data"""
         if self.graph is not None:
             return self.graph.diff_op
         else:
@@ -360,7 +359,7 @@ class MAGIC(BaseEstimator):
             reset_kernel = True
             del params["knn"]
         if "knn_max" in params and params["knn_max"] != self.knn_max:
-            self.knn = params["knn_max"]
+            self.knn_max = params["knn_max"]
             reset_kernel = True
             del params["knn_max"]
         if "decay" in params and params["decay"] != self.decay:
@@ -460,10 +459,14 @@ class MAGIC(BaseEstimator):
                     graph = None
         else:
             self.knn = graph.knn
-            self.knn_max = graph.knn_max
             self.alpha = graph.decay
             self.n_pca = graph.n_pca
             self.knn_dist = graph.distance
+            try:
+                self.knn_max = graph.knn_max
+            except AttributeError:
+                # not all graphs have knn_max
+                self.knn_max = None
 
         self.X = X
 
@@ -497,7 +500,7 @@ class MAGIC(BaseEstimator):
     def _parse_genes(self, X, genes):
         if (
             genes is None
-            and isinstance(X, (pd.SparseDataFrame, sparse.spmatrix))
+            and (sparse.issparse(X) or scprep.utils.is_sparse_dataframe(X))
             and np.prod(X.shape) > 5000 * 20000
         ):
             warnings.warn(
@@ -863,7 +866,10 @@ class MAGIC(BaseEstimator):
                 ax.plot(x, error_vec)
                 if t_opt is not None:
                     ax.plot(
-                        t_opt, error_vec[t_opt - 1], "ro", markersize=10,
+                        t_opt,
+                        error_vec[t_opt - 1],
+                        "ro",
+                        markersize=10,
                     )
                 ax.plot(x, np.full(len(error_vec), threshold), "k--")
                 ax.set_xlabel("t")
@@ -919,6 +925,6 @@ class MAGIC(BaseEstimator):
             n_mesh=n_mesh,
             n_jobs=n_jobs,
             plot=plot,
-            **kwargs
+            **kwargs,
         )
         return dremi

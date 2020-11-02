@@ -20,7 +20,7 @@ addons:
       - deadsnakes
     packages:
       - libhdf5-dev
-      - python3.6
+      - python3.6-dev
 
 cache:
   - packages
@@ -40,6 +40,7 @@ before_install:
 install:
   - cd python; pip install --user -q .
   - cd ../Rmagic; R -e 'install.packages("devtools", repos="http://cloud.r-project.org")'
+  - R -e 'install.packages("BiocManager", repos="http://cloud.r-project.org"); BiocManager::install("multtest")'
   - R -e 'devtools::install_deps(dep = T, upgrade="always")'
   - cd ..
 
@@ -48,7 +49,7 @@ script:
   - cd Rmagic; R CMD build .
   - R CMD check *tar.gz
   - cd ../python; pip install --user -q .[test]
-  - if [ "$TRAVIS_PYTHON_VERSION" != "3.5" ]; then black . --check --diff; fi
+  - if [ "$TRAVIS_PYTHON_VERSION" != "3.5" ]; then black . --check --diff -t py35; fi
   - python setup.py test
   - pip install --user -q .[doc]
   - cd doc; make html; cd ..

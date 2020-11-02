@@ -65,5 +65,17 @@ You can do this with `R -e 'reticulate::py_discover_config(required_module = "ma
 
 </details>
 
+Output of `Rmagic::check_pymagic_version()`:
+
+<details>
+
+```
+If you are running MAGIC in R, please run `Rmagic::check_pymagic_version()` and paste the results here.
+
+You can do this with `R -e 'Rmagic::check_pymagic_version()'`
+```
+
+</details>
+
 **Additional context**
 Add any other context about the problem here.

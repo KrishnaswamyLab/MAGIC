@@ -9,6 +9,10 @@ null_equal <- function(x, y) {
   }
 }
 
+#' Check that the current MAGIC version in Python is up to date.
+#'
+#' @importFrom utils packageVersion
+#' @export
 check_pymagic_version <- function() {
   pyversion <- strsplit(pymagic$`__version__`, '\\.')[[1]]
   rversion <- strsplit(as.character(packageVersion("Rmagic")), '\\.')[[1]]
@@ -17,12 +21,12 @@ check_pymagic_version <- function() {
   if (as.integer(pyversion[1]) < major_version) {
     warning(paste0("Python MAGIC version ", pymagic$`__version__`, " is out of date (recommended: ",
                    major_version, ".", minor_version, "). Please update with pip ",
-                   "(e.g. pip install --upgrade magic-impute) or Rmagic::install.magic()."))
+                   "(e.g. ", reticulate::py_config()$python, " -m pip install --upgrade magic-impute) or Rmagic::install.magic()."))
     return(FALSE)
   } else if (as.integer(pyversion[2]) < minor_version) {
     warning(paste0("Python MAGIC version ", pymagic$`__version__`, " is out of date (recommended: ",
                    major_version, ".", minor_version, "). Consider updating with pip ",
-                   "(e.g. pip install --upgrade magic-impute) or Rmagic::install.magic()."))
+                   "(e.g. ", reticulate::py_config()$python, " -m pip install --upgrade magic-impute) or Rmagic::install.magic()."))
     return(FALSE)
   }
   return(TRUE)
@@ -112,7 +116,7 @@ install.magic <- function(envname = "r-reticulate", method = "auto",
   error = function(e) {
     stop(paste0(
       "Cannot locate MAGIC Python package, please install through pip ",
-      "(e.g. pip install magic-impute) and then restart R."
+      "(e.g. ", reticulate::py_config()$python, " -m pip install magic-impute) and then restart R."
     ))
   }
   )
@@ -123,4 +127,39 @@ pymagic <- NULL
 .onLoad <- function(libname, pkgname) {
   py_config <- reticulate::py_discover_config(required_module = "magic")
   load_pymagic()
+}
+
+######
+# Parameter validation
+######
+
+check.int <- function(x) {
+    as.integer(x)
+}
+
+check.int.or.null <- function(x) {
+  if (is.numeric(x = x)) {
+    x <- as.integer(x = x)
+  } else if (!is.null(x = x) && is.na(x = x)) {
+    x <- NULL
+  }
+  x
+}
+
+check.double.or.null <- function(x) {
+  if (is.numeric(x = x)) {
+    x <- as.integer(x = x)
+  } else if (!is.null(x = x) && is.na(x = x)) {
+    x <- NULL
+  }
+  x
+}
+
+check.int.or.string <- function(x, str) {
+  if (is.numeric(x = x)) {
+    x <- as.integer(x = x)
+  } else if (is.null(x = x) || is.na(x = x)) {
+    x <- str
+  }
+  x
 }
