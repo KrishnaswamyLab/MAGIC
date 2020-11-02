@@ -16,7 +16,7 @@ def load_csv(
     **kwargs
 ):
     """magic.io is deprecated. Please use scprep.io instead.
-       Read more at http://scprep.readthedocs.io/
+    Read more at http://scprep.readthedocs.io/
     """
     raise RuntimeError(
         "magic.io is deprecated. Please use scprep.io instead. "
@@ -35,7 +35,7 @@ def load_tsv(
     **kwargs
 ):
     """magic.io is deprecated. Please use scprep.io instead.
-       Read more at http://scprep.readthedocs.io/
+    Read more at http://scprep.readthedocs.io/
     """
     raise RuntimeError(
         "magic.io is deprecated. Please use scprep.io instead. "
@@ -60,7 +60,7 @@ def load_fcs(
     ],
 ):
     """magic.io is deprecated. Please use scprep.io instead.
-       Read more at http://scprep.readthedocs.io/
+    Read more at http://scprep.readthedocs.io/
     """
     raise RuntimeError(
         "magic.io is deprecated. Please use scprep.io instead. "
@@ -71,7 +71,7 @@ def load_fcs(
 
 def load_mtx(mtx_file, cell_axis="row", gene_names=None, cell_names=None, sparse=None):
     """magic.io is deprecated. Please use scprep.io instead.
-       Read more at http://scprep.readthedocs.io/
+    Read more at http://scprep.readthedocs.io/
     """
     raise RuntimeError(
         "magic.io is deprecated. Please use scprep.io instead. "
@@ -82,7 +82,7 @@ def load_mtx(mtx_file, cell_axis="row", gene_names=None, cell_names=None, sparse
 
 def load_10X(data_dir, sparse=True, gene_labels="symbol", allow_duplicates=None):
     """magic.io is deprecated. Please use scprep.io instead.
-       Read more at http://scprep.readthedocs.io/
+    Read more at http://scprep.readthedocs.io/
     """
     raise RuntimeError(
         "magic.io is deprecated. Please use scprep.io instead. "
@@ -93,7 +93,7 @@ def load_10X(data_dir, sparse=True, gene_labels="symbol", allow_duplicates=None)
 
 def load_10X_zip(filename, sparse=True, gene_labels="symbol", allow_duplicates=None):
     """magic.io is deprecated. Please use scprep.io instead.
-       Read more at http://scprep.readthedocs.io/
+    Read more at http://scprep.readthedocs.io/
     """
     raise RuntimeError(
         "magic.io is deprecated. Please use scprep.io instead. "
@@ -106,7 +106,7 @@ def load_10X_HDF5(
     filename, genome=None, sparse=True, gene_labels="symbol", allow_duplicates=None
 ):
     """magic.io is deprecated. Please use scprep.io instead.
-       Read more at http://scprep.readthedocs.io/
+    Read more at http://scprep.readthedocs.io/
     """
     raise RuntimeError(
         "magic.io is deprecated. Please use scprep.io instead. "

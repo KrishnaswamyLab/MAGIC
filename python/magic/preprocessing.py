@@ -8,7 +8,7 @@ import scprep
 
 def library_size_normalize(data, verbose=False):
     """magic.preprocessing is deprecated. Please use scprep.normalize instead.
-       Read more at http://scprep.readthedocs.io/
+    Read more at http://scprep.readthedocs.io/
     """
     raise RuntimeError(
         "magic.preprocessing is deprecated. Please use scprep.normalize instead. "

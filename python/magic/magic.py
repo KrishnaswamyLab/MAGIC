@@ -925,6 +925,6 @@ class MAGIC(BaseEstimator):
             n_mesh=n_mesh,
             n_jobs=n_jobs,
             plot=plot,
-            **kwargs
+            **kwargs,
         )
         return dremi
