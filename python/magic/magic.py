@@ -22,12 +22,6 @@ import scprep
 import tasklogger
 import warnings
 
-try:
-    import anndata
-except ImportError:
-    # anndata not installed
-    pass
-
 _logger = tasklogger.get_tasklogger("graphtools")
 
 
@@ -202,7 +196,7 @@ class MAGIC(BaseEstimator):
         """
         utils.check_positive(knn=self.knn)
         utils.check_int(knn=self.knn, n_jobs=self.n_jobs)
-        # TODO: epsilon
+        # TODO(scottgigante): epsilon
         utils.check_if_not(
             None,
             utils.check_positive,
@@ -455,11 +449,9 @@ class MAGIC(BaseEstimator):
         return self
 
     def _parse_genes(self, X, genes):
-        if (
-            genes is None
-            and (sparse.issparse(X) or scprep.utils.is_sparse_dataframe(X))
-            and np.prod(X.shape) > 5000 * 20000
-        ):
+        X_sparse = sparse.issparse(X) or scprep.utils.is_sparse_dataframe(X)
+        X_large = np.prod(X.shape) > 5000 * 20000
+        if genes is None and X_sparse and X_large:
             warnings.warn(
                 "Returning imputed values for all genes on a ({} x "
                 "{}) matrix will require approximately {:.2f}GB of "
@@ -560,15 +552,12 @@ class MAGIC(BaseEstimator):
             store_result = True
 
         genes = self._parse_genes(X, genes)
+        genes_is_short = genes and len(genes) < self.graph.data_nu.shape[1]
 
         if isinstance(genes, str) and genes == "pca_only":
             # have to use PCA to return it
             solver = "approximate"
-        elif (
-            genes is not None
-            and self.X_magic is None
-            and len(genes) < self.graph.data_nu.shape[1]
-        ):
+        elif self.X_magic is None and genes_is_short:
             # faster to skip PCA
             solver = "exact"
             store_result = False
@@ -594,8 +583,8 @@ class MAGIC(BaseEstimator):
                 _logger.warning(
                     "Running MAGIC with `solver='exact'` on "
                     "{}-dimensional data may take a long time. "
-                    "Consider denoising specific genes with `genes=<list-like>` or using "
-                    "`solver='approximate'`.".format(X_input.shape[1])
+                    "Consider denoising specific genes with `genes=<list-like>` "
+                    "or using `solver='approximate'`.".format(X_input.shape[1])
                 )
             X_magic = self._impute(X_input, t_max=t_max, plot=plot_optimal_t, ax=ax)
             if store_result:
@@ -618,8 +607,7 @@ class MAGIC(BaseEstimator):
         return X_magic
 
     def fit_transform(self, X, graph=None, **kwargs):
-        """Computes the diffusion operator and the position of the cells in the
-        embedding space
+        """Computes the diffusion operator and the denoised gene expression
 
         Parameters
         ----------
