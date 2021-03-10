@@ -49,7 +49,7 @@ jobs:
         if: startsWith(runner.os, 'Linux')
         with:
           path: ${{env.R_LIBS_USER}}
-          key: precommit-${{env.UBUNTU_VERSION}}-renv-${{ hashFiles('.pre-commit.r_requirements.txt') }}-
+          key: precommit-${{env.UBUNTU_VERSION}}-renv-${{ hashFiles('Rmagic/.pre-commit.r_requirements.txt') }}-
           restore-keys: |
             precommit-${{env.UBUNTU_VERSION}}-renv-
 
