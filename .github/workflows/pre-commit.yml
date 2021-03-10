@@ -35,6 +35,15 @@ jobs:
           python-version: "3.8"
           architecture: "x64"
 
+      - name: Cache pre-commit
+        uses: actions/cache@v2
+        with:
+          path: ~/.cache/pre-commit
+          key: pre-commit-${{ hashFiles('.pre-commit-config.yaml') }}-
+
+      - name: Run pre-commit
+        uses: pre-commit/action@v2.0.0
+
       - name: Cache R packages
         uses: actions/cache@v2
         if: startsWith(runner.os, 'Linux')
@@ -47,23 +56,14 @@ jobs:
       - name: Install R packages
         run: |
           if (!requireNamespace("renv", quietly = TRUE)) install.packages("renv")
-          con = file(".pre-commit.r_requirements.txt", "r")
+          con = file("Rmagic/.pre-commit.r_requirements.txt", "r")
           while ( length(pkg <- readLines(con, n = 1)) > 0 ) {
             renv::install(pkg)
           }
           close(con)
         shell: Rscript {0}
 
-      - name: Cache pre-commit
-        uses: actions/cache@v2
-        with:
-          path: ~/.cache/pre-commit
-          key: pre-commit-${{ hashFiles('.pre-commit-config.yaml') }}-
-
-      - name: Run pre-commit
-        uses: pre-commit/action@v2.0.0
-
-      - name: Run pre-commit
+      - name: Run pre-commit for R
         run: |
           cd Rmagic
           git init
