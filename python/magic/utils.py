@@ -1,9 +1,9 @@
-import numbers
+from scipy import sparse
 
+import numbers
 import numpy as np
 import pandas as pd
 import scprep
-from scipy import sparse
 
 try:
     import anndata

@@ -1,17 +1,17 @@
 # author: Scott Gigante <scott.gigante@yale.edu>
 # (C) 2017 Krishnaswamy Lab GPLv2
 
-import numbers
+from .magic import MAGIC
+from .utils import in_ipynb
+from matplotlib import animation
+from matplotlib import rc
+from scipy import sparse
 
 import matplotlib.pyplot as plt
+import numbers
 import numpy as np
 import pandas as pd
 import scprep
-from matplotlib import animation, rc
-from scipy import sparse
-
-from .magic import MAGIC
-from .utils import in_ipynb
 
 
 def _validate_gene(gene, data):

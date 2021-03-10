@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 
 
-import os
-import scprep
-import numpy as np
 import magic
 import matplotlib as mpl
+import numpy as np
+import os
+import scprep
 
 mpl.use("agg")
 
