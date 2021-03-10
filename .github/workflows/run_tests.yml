@@ -113,6 +113,12 @@ jobs:
       with:
         python-version: "3.8"
 
+    - name: Install system dependencies
+      if: runner.os == 'Linux'
+      run: |
+        sudo apt-get update -qq
+        sudo apt-get install -y libcurl4-openssl-dev
+
     - name: Cache Python packages
       uses: actions/cache@v2
       with:
