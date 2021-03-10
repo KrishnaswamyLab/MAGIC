@@ -49,8 +49,9 @@ jobs:
         if: startsWith(runner.os, 'Linux')
         with:
           path: ${{env.R_LIBS_USER}}
-          key: precommit-${{env.UBUNTU_VERSION}}-renv-${{ hashFiles('Rmagic/.pre-commit.r_requirements.txt') }}-
+          key: precommit-${{env.UBUNTU_VERSION}}-renv-${{ hashFiles('Rmagic/.pre-commit.r_requirements.txt') }}-${{ hashFiles('Rmagic/DESCRIPTION') }}-
           restore-keys: |
+            precommit-${{env.UBUNTU_VERSION}}-renv-${{ hashFiles('Rmagic/.pre-commit.r_requirements.txt') }}-
             precommit-${{env.UBUNTU_VERSION}}-renv-
 
       - name: Install R packages
@@ -61,6 +62,9 @@ jobs:
             renv::install(pkg)
           }
           close(con)
+          if (!require("devtools")) install.packages("devtools", repos="http://cloud.r-project.org")
+          devtools::install_dev_deps("./Rmagic", upgrade=TRUE)
+          devtools::install("./Rmagic")
         shell: Rscript {0}
 
       - name: Run pre-commit for R
