@@ -155,6 +155,9 @@ jobs:
         devtools::install("./Rmagic")
       shell: Rscript {0}
 
+    - name: Install tinytex
+      uses: r-lib/actions/setup-tinytex@v1
+
     - name: Run R tests
       run: |
         cd Rmagic
