@@ -6,8 +6,6 @@ Scott Gigante <scott.gigante@yale.edu>, Daniel Dager <daniel.dager@yale.edu>
 (C) 2018 Krishnaswamy Lab GPLv2
 """
 
-from __future__ import print_function, division, absolute_import
-
 import numpy as np
 import graphtools
 from sklearn.base import BaseEstimator
@@ -91,10 +89,6 @@ class MAGIC(BaseEstimator):
     verbose : `int` or `boolean`, optional (default: 1)
         If `True` or `> 0`, print status messages
 
-    k : Deprecated for `knn`
-
-    a : Deprecated for `decay`
-
     Attributes
     ----------
 
@@ -154,23 +148,7 @@ class MAGIC(BaseEstimator):
         n_jobs=1,
         random_state=None,
         verbose=1,
-        k=None,
-        a=None,
     ):
-        if k is not None:
-            warnings.warn(
-                "Parameter `k` is deprecated and will be removed"
-                " in a future version. Use `knn` instead",
-                FutureWarning,
-            )
-            knn = k
-        if a is not None:
-            warnings.warn(
-                "Parameter `a` is deprecated and will be removed"
-                " in a future version. Use `decay` instead",
-                FutureWarning,
-            )
-            decay = a
         self.knn = knn
         self.knn_max = knn_max
         self.decay = decay
@@ -319,10 +297,6 @@ class MAGIC(BaseEstimator):
         verbose : `int` or `boolean`, optional (default: 1)
             If `True` or `> 0`, print status messages
 
-        k : Deprecated for `knn`
-
-        a : Deprecated for `decay`
-
         Returns
         -------
         self
@@ -336,24 +310,6 @@ class MAGIC(BaseEstimator):
             del params["t"]
 
         # kernel parameters
-        if "k" in params and params["k"] != self.knn:
-            warnings.warn(
-                "Parameter `k` is deprecated and will be removed"
-                " in a future version. Use `knn` instead",
-                FutureWarning,
-            )
-            self.knn = params["k"]
-            reset_kernel = True
-            del params["k"]
-        if "a" in params and params["a"] != self.decay:
-            warnings.warn(
-                "Parameter `a` is deprecated and will be removed"
-                " in a future version. Use `decay` instead",
-                FutureWarning,
-            )
-            self.decay = params["a"]
-            reset_kernel = True
-            del params["a"]
         if "knn" in params and params["knn"] != self.knn:
             self.knn = params["knn"]
             reset_kernel = True
