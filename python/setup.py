@@ -14,7 +14,7 @@ install_requires = [
     "scprep>=1.0",
 ]
 
-test_requires = ["nose2", "anndata"]
+test_requires = ["nose2", "anndata", "coverage", "coveralls"]
 
 doc_requires = [
     "sphinx",
