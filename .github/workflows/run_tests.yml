@@ -38,7 +38,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v2
       with:
-        python-version: ${{ matrix.config.python }}
+        python-version: "3.8"
 
     - name: Cache Python packages
       uses: actions/cache@v2
