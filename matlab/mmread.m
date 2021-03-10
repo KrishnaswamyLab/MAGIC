@@ -11,7 +11,7 @@ function  [A,rows,cols,entries,rep,field,symm] = mmread(filename)
 %      'array' (dense array storage).  The data will be duplicated
 %      as appropriate if symmetry is indicated in the header.
 %
-%      Optionally, size information about the matrix can be 
+%      Optionally, size information about the matrix can be
 %      obtained by using the return values rows, cols, and
 %      entries, where entries is the number of nonzero entries
 %      in the final matrix. Type information can also be retrieved
@@ -31,9 +31,9 @@ if (header == -1 )
 end
 
 % NOTE: If using a version of Matlab for which strtok is not
-%       defined, substitute 'gettok' for 'strtok' in the 
+%       defined, substitute 'gettok' for 'strtok' in the
 %       following lines, and download gettok.m from the
-%       Matrix Market site.    
+%       Matrix Market site.
 [head0,header]   = strtok(header);  % see note above
 [head1,header]   = strtok(header);
 [rep,header]     = strtok(header);
@@ -44,7 +44,7 @@ rep   = lower(rep);
 field = lower(field);
 symm  = lower(symm);
 if ( length(symm) == 0 )
-   disp(['Not enough words in header line of file ',filename]) 
+   disp(['Not enough words in header line of file ',filename])
    disp('Recognized format: ')
    disp('%%MatrixMarket matrix representation field symmetry')
    error('Check header line.')
@@ -69,7 +69,7 @@ end
 % Read size information, then branch according to
 % sparse or dense format
 
-if ( strcmp(rep,'coordinate')) %  read matrix given in sparse 
+if ( strcmp(rep,'coordinate')) %  read matrix given in sparse
                               %  coordinate matrix format
 
   [sizeinfo,count] = sscanf(commentline,'%d%d%d');
@@ -86,9 +86,9 @@ if ( strcmp(rep,'coordinate')) %  read matrix given in sparse
   rows = sizeinfo(1);
   cols = sizeinfo(2);
   entries = sizeinfo(3);
-  
+
   if  ( strcmp(field,'real') || strcmp(field,'integer') )   % real valued entries:
-  
+
     [T,count] = fscanf(mmfile,'%f',3);
     T = [T; fscanf(mmfile,'%f')];
     if ( size(T) ~= 3*entries )
@@ -100,9 +100,9 @@ if ( strcmp(rep,'coordinate')) %  read matrix given in sparse
     end
     T = reshape(T,3,entries)';
     A = sparse(T(:,1), T(:,2), T(:,3), rows , cols);
-  
+
   elseif   ( strcmp(field,'complex'))            % complex valued entries:
-  
+
     T = fscanf(mmfile,'%f',4);
     T = [T; fscanf(mmfile,'%f')];
     if ( size(T) ~= 4*entries )
@@ -114,9 +114,9 @@ if ( strcmp(rep,'coordinate')) %  read matrix given in sparse
     end
     T = reshape(T,4,entries)';
     A = sparse(T(:,1), T(:,2), T(:,3) + T(:,4)*sqrt(-1), rows , cols);
-  
+
   elseif  ( strcmp(field,'pattern'))    % pattern matrix (no values given):
-  
+
     T = fscanf(mmfile,'%f',2);
     T = [T; fscanf(mmfile,'%f')];
     if ( size(T) ~= 2*entries )
@@ -131,7 +131,7 @@ if ( strcmp(rep,'coordinate')) %  read matrix given in sparse
 
   end
 
-elseif ( strcmp(rep,'array') ) %  read matrix given in dense 
+elseif ( strcmp(rep,'array') ) %  read matrix given in dense
                                %  array (column major) format
 
   [sizeinfo,count] = sscanf(commentline,'%d%d');
@@ -151,7 +151,7 @@ elseif ( strcmp(rep,'array') ) %  read matrix given in dense
   if  ( strcmp(field,'real') || strcmp(field,'integer') )               % real valued entries:
     A = fscanf(mmfile,'%f',1);
     A = [A; fscanf(mmfile,'%f')];
-    if ( strcmp(symm,'symmetric') | strcmp(symm,'hermitian') | strcmp(symm,'skew-symmetric') ) 
+    if ( strcmp(symm,'symmetric') | strcmp(symm,'hermitian') | strcmp(symm,'skew-symmetric') )
       for j=1:cols-1,
         currenti = j*rows;
         A = [A(1:currenti); zeros(j,1);A(currenti+1:length(A))];
@@ -176,7 +176,7 @@ elseif ( strcmp(rep,'array') ) %  read matrix given in dense
       tmpi = fscanf(mmfile,'%f',1);
       A  = [A; tmpr + tmpi*i];
     end
-    if ( strcmp(symm,'symmetric') | strcmp(symm,'hermitian') | strcmp(symm,'skew-symmetric') ) 
+    if ( strcmp(symm,'symmetric') | strcmp(symm,'hermitian') | strcmp(symm,'skew-symmetric') )
       for j=1:cols-1,
         currenti = j*rows;
         A = [A(1:currenti); zeros(j,1);A(currenti+1:length(A))];
@@ -219,4 +219,3 @@ end
 
 fclose(mmfile);
 % Done.
-

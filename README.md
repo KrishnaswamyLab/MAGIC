@@ -17,13 +17,13 @@ To see how MAGIC can be applied to single-cell RNA-seq, elucidating the epitheli
 
 MAGIC has been implemented in Python, Matlab, and R.
 
-#### To get started immediately, check out our tutorials:  
-##### Python  
-* [Epithelial-to-Mesenchymal Transition Tutorial](http://nbviewer.jupyter.org/github/KrishnaswamyLab/MAGIC/blob/master/python/tutorial_notebooks/emt_tutorial.ipynb)  
-* [Bone Marrow Tutorial](http://nbviewer.jupyter.org/github/KrishnaswamyLab/MAGIC/blob/master/python/tutorial_notebooks/bonemarrow_tutorial.ipynb)  
-##### R  
-* [Epithelial-to-Mesenchymal Transition Tutorial](http://htmlpreview.github.io/?https://github.com/KrishnaswamyLab/MAGIC/blob/master/Rmagic/inst/examples/emt_tutorial.html)  
-* [Bone Marrow Tutorial](http://htmlpreview.github.io/?https://github.com/KrishnaswamyLab/MAGIC/blob/master/Rmagic/inst/examples/bonemarrow_tutorial.html)  
+#### To get started immediately, check out our tutorials:
+##### Python
+* [Epithelial-to-Mesenchymal Transition Tutorial](http://nbviewer.jupyter.org/github/KrishnaswamyLab/MAGIC/blob/master/python/tutorial_notebooks/emt_tutorial.ipynb)
+* [Bone Marrow Tutorial](http://nbviewer.jupyter.org/github/KrishnaswamyLab/MAGIC/blob/master/python/tutorial_notebooks/bonemarrow_tutorial.ipynb)
+##### R
+* [Epithelial-to-Mesenchymal Transition Tutorial](http://htmlpreview.github.io/?https://github.com/KrishnaswamyLab/MAGIC/blob/master/Rmagic/inst/examples/emt_tutorial.html)
+* [Bone Marrow Tutorial](http://htmlpreview.github.io/?https://github.com/KrishnaswamyLab/MAGIC/blob/master/Rmagic/inst/examples/bonemarrow_tutorial.html)
 
 
 <p align="center">

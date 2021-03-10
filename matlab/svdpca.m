@@ -24,4 +24,3 @@ switch lower(method)
         [U,S,V] = randPCA(X, k);
         Y = U*S*V';
 end
-

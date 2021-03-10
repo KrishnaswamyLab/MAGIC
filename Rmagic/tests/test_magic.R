@@ -9,7 +9,7 @@ library(viridis)
 seurat_obj <- function() {
   # load data
   data <- read.csv('../../data/HMLE_TGFb_day_8_10.csv.gz')
-  
+
   seurat_raw_data <- t(data)
   rownames(seurat_raw_data) <- colnames(data)
   colnames(seurat_raw_data) <- rownames(data)

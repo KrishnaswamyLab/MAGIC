@@ -6,18 +6,19 @@ Scott Gigante <scott.gigante@yale.edu>, Daniel Dager <daniel.dager@yale.edu>
 (C) 2018 Krishnaswamy Lab GPLv2
 """
 
-import numpy as np
-import graphtools
-from sklearn.base import BaseEstimator
-from sklearn.exceptions import NotFittedError
-from sklearn.decomposition import PCA
-import warnings
-import matplotlib.pyplot as plt
-from scipy import sparse, spatial
-import pandas as pd
 import numbers
-import tasklogger
+import warnings
+
+import graphtools
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
 import scprep
+import tasklogger
+from scipy import sparse, spatial
+from sklearn.base import BaseEstimator
+from sklearn.decomposition import PCA
+from sklearn.exceptions import NotFittedError
 
 from . import utils
 

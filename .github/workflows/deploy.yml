@@ -23,7 +23,7 @@ jobs:
 
     - name: Install pypa/build
       run: >-
-        cd python && 
+        cd python &&
         python -m
         pip install
         build

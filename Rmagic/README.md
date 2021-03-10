@@ -138,10 +138,10 @@ library(ggplot2)
 library(viridis)
 #> Loading required package: viridisLite
 library(phateR)
-#> 
+#>
 #> Attaching package: 'phateR'
 #> The following object is masked from 'package:Rmagic':
-#> 
+#>
 #>     library.size.normalize
 ```
 

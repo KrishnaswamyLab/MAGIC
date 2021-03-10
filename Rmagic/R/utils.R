@@ -66,11 +66,11 @@ load_pymagic <- function() {
 }
 
 #' Check whether MAGIC Python package is available and can be loaded
-#' 
+#'
 #' This is used primarily to avoid running tests on CRAN
 #' and elsewhere where the Python package should not be
 #' installed.
-#' 
+#'
 #' @export
 pymagic_is_available <- function() {
   tryCatch({

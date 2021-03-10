@@ -115,4 +115,3 @@ h = colorbar;
 ylabel(h,plot_genes{4});
 view([-50 22]);
 title 'After MAGIC'
-

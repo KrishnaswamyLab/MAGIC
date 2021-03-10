@@ -1,7 +1,7 @@
 function K = compute_alpha_kernel_sparse(data, varargin)
 % K = computer_alpha_kernel_sparse(data, varargin)
 % Computes sparse alpha-decay kernel
-% varargin: 
+% varargin:
 %   'npca' (default = [], no PCA)
 %       Perform fast random PCA before computing distances
 %   'k' (default = 5)
@@ -69,7 +69,7 @@ below_thresh=kdist(:,end)>=bth*epsilon;
 
 idx_thresh=find(below_thresh);
 
-if ~isempty(idx_thresh) 
+if ~isempty(idx_thresh)
     K=exp(-(kdist(idx_thresh,:)./epsilon(idx_thresh)).^a);
     K(K<=th)=0;
     K=K(:);
@@ -88,11 +88,11 @@ while length(idx_thresh)<.9*N
     epsilon2=epsilon(~below_thresh);
     disp(['Next iteration: k= ' num2str(k_knn)])
     [idx2, kdist2]=knnsearch(data_pc,data_pc2,'k',k_knn,'Distance',distfun);
-    
+
 %     Find the points that have large enough distance
     below_thresh2=kdist2(:,end)>=bth*epsilon2;
     idx_thresh2=find(below_thresh2);
-    
+
     if ~isempty(idx_thresh2)
         K2=exp(-(kdist2(idx_thresh2,:)./epsilon2(idx_thresh2)).^a);
         K2(K2<=th)=0;
@@ -101,7 +101,7 @@ while length(idx_thresh)<.9*N
         i2=i2(:);
         idx_temp=idx2(idx_thresh2,:);
         j2=idx_temp(:);
-        
+
         i=[i; i2];
         j=[j; j2];
         K=[K; K2(:)];
@@ -126,7 +126,7 @@ if length(idx_thresh)<N
         K2(K2<=th)=0;
         K=[K; K2(:)];
     end
-    
+
 end
 
 % Build the kernel
@@ -135,4 +135,3 @@ K = sparse(i, j, K);
 disp '   Symmetrize affinities'
 K = K + K';
 disp '   Done computing kernel'
-
