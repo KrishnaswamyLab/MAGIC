@@ -13,7 +13,7 @@ except (ImportError, SyntaxError):
 
 
 def check_positive(**params):
-    """Check that parameters are positive as expected
+    """Check that parameters are positive as expected.
 
     Raises
     ------
@@ -25,7 +25,7 @@ def check_positive(**params):
 
 
 def check_int(**params):
-    """Check that parameters are integers as expected
+    """Check that parameters are integers as expected.
 
     Raises
     ------
@@ -37,7 +37,7 @@ def check_int(**params):
 
 
 def check_if_not(x, *checks, **params):
-    """Run checks only if parameters are not equal to a specified value
+    """Run checks only if parameters are not equal to a specified value.
 
     Parameters
     ----------
@@ -61,7 +61,7 @@ def check_if_not(x, *checks, **params):
 
 
 def check_in(choices, **params):
-    """Checks parameters are in a list of allowed parameters
+    """Checks parameters are in a list of allowed parameters.
 
     Parameters
     ----------
@@ -85,7 +85,7 @@ def check_in(choices, **params):
 
 
 def check_between(v_min, v_max, **params):
-    """Checks parameters are in a specified range
+    """Checks parameters are in a specified range.
 
     Parameters
     ----------
@@ -110,9 +110,7 @@ def check_between(v_min, v_max, **params):
 
 
 def matrix_is_equivalent(X, Y):
-    """
-    Checks matrix equivalence with numpy, scipy and pandas
-    """
+    """Check matrix equivalence with numpy, scipy and pandas."""
     if X is Y:
         return True
     elif X.shape == Y.shape:
@@ -132,6 +130,7 @@ def matrix_is_equivalent(X, Y):
 
 
 def convert_to_same_format(data, target_data, columns=None, prevent_sparse=False):
+    """Convert data to same format as target data."""
     # create new data object
     if scprep.utils.is_sparse_dataframe(target_data):
         if prevent_sparse:
@@ -174,7 +173,7 @@ def convert_to_same_format(data, target_data, columns=None, prevent_sparse=False
 
 
 def in_ipynb():
-    """Check if we are running in a Jupyter Notebook
+    """Check if we are running in a Jupyter Notebook.
 
     Credit to https://stackoverflow.com/a/24937408/3996580
     """
@@ -189,6 +188,7 @@ def in_ipynb():
 
 
 def is_anndata(data):
+    """Check if an object is an AnnData object."""
     try:
         return isinstance(data, anndata.AnnData)
     except NameError:
@@ -197,6 +197,7 @@ def is_anndata(data):
 
 
 def has_empty_columns(data):
+    """Check if an object has empty columns."""
     try:
         return np.any(np.array(data.sum(0)) == 0)
     except AttributeError:
