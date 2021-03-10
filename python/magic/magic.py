@@ -552,7 +552,10 @@ class MAGIC(BaseEstimator):
             store_result = True
 
         genes = self._parse_genes(X, genes)
-        genes_is_short = genes and len(genes) < self.graph.data_nu.shape[1]
+        if genes is None:
+            genes_is_short = False
+        else:
+            genes_is_short = len(genes) < self.graph.data_nu.shape[1]
 
         if isinstance(genes, str) and genes == "pca_only":
             # have to use PCA to return it
