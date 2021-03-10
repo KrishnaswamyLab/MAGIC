@@ -127,10 +127,7 @@ def animate_magic(
         show = False
 
     data_magic = scprep.select.select_cols(data, idx=genes)
-    if isinstance(data_magic, pd.SparseDataFrame):
-        data_magic = data_magic.to_dense()
-    elif sparse.issparse(data_magic):
-        data_magic = data_magic.toarray()
+    data_magic = scprep.utils.toarray(data_magic)
     c = data_magic[gene_color] if gene_color is not None else None
     sc = ax.scatter(data_magic[gene_x], data_magic[gene_y], c=c, cmap=cmap)
     ax.set_title("t = 0")

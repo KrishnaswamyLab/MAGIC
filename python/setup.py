@@ -42,7 +42,9 @@ setup(
     description="MAGIC",
     author="",
     author_email="",
-    packages=["magic",],
+    packages=[
+        "magic",
+    ],
     license="GNU General Public License Version 2",
     install_requires=install_requires,
     extras_require={"test": test_requires, "doc": doc_requires},
