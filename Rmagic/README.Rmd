@@ -130,7 +130,7 @@ The example data is located in the MAGIC R package.
 ```{r load_data}
 # load data
 data(magic_testdata)
-magic_testdata[1:5,1:10]
+magic_testdata[1:5, 1:10]
 ```
 
 ### Running MAGIC
@@ -139,23 +139,23 @@ Running MAGIC is as simple as running the `magic` function.
 
 ```{r run_magic}
 # run MAGIC
-data_MAGIC <- magic(magic_testdata, genes=c("VIM", "CDH1", "ZEB1"))
+data_MAGIC <- magic(magic_testdata, genes = c("VIM", "CDH1", "ZEB1"))
 ```
 
 We can plot the data before and after MAGIC to visualize the results.
 
 ```{r plot_raw}
 ggplot(magic_testdata) +
-  geom_point(aes(VIM, CDH1, colour=ZEB1)) +
-  scale_colour_viridis(option="B")
+  geom_point(aes(VIM, CDH1, colour = ZEB1)) +
+  scale_colour_viridis(option = "B")
 ```
 
 The data suffers from dropout to the point that we cannot infer anything about the gene-gene relationships.
 
 ```{r plot_magic}
 ggplot(data_MAGIC) +
-  geom_point(aes(VIM, CDH1, colour=ZEB1)) +
-  scale_colour_viridis(option="B")
+  geom_point(aes(VIM, CDH1, colour = ZEB1)) +
+  scale_colour_viridis(option = "B")
 ```
 
 As you can see, the gene-gene relationships are much clearer after MAGIC.
@@ -163,17 +163,17 @@ As you can see, the gene-gene relationships are much clearer after MAGIC.
 The data is sometimes a little too smooth - we can decrease `t` from the automatic value to reduce the amount of diffusion. We pass the original result to the argument `init` to avoid recomputing intermediate steps.
 
 ```{r plot_reduced_t}
-data_MAGIC <- magic(magic_testdata, genes=c("VIM", "CDH1", "ZEB1"), t=6, init=data_MAGIC)
+data_MAGIC <- magic(magic_testdata, genes = c("VIM", "CDH1", "ZEB1"), t = 6, init = data_MAGIC)
 ggplot(data_MAGIC) +
-  geom_point(aes(VIM, CDH1, colour=ZEB1)) +
-  scale_colour_viridis(option="B")
+  geom_point(aes(VIM, CDH1, colour = ZEB1)) +
+  scale_colour_viridis(option = "B")
 ```
 
 
 We can look at the entire smoothed matrix with `genes='all_genes'`, passing the original result to the argument `init` to avoid recomputing intermediate steps. Note that this matrix may be large and could take up a lot of memory.
 
 ```{r run_magic_full_matrix}
-data_MAGIC <- magic(magic_testdata, genes="all_genes", t=6, init=data_MAGIC)
+data_MAGIC <- magic(magic_testdata, genes = "all_genes", t = 6, init = data_MAGIC)
 as.data.frame(data_MAGIC)[1:5, 1:10]
 ```
 
@@ -184,9 +184,9 @@ We can visualize the results of MAGIC on PCA as follows.
 ```{r run_pca}
 data_MAGIC_PCA <- as.data.frame(prcomp(data_MAGIC)$x)
 ggplot(data_MAGIC_PCA) +
-  geom_point(aes(x=PC1, y=PC2, color=data_MAGIC$result$VIM)) +
-  scale_color_viridis(option="B") +
-  labs(color="VIM")
+  geom_point(aes(x = PC1, y = PC2, color = data_MAGIC$result$VIM)) +
+  scale_color_viridis(option = "B") +
+  labs(color = "VIM")
 ```
 
 
@@ -195,11 +195,11 @@ ggplot(data_MAGIC_PCA) +
 We can visualize the results of MAGIC on PHATE as follows. We set `t` and `k` manually, because this toy dataset is really too small to make sense with PHATE; however, the default values work well for single-cell genomic data.
 
 ```{r run_phate}
-data_PHATE <- phate(magic_testdata, k=3, t=15)
+data_PHATE <- phate(magic_testdata, k = 3, t = 15)
 ggplot(data_PHATE) +
-  geom_point(aes(x=PHATE1, y=PHATE2, color=data_MAGIC$result$VIM)) +
-  scale_color_viridis(option="B") +
-  labs(color="VIM")
+  geom_point(aes(x = PHATE1, y = PHATE2, color = data_MAGIC$result$VIM)) +
+  scale_color_viridis(option = "B") +
+  labs(color = "VIM")
 ```
 
 ## Issues
