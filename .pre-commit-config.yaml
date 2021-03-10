@@ -38,4 +38,3 @@ repos:
     - id: lintr
       args: [--warn_only]
       verbose: true
-
