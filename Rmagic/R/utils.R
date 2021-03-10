@@ -20,30 +20,30 @@ check_pymagic_version <- function() {
   minor_version <- as.integer(rversion[2])
   if (as.integer(pyversion[1]) < major_version) {
     warning(paste0(
-      "Python MAGIC version ", 
-        pymagic$`__version__`, 
-        " is out of date (recommended: ",
-      major_version, 
-        ".", 
-        minor_version, 
-        "). Please update with pip ",
-      "(e.g. ", 
-        reticulate::py_config()$python, 
-        " -m pip install --upgrade magic-impute) or Rmagic::install.magic()."
+      "Python MAGIC version ",
+      pymagic$`__version__`,
+      " is out of date (recommended: ",
+      major_version,
+      ".",
+      minor_version,
+      "). Please update with pip ",
+      "(e.g. ",
+      reticulate::py_config()$python,
+      " -m pip install --upgrade magic-impute) or Rmagic::install.magic()."
     ))
     return(FALSE)
   } else if (as.integer(pyversion[2]) < minor_version) {
     warning(paste0(
-      "Python MAGIC version ", 
-        pymagic$`__version__`, 
-        " is out of date (recommended: ",
-      major_version, 
-        ".", 
-        minor_version, 
-        "). Consider updating with pip ",
-      "(e.g. ", 
-        reticulate::py_config()$python, 
-        " -m pip install --upgrade magic-impute) or Rmagic::install.magic()."
+      "Python MAGIC version ",
+      pymagic$`__version__`,
+      " is out of date (recommended: ",
+      major_version,
+      ".",
+      minor_version,
+      "). Consider updating with pip ",
+      "(e.g. ",
+      reticulate::py_config()$python,
+      " -m pip install --upgrade magic-impute) or Rmagic::install.magic()."
     ))
     return(FALSE)
   }
@@ -91,7 +91,8 @@ load_pymagic <- function() {
 #'
 #' @export
 pymagic_is_available <- function() {
-  tryCatch( {
+  tryCatch(
+    {
       reticulate::import("magic")$MAGIC
       check_pymagic_version()
     },
@@ -124,7 +125,8 @@ pymagic_is_available <- function() {
 install.magic <- function(envname = "r-reticulate", method = "auto",
                           conda = "auto", pip = TRUE, ...) {
   message("Attempting to install MAGIC python package with reticulate")
-  tryCatch( {
+  tryCatch(
+    {
       reticulate::py_install("magic-impute",
         envname = envname, method = method,
         conda = conda, pip = pip, ...

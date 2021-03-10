@@ -124,8 +124,10 @@ magic.default <- function(
                           k = NULL, alpha = NULL,
                           ...) {
   # check installation
-  if (!reticulate::py_module_available(module = "magic") || 
-      (is.null(pymagic))) load_pymagic()
+  if (!reticulate::py_module_available(module = "magic") ||
+    (is.null(pymagic))) {
+    load_pymagic()
+  }
   # check for deprecated arguments
   if (!is.null(k)) {
     message("Argument k is deprecated. Using knn instead.")
@@ -162,10 +164,11 @@ magic.default <- function(
     # character vector
     if (!all(genes %in% colnames(x = data))) {
       warning(paste0(
-          "Genes ", 
-          genes[!(genes %in% colnames(data))], 
-          " not found.", 
-          collapse = ", "))
+        "Genes ",
+        genes[!(genes %in% colnames(data))],
+        " not found.",
+        collapse = ", "
+      ))
     }
     genes <- which(x = colnames(x = data) %in% genes)
     gene_names <- colnames(x = data)[genes]
@@ -344,16 +347,16 @@ magic.Seurat <- function(
     )
     assay_name <- paste0("MAGIC_", assay)
     data[[assay_name]] <- Seurat::CreateAssayObject(
-        data = t(x = as.matrix(x = results$result))
+      data = t(x = as.matrix(x = results$result))
     )
     print(paste0(
-      "Added MAGIC output to ", 
-        assay_name, 
-        ". To use it, pass assay='", 
-        assay_name,
-      "' to downstream methods or set DefaultAssay(seurat_object) <- '", 
-        assay_name, 
-        "'."
+      "Added MAGIC output to ",
+      assay_name,
+      ". To use it, pass assay='",
+      assay_name,
+      "' to downstream methods or set DefaultAssay(seurat_object) <- '",
+      assay_name,
+      "'."
     ))
     Seurat::Tool(object = data) <- results[c("operator", "params")]
     return(data)
