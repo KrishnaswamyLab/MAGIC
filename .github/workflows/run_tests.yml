@@ -146,6 +146,7 @@ jobs:
       run: |
         if (!require("devtools")) install.packages("devtools", repos="http://cloud.r-project.org")
         devtools::install("./Rmagic")
+      shell: Rscript {0}
 
     - name: Run R tests
       run: |
