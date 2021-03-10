@@ -28,14 +28,10 @@ repos:
     rev: v0.1.3
     hooks:
     - id: parsable-R
-    - id: style-files
-    - id: roxygenize
     - id: no-browser-statement
-    - id: deps-in-desc
-    - id: use-tidy-description
-    - id: codemeta-description-updated
     - id: readme-rmd-rendered
+      args: [Rmagic/DESCRIPTION]
+    - id: style-files
     - id: lintr
       args: [--warn_only]
       verbose: true
-
