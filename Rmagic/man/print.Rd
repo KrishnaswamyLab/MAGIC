@@ -16,14 +16,12 @@ This avoids spamming the user's console with a list of many large matrices
 }
 \examples{
 if (pymagic_is_available()) {
-
-data(magic_testdata)
-data_magic <- magic(magic_testdata)
-print(data_magic)
-## MAGIC with elements
-## $result : (500, 197)
-## $operator : Python MAGIC operator
-## $params : list with elements (data, knn, decay, t, npca, knn.dist.method)
-
+  data(magic_testdata)
+  data_magic <- magic(magic_testdata)
+  print(data_magic)
+  ## MAGIC with elements
+  ## $result : (500, 197)
+  ## $operator : Python MAGIC operator
+  ## $params : list with elements (data, knn, decay, t, npca, knn.dist.method)
 }
 }

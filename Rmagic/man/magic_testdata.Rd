@@ -4,7 +4,9 @@
 \name{magic_testdata}
 \alias{magic_testdata}
 \title{Fake scRNAseq data for examples}
-\format{A matrix with 500 rows and 197 variables}
+\format{
+A matrix with 500 rows and 197 variables
+}
 \source{
 The authors
 }

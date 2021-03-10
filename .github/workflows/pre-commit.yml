@@ -63,6 +63,15 @@ jobs:
       - name: Run pre-commit
         uses: pre-commit/action@v2.0.0
 
+      - name: Run pre-commit
+        run: |
+          cd Rmagic
+          git init
+          git add *
+          pre-commit run --all-files
+          rm -rf .git
+          cd ..
+
       - name: Commit files
         if: failure()
         run: |

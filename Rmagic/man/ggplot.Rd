@@ -16,11 +16,9 @@ Passes the smoothed data matrix to ggplot
 }
 \examples{
 if (pymagic_is_available() && require(ggplot2)) {
-
-data(magic_testdata)
-data_magic <- magic(magic_testdata, genes=c("VIM", "CDH1", "ZEB1"))
-ggplot(data_magic, aes(VIM, CDH1, colour=ZEB1)) +
-  geom_point()
-
+  data(magic_testdata)
+  data_magic <- magic(magic_testdata, genes = c("VIM", "CDH1", "ZEB1"))
+  ggplot(data_magic, aes(VIM, CDH1, colour = ZEB1)) +
+    geom_point()
 }
 }
