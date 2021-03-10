@@ -55,80 +55,74 @@
 #'
 #' @examples
 #' if (pymagic_is_available()) {
+#'   data(magic_testdata)
 #'
-#' data(magic_testdata)
+#'   # Run MAGIC
+#'   data_magic <- magic(magic_testdata, genes = c("VIM", "CDH1", "ZEB1"))
+#'   summary(data_magic)
+#'   ##       CDH1             VIM             ZEB1
+#'   ## Min.   :0.4303   Min.   :3.854   Min.   :0.01111
+#'   ## 1st Qu.:0.4444   1st Qu.:3.947   1st Qu.:0.01145
+#'   ## Median :0.4462   Median :3.964   Median :0.01153
+#'   ## Mean   :0.4461   Mean   :3.965   Mean   :0.01152
+#'   ## 3rd Qu.:0.4478   3rd Qu.:3.982   3rd Qu.:0.01160
+#'   ## Max.   :0.4585   Max.   :4.127   Max.   :0.01201
 #'
-#' # Run MAGIC
-#' data_magic <- magic(magic_testdata, genes=c("VIM", "CDH1", "ZEB1"))
-#' summary(data_magic)
-#' ##       CDH1             VIM             ZEB1
-#' ## Min.   :0.4303   Min.   :3.854   Min.   :0.01111
-#' ## 1st Qu.:0.4444   1st Qu.:3.947   1st Qu.:0.01145
-#' ## Median :0.4462   Median :3.964   Median :0.01153
-#' ## Mean   :0.4461   Mean   :3.965   Mean   :0.01152
-#' ## 3rd Qu.:0.4478   3rd Qu.:3.982   3rd Qu.:0.01160
-#' ## Max.   :0.4585   Max.   :4.127   Max.   :0.01201
+#'   # Plot the result with ggplot2
+#'   if (require(ggplot2)) {
+#'     ggplot(data_magic) +
+#'       geom_point(aes(x = VIM, y = CDH1, color = ZEB1))
+#'   }
 #'
-#' # Plot the result with ggplot2
-#' if (require(ggplot2)) {
-#'   ggplot(data_magic) +
-#'     geom_point(aes(x=VIM, y=CDH1, color=ZEB1))
-#' }
-#'
-#' # Run MAGIC again returning all genes
-#' # We use the last run as initialization
-#' data_magic <- magic(magic_testdata, genes="all_genes", init=data_magic)
-#' # Extract the smoothed data matrix to use in downstream analysis
-#' data_smooth <- as.matrix(data_magic)
-#'
+#'   # Run MAGIC again returning all genes
+#'   # We use the last run as initialization
+#'   data_magic <- magic(magic_testdata, genes = "all_genes", init = data_magic)
+#'   # Extract the smoothed data matrix to use in downstream analysis
+#'   data_smooth <- as.matrix(data_magic)
 #' }
 #'
 #' if (pymagic_is_available() && require(Seurat)) {
+#'   data(magic_testdata)
 #'
-#' data(magic_testdata)
+#'   # Create a Seurat object
+#'   seurat_object <- CreateSeuratObject(counts = t(magic_testdata), assay = "RNA")
+#'   seurat_object <- NormalizeData(object = seurat_object)
+#'   seurat_object <- ScaleData(object = seurat_object)
 #'
-#' # Create a Seurat object
-#' seurat_object <- CreateSeuratObject(counts = t(magic_testdata), assay="RNA")
-#' seurat_object <- NormalizeData(object = seurat_object)
-#' seurat_object <- ScaleData(object = seurat_object)
+#'   # Run MAGIC and reset the active assay
+#'   seurat_object <- magic(seurat_object)
+#'   seurat_object@active.assay <- "MAGIC_RNA"
 #'
-#' # Run MAGIC and reset the active assay
-#' seurat_object <- magic(seurat_object)
-#' seurat_object@active.assay = "MAGIC_RNA"
-#'
-#' # Analyze with Seurat
-#' VlnPlot(seurat_object, features=c("VIM", "ZEB1", "CDH1"))
-#'
+#'   # Analyze with Seurat
+#'   VlnPlot(seurat_object, features = c("VIM", "ZEB1", "CDH1"))
 #' }
-#'
 #' @export
 #'
 magic <- function(data, ...) {
-  UseMethod(generic = 'magic', object = data)
+  UseMethod(generic = "magic", object = data)
 }
 
 #' @rdname magic
 #' @export
 #'
 magic.default <- function(
-  data,
-  genes = NULL,
-  knn = 5,
-  knn.max = NULL,
-  decay = 1,
-  t = 3,
-  npca = 100,
-  solver = 'exact',
-  init = NULL,
-  t.max = 20,
-  knn.dist.method = 'euclidean',
-  verbose = 1,
-  n.jobs = 1,
-  seed = NULL,
-  # deprecated args
-  k=NULL, alpha=NULL,
-  ...
-) {
+                          data,
+                          genes = NULL,
+                          knn = 5,
+                          knn.max = NULL,
+                          decay = 1,
+                          t = 3,
+                          npca = 100,
+                          solver = "exact",
+                          init = NULL,
+                          t.max = 20,
+                          knn.dist.method = "euclidean",
+                          verbose = 1,
+                          n.jobs = 1,
+                          seed = NULL,
+                          # deprecated args
+                          k = NULL, alpha = NULL,
+                          ...) {
   # check installation
   if (!reticulate::py_module_available(module = "magic") || (is.null(pymagic))) load_pymagic()
   # check for deprecated arguments
@@ -149,7 +143,7 @@ magic.default <- function(
   seed <- check.int.or.null(seed)
   verbose <- check.int.or.null(verbose)
   decay <- check.double.or.null(decay)
-  t <- check.int.or.string(t, 'auto')
+  t <- check.int.or.string(t, "auto")
   if (!methods::is(object = data, "Matrix")) {
     data <- as.matrix(x = data)
   }
@@ -228,11 +222,11 @@ magic.default <- function(
   colnames(x = result) <- gene_names
   rownames(x = result) <- rownames(data)
   result <- as.data.frame(x = result)
-    result <- list(
-      "result" = result,
-      "operator" = operator,
-      "params" = params
-    )
+  result <- list(
+    "result" = result,
+    "operator" = operator,
+    "params" = params
+  )
   class(x = result) <- c("magic", "list")
   return(result)
 }
@@ -242,22 +236,21 @@ magic.default <- function(
 #' @method magic seurat
 #'
 magic.seurat <- function(
-  data,
-  genes = NULL,
-  knn = 5,
-  knn.max = NULL,
-  decay = 1,
-  t = 3,
-  npca = 100,
-  solver = "exact",
-  init = NULL,
-  t.max = 20,
-  knn.dist.method = 'euclidean',
-  verbose = 1,
-  n.jobs = 1,
-  seed = NULL,
-  ...
-) {
+                         data,
+                         genes = NULL,
+                         knn = 5,
+                         knn.max = NULL,
+                         decay = 1,
+                         t = 3,
+                         npca = 100,
+                         solver = "exact",
+                         init = NULL,
+                         t.max = 20,
+                         knn.dist.method = "euclidean",
+                         verbose = 1,
+                         n.jobs = 1,
+                         seed = NULL,
+                         ...) {
   if (requireNamespace("Seurat", quietly = TRUE)) {
     results <- magic(
       data = as.matrix(x = t(x = data@data)),
@@ -307,29 +300,28 @@ magic.seurat <- function(
 #' @method magic Seurat
 #'
 magic.Seurat <- function(
-  data,
-  assay = NULL,
-  genes = NULL,
-  knn = 5,
-  knn.max = NULL,
-  decay = 1,
-  t = 3,
-  npca = 100,
-  solver = 'exact',
-  init = NULL,
-  t.max = 20,
-  knn.dist.method = 'euclidean',
-  verbose = 1,
-  n.jobs = 1,
-  seed = NULL,
-  ...
-) {
+                         data,
+                         assay = NULL,
+                         genes = NULL,
+                         knn = 5,
+                         knn.max = NULL,
+                         decay = 1,
+                         t = 3,
+                         npca = 100,
+                         solver = "exact",
+                         init = NULL,
+                         t.max = 20,
+                         knn.dist.method = "euclidean",
+                         verbose = 1,
+                         n.jobs = 1,
+                         seed = NULL,
+                         ...) {
   if (requireNamespace("Seurat", quietly = TRUE)) {
     if (is.null(x = assay)) {
       assay <- Seurat::DefaultAssay(object = data)
     }
     results <- magic(
-      data = t(x = Seurat::GetAssayData(object = data, slot = 'data', assay = assay)),
+      data = t(x = Seurat::GetAssayData(object = data, slot = "data", assay = assay)),
       genes = genes,
       knn = knn,
       knn.max = knn.max,
@@ -345,11 +337,13 @@ magic.Seurat <- function(
       seed = seed,
       ...
     )
-    assay_name <- paste0('MAGIC_', assay)
+    assay_name <- paste0("MAGIC_", assay)
     data[[assay_name]] <- Seurat::CreateAssayObject(data = t(x = as.matrix(x = results$result)))
-    print(paste0("Added MAGIC output to ", assay_name, ". To use it, pass assay='", assay_name,
-                 "' to downstream methods or set DefaultAssay(seurat_object) <- '", assay_name, "'."))
-    Seurat::Tool(object = data) <- results[c('operator', 'params')]
+    print(paste0(
+      "Added MAGIC output to ", assay_name, ". To use it, pass assay='", assay_name,
+      "' to downstream methods or set DefaultAssay(seurat_object) <- '", assay_name, "'."
+    ))
+    Seurat::Tool(object = data) <- results[c("operator", "params")]
     return(data)
   } else {
     message("Seurat package not available. Running default MAGIC implementation.")
@@ -380,26 +374,26 @@ magic.Seurat <- function(
 #' @param ... Arguments for print()
 #' @examples
 #' if (pymagic_is_available()) {
-#'
-#' data(magic_testdata)
-#' data_magic <- magic(magic_testdata)
-#' print(data_magic)
-#' ## MAGIC with elements
-#' ## $result : (500, 197)
-#' ## $operator : Python MAGIC operator
-#' ## $params : list with elements (data, knn, decay, t, npca, knn.dist.method)
-#'
+#'   data(magic_testdata)
+#'   data_magic <- magic(magic_testdata)
+#'   print(data_magic)
+#'   ## MAGIC with elements
+#'   ## $result : (500, 197)
+#'   ## $operator : Python MAGIC operator
+#'   ## $params : list with elements (data, knn, decay, t, npca, knn.dist.method)
 #' }
 #' @rdname print
 #' @method print magic
 #' @export
 print.magic <- function(x, ...) {
-  result <- paste0("MAGIC with elements\n",
-                   "  $result : (", nrow(x$result), ", ",
-                   ncol(x$result), ")\n",
-                   "  $operator : Python MAGIC operator\n",
-                   "  $params : list with elements (",
-                   paste(names(x$params), collapse = ", "), ")")
+  result <- paste0(
+    "MAGIC with elements\n",
+    "  $result : (", nrow(x$result), ", ",
+    ncol(x$result), ")\n",
+    "  $operator : Python MAGIC operator\n",
+    "  $params : list with elements (",
+    paste(names(x$params), collapse = ", "), ")"
+  )
   cat(result)
 }
 
@@ -409,18 +403,16 @@ print.magic <- function(x, ...) {
 #' @param ... Arguments for summary()
 #' @examples
 #' if (pymagic_is_available()) {
-#'
-#' data(magic_testdata)
-#' data_magic <- magic(magic_testdata)
-#' summary(data_magic)
-#' ## ZEB1
-#' ## Min.   :0.01071
-#' ## 1st Qu.:0.01119
-#' ## Median :0.01130
-#' ## Mean   :0.01129
-#' ## 3rd Qu.:0.01140
-#' ## Max.   :0.01201
-#'
+#'   data(magic_testdata)
+#'   data_magic <- magic(magic_testdata)
+#'   summary(data_magic)
+#'   ## ZEB1
+#'   ## Min.   :0.01071
+#'   ## 1st Qu.:0.01119
+#'   ## Median :0.01130
+#'   ## Mean   :0.01129
+#'   ## 3rd Qu.:0.01140
+#'   ## Max.   :0.01201
 #' }
 #' @rdname summary
 #' @method summary magic
@@ -463,12 +455,10 @@ as.data.frame.magic <- function(x, ...) {
 #' @param ... Arguments for ggplot()
 #' @examples
 #' if (pymagic_is_available() && require(ggplot2)) {
-#'
-#' data(magic_testdata)
-#' data_magic <- magic(magic_testdata, genes=c("VIM", "CDH1", "ZEB1"))
-#' ggplot(data_magic, aes(VIM, CDH1, colour=ZEB1)) +
-#'   geom_point()
-#'
+#'   data(magic_testdata)
+#'   data_magic <- magic(magic_testdata, genes = c("VIM", "CDH1", "ZEB1"))
+#'   ggplot(data_magic, aes(VIM, CDH1, colour = ZEB1)) +
+#'     geom_point()
 #' }
 #' @rdname ggplot
 #' @method ggplot magic

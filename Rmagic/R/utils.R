@@ -14,19 +14,23 @@ null_equal <- function(x, y) {
 #' @importFrom utils packageVersion
 #' @export
 check_pymagic_version <- function() {
-  pyversion <- strsplit(pymagic$`__version__`, '\\.')[[1]]
-  rversion <- strsplit(as.character(packageVersion("Rmagic")), '\\.')[[1]]
+  pyversion <- strsplit(pymagic$`__version__`, "\\.")[[1]]
+  rversion <- strsplit(as.character(packageVersion("Rmagic")), "\\.")[[1]]
   major_version <- as.integer(rversion[1])
   minor_version <- as.integer(rversion[2])
   if (as.integer(pyversion[1]) < major_version) {
-    warning(paste0("Python MAGIC version ", pymagic$`__version__`, " is out of date (recommended: ",
-                   major_version, ".", minor_version, "). Please update with pip ",
-                   "(e.g. ", reticulate::py_config()$python, " -m pip install --upgrade magic-impute) or Rmagic::install.magic()."))
+    warning(paste0(
+      "Python MAGIC version ", pymagic$`__version__`, " is out of date (recommended: ",
+      major_version, ".", minor_version, "). Please update with pip ",
+      "(e.g. ", reticulate::py_config()$python, " -m pip install --upgrade magic-impute) or Rmagic::install.magic()."
+    ))
     return(FALSE)
   } else if (as.integer(pyversion[2]) < minor_version) {
-    warning(paste0("Python MAGIC version ", pymagic$`__version__`, " is out of date (recommended: ",
-                   major_version, ".", minor_version, "). Consider updating with pip ",
-                   "(e.g. ", reticulate::py_config()$python, " -m pip install --upgrade magic-impute) or Rmagic::install.magic()."))
+    warning(paste0(
+      "Python MAGIC version ", pymagic$`__version__`, " is out of date (recommended: ",
+      major_version, ".", minor_version, "). Consider updating with pip ",
+      "(e.g. ", reticulate::py_config()$python, " -m pip install --upgrade magic-impute) or Rmagic::install.magic()."
+    ))
     return(FALSE)
   }
   return(TRUE)
@@ -37,9 +41,9 @@ failed_pymagic_import <- function(e) {
   message(e)
   result <- as.character(e)
   if (length(grep("ModuleNotFoundError: No module named 'magic'", result)) > 0 ||
-      length(grep("ImportError: No module named magic", result)) > 0) {
+    length(grep("ImportError: No module named magic", result)) > 0) {
     # not installed
-    if (utils::menu(c("Yes", "No"), title="Install MAGIC Python package with reticulate?") == 1) {
+    if (utils::menu(c("Yes", "No"), title = "Install MAGIC Python package with reticulate?") == 1) {
       install.magic()
     }
   } else if (length(grep("r\\-reticulate", reticulate::py_config()$python)) > 0) {
@@ -54,7 +58,7 @@ failed_pymagic_import <- function(e) {
 }
 
 load_pymagic <- function() {
-  delay_load = list(on_load=check_pymagic_version, on_error=failed_pymagic_import)
+  delay_load <- list(on_load = check_pymagic_version, on_error = failed_pymagic_import)
   # load
   if (is.null(pymagic)) {
     # first time load
@@ -73,13 +77,14 @@ load_pymagic <- function() {
 #'
 #' @export
 pymagic_is_available <- function() {
-  tryCatch({
-    reticulate::import("magic")$MAGIC
-    check_pymagic_version()
-  },
-  error = function(e) {
-    FALSE
-  }
+  tryCatch(
+    {
+      reticulate::import("magic")$MAGIC
+      check_pymagic_version()
+    },
+    error = function(e) {
+      FALSE
+    }
   )
 }
 
@@ -104,21 +109,22 @@ pymagic_is_available <- function() {
 #'
 #' @export
 install.magic <- function(envname = "r-reticulate", method = "auto",
-                          conda = "auto", pip=TRUE, ...) {
+                          conda = "auto", pip = TRUE, ...) {
   message("Attempting to install MAGIC python package with reticulate")
-  tryCatch({
-    reticulate::py_install("magic-impute",
-      envname = envname, method = method,
-      conda = conda, pip=pip, ...
-    )
-    message("Install complete. Please restart R and try again.")
-  },
-  error = function(e) {
-    stop(paste0(
-      "Cannot locate MAGIC Python package, please install through pip ",
-      "(e.g. ", reticulate::py_config()$python, " -m pip install magic-impute) and then restart R."
-    ))
-  }
+  tryCatch(
+    {
+      reticulate::py_install("magic-impute",
+        envname = envname, method = method,
+        conda = conda, pip = pip, ...
+      )
+      message("Install complete. Please restart R and try again.")
+    },
+    error = function(e) {
+      stop(paste0(
+        "Cannot locate MAGIC Python package, please install through pip ",
+        "(e.g. ", reticulate::py_config()$python, " -m pip install magic-impute) and then restart R."
+      ))
+    }
   )
 }
 
@@ -134,7 +140,7 @@ pymagic <- NULL
 ######
 
 check.int <- function(x) {
-    as.integer(x)
+  as.integer(x)
 }
 
 check.int.or.null <- function(x) {

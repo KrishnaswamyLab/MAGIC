@@ -60,8 +60,8 @@ In this tutorial, we will analyse myeloid and erythroid cells in mouse bone marr
 ```{r load_data}
 # load data
 bmmsc <- read_csv("https://github.com/KrishnaswamyLab/PHATE/raw/master/data/BMMC_myeloid.csv.gz")
-bmmsc <- bmmsc[,2:ncol(bmmsc)]
-bmmsc[1:5,1:10]
+bmmsc <- bmmsc[, 2:ncol(bmmsc)]
+bmmsc[1:5, 1:10]
 ```
 
 ### Filtering data
@@ -71,17 +71,17 @@ First, we need to remove lowly expressed genes and cells with small library size
 ```{r}
 # keep genes expressed in at least 10 cells
 keep_cols <- colSums(bmmsc > 0) > 10
-bmmsc <- bmmsc[,keep_cols]
+bmmsc <- bmmsc[, keep_cols]
 # look at the distribution of library sizes
 ggplot() +
-  geom_histogram(aes(x=rowSums(bmmsc)), bins=50) +
-  geom_vline(xintercept = 1000, color='red')
+  geom_histogram(aes(x = rowSums(bmmsc)), bins = 50) +
+  geom_vline(xintercept = 1000, color = "red")
 ```
 
 ```{r}
 # keep cells with at least 1000 UMIs
 keep_rows <- rowSums(bmmsc) > 1000
-bmmsc <- bmmsc[keep_rows,]
+bmmsc <- bmmsc[keep_rows, ]
 ```
 
 ### Normalizing data
@@ -99,24 +99,24 @@ Running MAGIC is as simple as running the `magic` function.
 
 ```{r run_magic}
 # run MAGIC
-bmmsc_MAGIC <- magic(bmmsc, genes=c("Mpo", "Klf1", "Ifitm1"))
+bmmsc_MAGIC <- magic(bmmsc, genes = c("Mpo", "Klf1", "Ifitm1"))
 ```
 
 We can plot the data before and after MAGIC to visualize the results.
 
 ```{r plot_raw}
 ggplot(bmmsc) +
-  geom_point(aes(Mpo, Klf1, color=Ifitm1)) +
-  scale_color_viridis(option="B")
-ggsave('BMMSC_data_R_before_magic.png', width=5, height=5)
+  geom_point(aes(Mpo, Klf1, color = Ifitm1)) +
+  scale_color_viridis(option = "B")
+ggsave("BMMSC_data_R_before_magic.png", width = 5, height = 5)
 ```
 
 The data suffers from dropout to the point that we cannot infer anything about the gene-gene relationships.
 
 ```{r plot_magic}
 ggplot(bmmsc_MAGIC) +
-  geom_point(aes(Mpo, Klf1, color=Ifitm1)) +
-  scale_color_viridis(option="B")
+  geom_point(aes(Mpo, Klf1, color = Ifitm1)) +
+  scale_color_viridis(option = "B")
 ```
 
 As you can see, the gene-gene relationships are much clearer after MAGIC. These relationships also match the biological progression we expect to see - Ifitm1 is a stem cell marker, Klf1 is an erythroid marker, and Mpo is a myeloid marker.
@@ -126,12 +126,14 @@ As you can see, the gene-gene relationships are much clearer after MAGIC. These 
 The data is a little too smooth - we can increase `t` from the default value of 3 to increase the amount of diffusion. We pass the original result to the argument `init` to avoid recomputing intermediate steps.
 
 ```{r decrease_t}
-bmmsc_MAGIC <- magic(bmmsc, genes=c("Mpo", "Klf1", "Ifitm1"),
-                     t=4, init=bmmsc_MAGIC)
+bmmsc_MAGIC <- magic(bmmsc,
+  genes = c("Mpo", "Klf1", "Ifitm1"),
+  t = 4, init = bmmsc_MAGIC
+)
 ggplot(bmmsc_MAGIC) +
-  geom_point(aes(Mpo, Klf1, color=Ifitm1)) +
-  scale_color_viridis(option="B")
-ggsave('BMMSC_data_R_after_magic.png', width=5, height=5)
+  geom_point(aes(Mpo, Klf1, color = Ifitm1)) +
+  scale_color_viridis(option = "B")
+ggsave("BMMSC_data_R_after_magic.png", width = 5, height = 5)
 ```
 
 ### Visualizing MAGIC values on PCA
@@ -139,13 +141,15 @@ ggsave('BMMSC_data_R_after_magic.png', width=5, height=5)
 We can visualize the results of MAGIC on PCA with `genes="pca_only"`.
 
 ```{r run_pca}
-bmmsc_MAGIC_PCA <- magic(bmmsc, genes="pca_only",
-                         t=4, init=bmmsc_MAGIC)
+bmmsc_MAGIC_PCA <- magic(bmmsc,
+  genes = "pca_only",
+  t = 4, init = bmmsc_MAGIC
+)
 # ggplot(bmmsc_MAGIC_PCA) +
-  geom_point(aes(x=PC1, y=PC2, color=bmmsc_MAGIC$result$Klf1)) +
-  scale_color_viridis(option="B") +
-  labs(color="Klf1")
-ggsave('BMMSC_data_R_pca_colored_by_magic.png', width=5, height=5)
+geom_point(aes(x = PC1, y = PC2, color = bmmsc_MAGIC$result$Klf1)) +
+  scale_color_viridis(option = "B") +
+  labs(color = "Klf1")
+ggsave("BMMSC_data_R_pca_colored_by_magic.png", width = 5, height = 5)
 ```
 
 
@@ -156,10 +160,10 @@ We can visualize the results of MAGIC on PHATE as follows.
 ```{r run_phate}
 bmmsc_PHATE <- phate(bmmsc)
 ggplot(bmmsc_PHATE) +
-  geom_point(aes(x=PHATE1, y=PHATE2, color=bmmsc_MAGIC$result$Klf1)) +
-  scale_color_viridis(option="B") +
-  labs(color="Klf1")
-ggsave('BMMSC_data_R_phate_colored_by_magic.png', width=5, height=5)
+  geom_point(aes(x = PHATE1, y = PHATE2, color = bmmsc_MAGIC$result$Klf1)) +
+  scale_color_viridis(option = "B") +
+  labs(color = "Klf1")
+ggsave("BMMSC_data_R_phate_colored_by_magic.png", width = 5, height = 5)
 ```
 
 ### Using MAGIC for downstream analysis
@@ -167,8 +171,10 @@ ggsave('BMMSC_data_R_phate_colored_by_magic.png', width=5, height=5)
 We can look at the entire smoothed matrix with `genes='all_genes'`, passing the original result to the argument `init` to avoid recomputing intermediate steps. Note that this matrix may be large and could take up a lot of memory.
 
 ```{r run_magic_full_matrix}
-bmmsc_MAGIC <- magic(bmmsc, genes="all_genes",
-                     t=4, init=bmmsc_MAGIC)
+bmmsc_MAGIC <- magic(bmmsc,
+  genes = "all_genes",
+  t = 4, init = bmmsc_MAGIC
+)
 as.data.frame(bmmsc_MAGIC)[1:5, 1:10]
 ```
 

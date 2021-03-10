@@ -60,7 +60,7 @@ In this tutorial, we will analyze single-cell RNA sequencing of the epithelial t
 ```{r load_data}
 # load data
 data <- read_csv("../../../data/HMLE_TGFb_day_8_10.csv.gz")
-data[1:5,1:10]
+data[1:5, 1:10]
 ```
 
 ### Filtering data
@@ -70,7 +70,7 @@ First, we need to remove lowly expressed genes.
 ```{r remove_rare_genes}
 # keep genes expressed in at least 10 cells
 keep_cols <- colSums(data > 0) > 10
-data <- data[,keep_cols]
+data <- data[, keep_cols]
 ```
 
 Ordinarily, we would remove cells with small library sizes. In this dataset, it has already been done; however, if you wanted to do that, you could do it with the code below.
@@ -78,15 +78,15 @@ Ordinarily, we would remove cells with small library sizes. In this dataset, it 
 ```{r libsize_histogram}
 # look at the distribution of library sizes
 ggplot() +
-  geom_histogram(aes(x=rowSums(data)), bins=50) +
-  geom_vline(xintercept = 1000, color='red')
+  geom_histogram(aes(x = rowSums(data)), bins = 50) +
+  geom_vline(xintercept = 1000, color = "red")
 ```
 
 ```{r filter_libsize}
 if (FALSE) {
   # keep cells with at least 1000 UMIs and at most 15000
   keep_rows <- rowSums(data) > 1000 & rowSums(data) < 15000
-  data <- data[keep_rows,]
+  data <- data[keep_rows, ]
 }
 ```
 
@@ -107,23 +107,23 @@ Running MAGIC is as simple as running the `magic` function. Because this dataset
 
 ```{r run_magic}
 # run MAGIC
-data_MAGIC <- magic(data, knn=3, genes=c("VIM", "CDH1", "ZEB1"))
+data_MAGIC <- magic(data, knn = 3, genes = c("VIM", "CDH1", "ZEB1"))
 ```
 
 We can plot the data before and after MAGIC to visualize the results.
 
 ```{r plot_raw}
 ggplot(data) +
-  geom_point(aes(VIM, CDH1, color=ZEB1)) +
-  scale_color_viridis(option="B")
-ggsave('EMT_data_R_before_magic.png', width=5, height=5)
+  geom_point(aes(VIM, CDH1, color = ZEB1)) +
+  scale_color_viridis(option = "B")
+ggsave("EMT_data_R_before_magic.png", width = 5, height = 5)
 ```
 
 ```{r plot_magic}
 ggplot(data_MAGIC) +
-  geom_point(aes(VIM, CDH1, color=ZEB1)) +
-  scale_color_viridis(option="B")
-ggsave('EMT_data_R_after_magic.png', width=5, height=5)
+  geom_point(aes(VIM, CDH1, color = ZEB1)) +
+  scale_color_viridis(option = "B")
+ggsave("EMT_data_R_after_magic.png", width = 5, height = 5)
 ```
 
 As you can see, the gene-gene relationships are much clearer after MAGIC.
@@ -133,13 +133,15 @@ As you can see, the gene-gene relationships are much clearer after MAGIC.
 We can visualize the results of MAGIC on PCA with `genes="pca_only"`.
 
 ```{r run_pca}
-data_MAGIC_PCA <- magic(data, genes="pca_only",
-                        knn=15, init=data_MAGIC)
+data_MAGIC_PCA <- magic(data,
+  genes = "pca_only",
+  knn = 15, init = data_MAGIC
+)
 ggplot(data_MAGIC_PCA) +
-  geom_point(aes(x=PC1, y=PC2, color=data_MAGIC$result$VIM)) +
-  scale_color_viridis(option="B") +
-  labs(color="VIM")
-ggsave('EMT_data_R_pca_colored_by_magic.png', width=5, height=5)
+  geom_point(aes(x = PC1, y = PC2, color = data_MAGIC$result$VIM)) +
+  scale_color_viridis(option = "B") +
+  labs(color = "VIM")
+ggsave("EMT_data_R_pca_colored_by_magic.png", width = 5, height = 5)
 ```
 
 ### Using MAGIC for downstream analysis
@@ -147,8 +149,10 @@ ggsave('EMT_data_R_pca_colored_by_magic.png', width=5, height=5)
 We can look at the entire smoothed matrix with `genes='all_genes'`, passing the original result to the argument `init` to avoid recomputing intermediate steps. Note that this matrix may be large and could take up a lot of memory.
 
 ```{r run_magic_full_matrix}
-data_MAGIC <- magic(data, genes="all_genes",
-                    knn=15, init=data_MAGIC)
+data_MAGIC <- magic(data,
+  genes = "all_genes",
+  knn = 15, init = data_MAGIC
+)
 as.data.frame(data_MAGIC)[1:5, 1:10]
 ```
 

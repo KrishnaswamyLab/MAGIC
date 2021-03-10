@@ -12,7 +12,7 @@
 #' @import Matrix
 #'
 #' @export
-library.size.normalize <- function(data, verbose=FALSE) {
+library.size.normalize <- function(data, verbose = FALSE) {
   if (verbose) {
     message(paste0(
       "Normalizing library sizes for ",
