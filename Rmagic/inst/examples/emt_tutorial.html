@@ -1695,10 +1695,10 @@ library(ggplot2)
 library(viridis)</code></pre>
 <pre><code>## Loading required package: viridisLite</code></pre>
 <pre class="r"><code>library(phateR)</code></pre>
-<pre><code>## 
+<pre><code>##
 ## Attaching package: &#39;phateR&#39;</code></pre>
 <pre><code>## The following object is masked from &#39;package:Rmagic&#39;:
-## 
+##
 ##     library.size.normalize</code></pre>
 </div>
 <div id="loading-data" class="section level3">
@@ -1765,7 +1765,7 @@ data_MAGIC &lt;- magic(data, knn=15, genes=c(&quot;VIM&quot;, &quot;CDH1&quot;, 
 <div id="visualizing-magic-values-on-pca" class="section level3">
 <h3>Visualizing MAGIC values on PCA</h3>
 <p>We can visualize the results of MAGIC on PCA with <code>genes=&quot;pca_only&quot;</code>.</p>
-<pre class="r"><code>data_MAGIC_PCA &lt;- magic(data, genes=&quot;pca_only&quot;, 
+<pre class="r"><code>data_MAGIC_PCA &lt;- magic(data, genes=&quot;pca_only&quot;,
                         knn=15, init=data_MAGIC)
 ggplot(data_MAGIC_PCA) +
   geom_point(aes(x=PC1, y=PC2, color=data_MAGIC$result$VIM)) +
@@ -1777,7 +1777,7 @@ ggplot(data_MAGIC_PCA) +
 <div id="using-magic-for-downstream-analysis" class="section level3">
 <h3>Using MAGIC for downstream analysis</h3>
 <p>We can look at the entire smoothed matrix with <code>genes=&#39;all_genes&#39;</code>, passing the original result to the argument <code>init</code> to avoid recomputing intermediate steps. Note that this matrix may be large and could take up a lot of memory.</p>
-<pre class="r"><code>data_MAGIC &lt;- magic(data, genes=&quot;all_genes&quot;, 
+<pre class="r"><code>data_MAGIC &lt;- magic(data, genes=&quot;all_genes&quot;,
                     knn=15, init=data_MAGIC)
 as.data.frame(data_MAGIC)[1:5, 1:10]</code></pre>
 <div data-pagedtable="false">

@@ -10,7 +10,7 @@ return_sparse = false;
 if isempty(data_dir)
     data_dir = './';
 elseif data_dir(end) ~= '/'
-    data_dir = [data_dir '/']; 
+    data_dir = [data_dir '/'];
 end
 
 for i=1:length(varargin)-1
@@ -38,7 +38,7 @@ dataMatrix_genes = table2cell( ...
 dataMatrix_cells = table2cell( ...
                    readtable(filename_cells, ...
                              'FileType','text','ReadVariableNames',0));
-   
+
 % Remove empty cells
 col_keep = any(dataMatrix,1);
 dataMatrix = dataMatrix(:,col_keep);

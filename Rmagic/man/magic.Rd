@@ -142,50 +142,45 @@ van Dijk et al, 2018.
 }
 \examples{
 if (pymagic_is_available()) {
+  data(magic_testdata)
 
-data(magic_testdata)
+  # Run MAGIC
+  data_magic <- magic(magic_testdata, genes = c("VIM", "CDH1", "ZEB1"))
+  summary(data_magic)
+  ##       CDH1             VIM             ZEB1
+  ## Min.   :0.4303   Min.   :3.854   Min.   :0.01111
+  ## 1st Qu.:0.4444   1st Qu.:3.947   1st Qu.:0.01145
+  ## Median :0.4462   Median :3.964   Median :0.01153
+  ## Mean   :0.4461   Mean   :3.965   Mean   :0.01152
+  ## 3rd Qu.:0.4478   3rd Qu.:3.982   3rd Qu.:0.01160
+  ## Max.   :0.4585   Max.   :4.127   Max.   :0.01201
 
-# Run MAGIC
-data_magic <- magic(magic_testdata, genes=c("VIM", "CDH1", "ZEB1"))
-summary(data_magic)
-##       CDH1             VIM             ZEB1
-## Min.   :0.4303   Min.   :3.854   Min.   :0.01111
-## 1st Qu.:0.4444   1st Qu.:3.947   1st Qu.:0.01145
-## Median :0.4462   Median :3.964   Median :0.01153
-## Mean   :0.4461   Mean   :3.965   Mean   :0.01152
-## 3rd Qu.:0.4478   3rd Qu.:3.982   3rd Qu.:0.01160
-## Max.   :0.4585   Max.   :4.127   Max.   :0.01201
+  # Plot the result with ggplot2
+  if (require(ggplot2)) {
+    ggplot(data_magic) +
+      geom_point(aes(x = VIM, y = CDH1, color = ZEB1))
+  }
 
-# Plot the result with ggplot2
-if (require(ggplot2)) {
-  ggplot(data_magic) +
-    geom_point(aes(x=VIM, y=CDH1, color=ZEB1))
-}
-
-# Run MAGIC again returning all genes
-# We use the last run as initialization
-data_magic <- magic(magic_testdata, genes="all_genes", init=data_magic)
-# Extract the smoothed data matrix to use in downstream analysis
-data_smooth <- as.matrix(data_magic)
-
+  # Run MAGIC again returning all genes
+  # We use the last run as initialization
+  data_magic <- magic(magic_testdata, genes = "all_genes", init = data_magic)
+  # Extract the smoothed data matrix to use in downstream analysis
+  data_smooth <- as.matrix(data_magic)
 }
 
 if (pymagic_is_available() && require(Seurat)) {
+  data(magic_testdata)
 
-data(magic_testdata)
+  # Create a Seurat object
+  seurat_object <- CreateSeuratObject(counts = t(magic_testdata), assay = "RNA")
+  seurat_object <- NormalizeData(object = seurat_object)
+  seurat_object <- ScaleData(object = seurat_object)
 
-# Create a Seurat object
-seurat_object <- CreateSeuratObject(counts = t(magic_testdata), assay="RNA")
-seurat_object <- NormalizeData(object = seurat_object)
-seurat_object <- ScaleData(object = seurat_object)
+  # Run MAGIC and reset the active assay
+  seurat_object <- magic(seurat_object)
+  seurat_object@active.assay <- "MAGIC_RNA"
 
-# Run MAGIC and reset the active assay
-seurat_object <- magic(seurat_object)
-seurat_object@active.assay = "MAGIC_RNA"
-
-# Analyze with Seurat
-VlnPlot(seurat_object, features=c("VIM", "ZEB1", "CDH1"))
-
+  # Analyze with Seurat
+  VlnPlot(seurat_object, features = c("VIM", "ZEB1", "CDH1"))
 }
-
 }

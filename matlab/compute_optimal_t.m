@@ -32,7 +32,7 @@ if make_plot
         data_prev = data_curr;
     end
     t_opt = find(error_vec < th, 1, 'first');
-    
+
     figure;
     hold all;
     plot(1:t_max, error_vec, '*-');
@@ -60,12 +60,3 @@ else
 end
 
 disp(['optimal t = ' num2str(t_opt)]);
-
-
-
-
-
-
-
-
-

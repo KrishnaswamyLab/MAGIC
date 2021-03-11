@@ -18,4 +18,3 @@ switch method
         disp 'No PCA performed'
         pc = X;
 end
-

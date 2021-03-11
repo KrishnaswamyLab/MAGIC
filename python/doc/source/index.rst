@@ -12,7 +12,7 @@ MAGIC - Markov Affinity-based Graph Imputation of Cells
 
 .. raw:: html
 
-    <a href="https://travis-ci.com/KrishnaswamyLab/MAGIC"><img src="https://api.travis-ci.com/KrishnaswamyLab/magic.svg?branch=master" alt="Travis CI Build"></a>
+    <a href="https://github.com/KrishnaswamyLab/MAGIC/actions"><img src="https://img.shields.io/github/workflow/status/KrishnaswamyLab/MAGIC/Unit%20Tests/master?label=Github%20Actions" alt="GitHub Actions Build"></a>
 
 .. raw:: html
 

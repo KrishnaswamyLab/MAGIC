@@ -1,0 +1,172 @@
+name: Unit Tests
+
+on:
+  push:
+    branches-ignore:
+      - 'test_deploy'
+  pull_request:
+    branches:
+      - '*'
+
+jobs:
+
+  test_python:
+    runs-on: ${{ matrix.config.os }}
+    if: "!contains(github.event.head_commit.message, 'ci skip')"
+
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+        - {name: '3.9', os: ubuntu-latest, python: '3.9' }
+        - {name: '3.8', os: ubuntu-latest, python: '3.8' }
+        - {name: '3.7', os: ubuntu-latest, python: '3.7' }
+        - {name: '3.6', os: ubuntu-latest, python: '3.6' }
+
+    steps:
+    - name: Cancel Previous Runs
+      uses: styfle/cancel-workflow-action@0.6.0
+      with:
+        access_token: ${{ github.token }}
+
+    - name: Check Ubuntu version
+      run: |
+        echo "UBUNTU_VERSION=`grep DISTRIB_RELEASE /etc/lsb-release | sed 's/.*=//g'`" >> $GITHUB_ENV
+
+    - uses: actions/checkout@v2
+
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.config.python }}
+
+    - name: Cache Python packages
+      uses: actions/cache@v2
+      with:
+        path: ${{ env.pythonLocation }}
+        key: ${{runner.os}}-pip-${{ env.pythonLocation }}-${{ hashFiles('python/setup.py') }}
+        restore-keys: ${{runner.os}}-pip-${{ env.pythonLocation }}-
+
+    - name: Install package & dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -U wheel setuptools
+        pip install -U ./python[test]
+        python -c "import magic"
+
+    - name: Run Python tests
+      run: |
+        cd python
+        nose2 -vvv
+        cd ..
+
+    - name: Build docs
+      run: |
+        cd python
+        pip install .[doc]
+        cd doc
+        make html
+        cd ../..
+
+    - name: Coveralls
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        COVERALLS_SERVICE_NAME: github
+      run: |
+        coveralls
+
+    - name: Upload check results on fail
+      if: failure()
+      uses: actions/upload-artifact@master
+      with:
+        name: ${{ matrix.config.name }}_results
+        path: check
+
+  test_r:
+    runs-on: ${{ matrix.config.os }}
+    if: "!contains(github.event.head_commit.message, 'ci skip')"
+
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+        - {name: 'devel', os: ubuntu-latest, r: 'devel' }
+        - {name: 'release', os: ubuntu-latest, r: 'release' }
+
+    steps:
+    - name: Cancel Previous Runs
+      uses: styfle/cancel-workflow-action@0.6.0
+      with:
+        access_token: ${{ github.token }}
+
+    - name: Set up environment
+      run: |
+        echo "UBUNTU_VERSION=`grep DISTRIB_RELEASE /etc/lsb-release | sed 's/.*=//g'`" >> $GITHUB_ENV
+        mkdir -p .local/R/site-packages
+        echo "R_LIBS_USER=`pwd`/.local/R/site-packages" >> $GITHUB_ENV
+
+    - uses: actions/checkout@v2
+
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: "3.8"
+
+    - name: Install system dependencies
+      if: runner.os == 'Linux'
+      run: |
+        sudo apt-get update -qq
+        sudo apt-get install -y libcurl4-openssl-dev pandoc
+
+    - name: Cache Python packages
+      uses: actions/cache@v2
+      with:
+        path: ${{ env.pythonLocation }}
+        key: ${{runner.os}}-pip-${{ env.pythonLocation }}-${{ hashFiles('python/setup.py') }}
+        restore-keys: ${{runner.os}}-pip-${{ env.pythonLocation }}-
+
+    - name: Install package & dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -U wheel setuptools
+        pip install -U ./python
+        python -c "import magic"
+
+    - name: Set up R
+      id: setup-r
+      uses: r-lib/actions/setup-r@v1
+      with:
+        r-version: ${{ matrix.config.r }}
+
+    - name: Cache R packages
+      uses: actions/cache@v2
+      if: startsWith(runner.os, 'Linux')
+      with:
+        path: ${{env.R_LIBS_USER}}
+        key: test-${{env.UBUNTU_VERSION}}-renv-${{ steps.setup-r.outputs.installed-r-version }}-${{ hashFiles('Rmagic/DESCRIPTION') }}-
+        restore-keys: |
+          test-${{env.UBUNTU_VERSION}}-renv-${{ steps.setup-r.outputs.installed-r-version }}-
+
+    - name: Install R packages
+      run: |
+        if (!require("devtools")) install.packages("devtools", repos="http://cloud.r-project.org")
+        devtools::install_dev_deps("./Rmagic", upgrade=TRUE)
+        devtools::install("./Rmagic")
+      shell: Rscript {0}
+
+    - name: Install tinytex
+      uses: r-lib/actions/setup-tinytex@v1
+
+    - name: Run R tests
+      run: |
+        cd Rmagic
+        R CMD build .
+        R CMD check --as-cran *.tar.gz
+        cd ..
+
+    - name: Upload check results on fail
+      if: failure()
+      uses: actions/upload-artifact@master
+      with:
+        name: ${{ matrix.config.name }}_results
+        path: check

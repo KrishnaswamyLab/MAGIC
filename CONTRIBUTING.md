@@ -25,7 +25,7 @@ Code Style and Testing
 
 Contributors are encouraged to write tests for their code, but if you do not know how to do so, please do not feel discouraged from contributing code! Others can always help you test your contribution.
 
-Python code style is dictated by [`black`](https://pypi.org/project/black/#installation-and-usage). To automatically reformat your code when you run `git commit`, you can run `./autoblack.sh` in the root directory of this project to add a hook to your `git` repository.
+Code style is dictated by [`black`](https://pypi.org/project/black/#installation-and-usage) and [OpenStack](https://docs.openstack.org/hacking/latest/user/hacking.html#styleguide). Styling is automatically applied by [`pre-commit`](https://github.com/pre-commit/pre-commit).
 
 Code of Conduct
 ---------------

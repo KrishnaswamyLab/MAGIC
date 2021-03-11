@@ -1,16 +1,15 @@
-# author: Scott Gigante <scott.gigante@yale.edu>
 # (C) 2017 Krishnaswamy Lab GPLv2
-
-import matplotlib.pyplot as plt
-import pandas as pd
-import numpy as np
-from matplotlib import rc, animation
-import numbers
-import scprep
-from scipy import sparse
 
 from .magic import MAGIC
 from .utils import in_ipynb
+from matplotlib import animation
+from matplotlib import rc
+
+import matplotlib.pyplot as plt
+import numbers
+import numpy as np
+import pandas as pd
+import scprep
 
 
 def _validate_gene(gene, data):
@@ -44,7 +43,7 @@ def animate_magic(
     dpi=100,
     ipython_html="jshtml",
     verbose=False,
-    **kwargs
+    **kwargs,
 ):
     """Animate a gene-gene relationship with increased diffusion
 

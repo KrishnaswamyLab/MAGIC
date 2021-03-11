@@ -6,28 +6,21 @@ Scott Gigante <scott.gigante@yale.edu>, Daniel Dager <daniel.dager@yale.edu>
 (C) 2018 Krishnaswamy Lab GPLv2
 """
 
-from __future__ import print_function, division, absolute_import
-
-import numpy as np
-import graphtools
-from sklearn.base import BaseEstimator
-from sklearn.exceptions import NotFittedError
-from sklearn.decomposition import PCA
-import warnings
-import matplotlib.pyplot as plt
-from scipy import sparse, spatial
-import pandas as pd
-import numbers
-import tasklogger
-import scprep
-
 from . import utils
+from scipy import sparse
+from scipy import spatial
+from sklearn.base import BaseEstimator
+from sklearn.decomposition import PCA
+from sklearn.exceptions import NotFittedError
 
-try:
-    import anndata
-except ImportError:
-    # anndata not installed
-    pass
+import graphtools
+import matplotlib.pyplot as plt
+import numbers
+import numpy as np
+import pandas as pd
+import scprep
+import tasklogger
+import warnings
 
 _logger = tasklogger.get_tasklogger("graphtools")
 
@@ -91,10 +84,6 @@ class MAGIC(BaseEstimator):
     verbose : `int` or `boolean`, optional (default: 1)
         If `True` or `> 0`, print status messages
 
-    k : Deprecated for `knn`
-
-    a : Deprecated for `decay`
-
     Attributes
     ----------
 
@@ -154,23 +143,7 @@ class MAGIC(BaseEstimator):
         n_jobs=1,
         random_state=None,
         verbose=1,
-        k=None,
-        a=None,
     ):
-        if k is not None:
-            warnings.warn(
-                "Parameter `k` is deprecated and will be removed"
-                " in a future version. Use `knn` instead",
-                FutureWarning,
-            )
-            knn = k
-        if a is not None:
-            warnings.warn(
-                "Parameter `a` is deprecated and will be removed"
-                " in a future version. Use `decay` instead",
-                FutureWarning,
-            )
-            decay = a
         self.knn = knn
         self.knn_max = knn_max
         self.decay = decay
@@ -223,7 +196,7 @@ class MAGIC(BaseEstimator):
         """
         utils.check_positive(knn=self.knn)
         utils.check_int(knn=self.knn, n_jobs=self.n_jobs)
-        # TODO: epsilon
+        # TODO(scottgigante): epsilon
         utils.check_if_not(
             None,
             utils.check_positive,
@@ -319,10 +292,6 @@ class MAGIC(BaseEstimator):
         verbose : `int` or `boolean`, optional (default: 1)
             If `True` or `> 0`, print status messages
 
-        k : Deprecated for `knn`
-
-        a : Deprecated for `decay`
-
         Returns
         -------
         self
@@ -336,24 +305,6 @@ class MAGIC(BaseEstimator):
             del params["t"]
 
         # kernel parameters
-        if "k" in params and params["k"] != self.knn:
-            warnings.warn(
-                "Parameter `k` is deprecated and will be removed"
-                " in a future version. Use `knn` instead",
-                FutureWarning,
-            )
-            self.knn = params["k"]
-            reset_kernel = True
-            del params["k"]
-        if "a" in params and params["a"] != self.decay:
-            warnings.warn(
-                "Parameter `a` is deprecated and will be removed"
-                " in a future version. Use `decay` instead",
-                FutureWarning,
-            )
-            self.decay = params["a"]
-            reset_kernel = True
-            del params["a"]
         if "knn" in params and params["knn"] != self.knn:
             self.knn = params["knn"]
             reset_kernel = True
@@ -498,11 +449,9 @@ class MAGIC(BaseEstimator):
         return self
 
     def _parse_genes(self, X, genes):
-        if (
-            genes is None
-            and (sparse.issparse(X) or scprep.utils.is_sparse_dataframe(X))
-            and np.prod(X.shape) > 5000 * 20000
-        ):
+        X_sparse = sparse.issparse(X) or scprep.utils.is_sparse_dataframe(X)
+        X_large = np.prod(X.shape) > 5000 * 20000
+        if genes is None and X_sparse and X_large:
             warnings.warn(
                 "Returning imputed values for all genes on a ({} x "
                 "{}) matrix will require approximately {:.2f}GB of "
@@ -603,15 +552,15 @@ class MAGIC(BaseEstimator):
             store_result = True
 
         genes = self._parse_genes(X, genes)
+        if genes is None:
+            genes_is_short = False
+        else:
+            genes_is_short = len(genes) < self.graph.data_nu.shape[1]
 
         if isinstance(genes, str) and genes == "pca_only":
             # have to use PCA to return it
             solver = "approximate"
-        elif (
-            genes is not None
-            and self.X_magic is None
-            and len(genes) < self.graph.data_nu.shape[1]
-        ):
+        elif self.X_magic is None and genes_is_short:
             # faster to skip PCA
             solver = "exact"
             store_result = False
@@ -637,8 +586,8 @@ class MAGIC(BaseEstimator):
                 _logger.warning(
                     "Running MAGIC with `solver='exact'` on "
                     "{}-dimensional data may take a long time. "
-                    "Consider denoising specific genes with `genes=<list-like>` or using "
-                    "`solver='approximate'`.".format(X_input.shape[1])
+                    "Consider denoising specific genes with `genes=<list-like>` "
+                    "or using `solver='approximate'`.".format(X_input.shape[1])
                 )
             X_magic = self._impute(X_input, t_max=t_max, plot=plot_optimal_t, ax=ax)
             if store_result:
@@ -661,8 +610,7 @@ class MAGIC(BaseEstimator):
         return X_magic
 
     def fit_transform(self, X, graph=None, **kwargs):
-        """Computes the diffusion operator and the position of the cells in the
-        embedding space
+        """Computes the diffusion operator and the denoised gene expression
 
         Parameters
         ----------

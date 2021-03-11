@@ -1630,10 +1630,10 @@ if (!require(phateR)) install.packages(&quot;phateR&quot;)</code></pre>
 library(viridis)</code></pre>
 <pre><code>## Loading required package: viridisLite</code></pre>
 <pre class="r"><code>library(phateR)</code></pre>
-<pre><code>## 
+<pre><code>##
 ## Attaching package: 'phateR'</code></pre>
 <pre><code>## The following object is masked from 'package:Rmagic':
-## 
+##
 ##     library.size.normalize</code></pre>
 </div>
 <div id="loading-data" class="section level3">
@@ -1698,7 +1698,7 @@ bmmsc_MAGIC &lt;- magic(bmmsc, genes=c(&quot;Mpo&quot;, &quot;Klf1&quot;, &quot;
 <div id="rerunning-magic-with-new-parameters" class="section level3">
 <h3>Rerunning MAGIC with new parameters</h3>
 <p>The data is a little too smooth - we can decrease <code>t</code> from the automatic value to reduce the amount of diffusion. We pass the original result to the argument <code>init</code> to avoid recomputing intermediate steps.</p>
-<pre class="r"><code>bmmsc_MAGIC &lt;- magic(bmmsc, genes=c(&quot;Mpo&quot;, &quot;Klf1&quot;, &quot;Ifitm1&quot;), 
+<pre class="r"><code>bmmsc_MAGIC &lt;- magic(bmmsc, genes=c(&quot;Mpo&quot;, &quot;Klf1&quot;, &quot;Ifitm1&quot;),
                      t=4, init=bmmsc_MAGIC)
 ggplot(bmmsc_MAGIC) +
   geom_point(aes(Mpo, Klf1, color=Ifitm1)) +
@@ -1709,7 +1709,7 @@ ggplot(bmmsc_MAGIC) +
 <div id="visualizing-magic-values-on-pca" class="section level3">
 <h3>Visualizing MAGIC values on PCA</h3>
 <p>We can visualize the results of MAGIC on PCA with <code>genes=&quot;pca_only&quot;</code>.</p>
-<pre class="r"><code>bmmsc_MAGIC_PCA &lt;- magic(bmmsc, genes=&quot;pca_only&quot;, 
+<pre class="r"><code>bmmsc_MAGIC_PCA &lt;- magic(bmmsc, genes=&quot;pca_only&quot;,
                          t=4, init=bmmsc_MAGIC)
 ggplot(bmmsc_MAGIC_PCA) +
   geom_point(aes(x=PC1, y=PC2, color=bmmsc_MAGIC$result$Klf1)) +
@@ -1732,7 +1732,7 @@ ggplot(bmmsc_PHATE) +
 <div id="using-magic-for-downstream-analysis" class="section level3">
 <h3>Using MAGIC for downstream analysis</h3>
 <p>We can look at the entire smoothed matrix with <code>genes='all_genes'</code>, passing the original result to the argument <code>init</code> to avoid recomputing intermediate steps. Note that this matrix may be large and could take up a lot of memory.</p>
-<pre class="r"><code>bmmsc_MAGIC &lt;- magic(bmmsc, genes=&quot;all_genes&quot;, 
+<pre class="r"><code>bmmsc_MAGIC &lt;- magic(bmmsc, genes=&quot;all_genes&quot;,
                      t=4, init=bmmsc_MAGIC)
 as.data.frame(bmmsc_MAGIC)[1:5, 1:10]</code></pre>
 <div data-pagedtable="false">

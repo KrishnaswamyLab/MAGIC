@@ -1,13 +1,13 @@
 #!/usr/bin/env python
 
 
-from __future__ import print_function, division, absolute_import
+import magic
 import matplotlib as mpl
+import numpy as np
+import os
+import scprep
 
 mpl.use("agg")
-import magic
-import numpy as np
-import scprep
 
 try:
     import anndata
@@ -15,7 +15,6 @@ except (ImportError, SyntaxError):
     # anndata not installed
     pass
 
-import os
 
 data_path = os.path.join("..", "data", "test_data.csv")
 if not os.path.isfile(data_path):
