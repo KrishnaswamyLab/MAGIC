@@ -92,7 +92,6 @@ jobs:
         config:
         - {name: 'devel', os: ubuntu-latest, r: 'devel' }
         - {name: 'release', os: ubuntu-latest, r: 'release' }
-        - {name: 'oldrel', os: ubuntu-latest, r: 'oldrel' }
 
     steps:
     - name: Cancel Previous Runs
