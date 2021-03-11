@@ -1,3 +1,4 @@
 ^data-raw$
 ^tests$
 ^README\.Rmd$
+^.pre\-commit.*$
